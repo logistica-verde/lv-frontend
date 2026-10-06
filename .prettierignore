@@ -1,0 +1,6 @@
+dist
+coverage
+node_modules
+package-lock.json
+README.md
+public/mockServiceWorker.js
