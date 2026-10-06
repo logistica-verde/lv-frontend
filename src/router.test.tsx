@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import AppLayout from '@/components/AppLayout/AppLayout'
 import RouteErrorPage from '@/pages/RouteErrorPage/RouteErrorPage'
 import { routes } from '@/router'
@@ -10,6 +10,10 @@ import { renderRoutes } from '@/test/renderRoutes'
 import { server } from '@/test/server'
 
 describe('app routes', () => {
+  beforeEach(() => {
+    server.use(http.get(apiUrl('/api/delivery-points'), () => HttpResponse.json([])))
+  })
+
   it('shows the planning page at the root', () => {
     renderRoutes(routes, '/')
 
