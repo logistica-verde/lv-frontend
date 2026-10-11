@@ -1,0 +1,1 @@
+export const ROUTE_POLL_INTERVAL_MS = 1500
