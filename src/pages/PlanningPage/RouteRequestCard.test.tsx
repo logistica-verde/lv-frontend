@@ -12,7 +12,11 @@ import { completedRouteFixture, vehicleFixture } from '@/test/fixtures'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { server } from '@/test/server'
 
-vi.mock('@/config/polling', () => ({ ROUTE_POLL_INTERVAL_MS: 20 }))
+vi.mock('@/config/polling', () => ({
+  ROUTE_POLL_INTERVAL_MS: 20,
+  ANCHOR_POLL_INTERVAL_MS: 20,
+  ANCHOR_MAX_POLLS: 40,
+}))
 
 const secondVehicle: Vehicle = {
   ...vehicleFixture,

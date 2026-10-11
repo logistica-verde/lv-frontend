@@ -5,11 +5,15 @@ import { describe, expect, it, vi } from 'vitest'
 import ComparisonPage from '@/pages/ComparisonPage/ComparisonPage'
 import type { Route } from '@/services/schemas/route'
 import { apiUrl } from '@/test/api'
-import { completedRouteFixture } from '@/test/fixtures'
+import { completedRouteFixture, integrityFixture } from '@/test/fixtures'
 import { renderRoutes } from '@/test/renderRoutes'
 import { server } from '@/test/server'
 
-vi.mock('@/config/polling', () => ({ ROUTE_POLL_INTERVAL_MS: 20 }))
+vi.mock('@/config/polling', () => ({
+  ROUTE_POLL_INTERVAL_MS: 20,
+  ANCHOR_POLL_INTERVAL_MS: 20,
+  ANCHOR_MAX_POLLS: 40,
+}))
 
 const emissionRoute: Route = { ...completedRouteFixture, id: 7, criterion: 'EMISSION' }
 
@@ -30,6 +34,9 @@ const routes = [{ path: '/rotas/:emissionId/:distanceId', element: <ComparisonPa
 
 function useRoutesApi(byId: Record<number, Route | (() => Route)>) {
   server.use(
+    http.get(apiUrl('/api/routes/:id/integrity'), ({ params }) =>
+      HttpResponse.json({ ...integrityFixture, operationId: Number(params.id) }),
+    ),
     http.get(apiUrl('/api/routes/:id'), ({ params }) => {
       const entry = byId[Number(params.id)]
       if (!entry) {
