@@ -3,6 +3,7 @@ import type { LatLngTuple } from 'leaflet'
 import { useEffect, useMemo } from 'react'
 import type { ReactNode } from 'react'
 import { MapContainer, TileLayer, useMap } from 'react-leaflet'
+import MapClickHandler from '@/components/Map/MapClickHandler'
 import styles from '@/components/Map/MapView.module.css'
 import { env } from '@/config/env'
 import { DEFAULT_ZOOM, parsePositionsKey, positionsKey, SAO_PAULO_CENTER } from '@/lib/geo'
@@ -42,15 +43,22 @@ function FitBounds({ positions }: FitBoundsProps) {
 type MapViewProps = {
   label: string
   fitTo?: LatLngTuple[]
+  onMapClick?: (position: LatLngTuple) => void
   children?: ReactNode
 }
 
-export default function MapView({ label, fitTo = NO_POSITIONS, children }: MapViewProps) {
+export default function MapView({
+  label,
+  fitTo = NO_POSITIONS,
+  onMapClick,
+  children,
+}: MapViewProps) {
   return (
     <div role="region" aria-label={label} className={styles.wrapper}>
       <MapContainer center={SAO_PAULO_CENTER} zoom={DEFAULT_ZOOM} className={styles.map}>
         <TileLayer attribution={ATTRIBUTION} url={env.tileUrl} />
         <FitBounds positions={fitTo} />
+        {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
         {children}
       </MapContainer>
     </div>
