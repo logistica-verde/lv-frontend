@@ -1,0 +1,58 @@
+import 'leaflet/dist/leaflet.css'
+import type { LatLngTuple } from 'leaflet'
+import { useEffect, useMemo } from 'react'
+import type { ReactNode } from 'react'
+import { MapContainer, TileLayer, useMap } from 'react-leaflet'
+import styles from '@/components/Map/MapView.module.css'
+import { env } from '@/config/env'
+import { DEFAULT_ZOOM, parsePositionsKey, positionsKey, SAO_PAULO_CENTER } from '@/lib/geo'
+
+const ATTRIBUTION =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+const FIT_PADDING = 40
+const MAX_FIT_ZOOM = 15
+const SINGLE_POINT_ZOOM = 15
+const NO_POSITIONS: LatLngTuple[] = []
+
+type FitBoundsProps = {
+  positions: LatLngTuple[]
+}
+
+function FitBounds({ positions }: FitBoundsProps) {
+  const map = useMap()
+  const key = positionsKey(positions)
+  const target = useMemo(() => parsePositionsKey(key), [key])
+
+  useEffect(() => {
+    const size = map.getSize()
+    if (target.length === 0 || size.x === 0 || size.y === 0) {
+      return
+    }
+    const [only] = target
+    if (target.length === 1 && only) {
+      map.setView(only, SINGLE_POINT_ZOOM)
+      return
+    }
+    map.fitBounds(target, { padding: [FIT_PADDING, FIT_PADDING], maxZoom: MAX_FIT_ZOOM })
+  }, [map, target])
+
+  return null
+}
+
+type MapViewProps = {
+  label: string
+  fitTo?: LatLngTuple[]
+  children?: ReactNode
+}
+
+export default function MapView({ label, fitTo = NO_POSITIONS, children }: MapViewProps) {
+  return (
+    <div role="region" aria-label={label} className={styles.wrapper}>
+      <MapContainer center={SAO_PAULO_CENTER} zoom={DEFAULT_ZOOM} className={styles.map}>
+        <TileLayer attribution={ATTRIBUTION} url={env.tileUrl} />
+        <FitBounds positions={fitTo} />
+        {children}
+      </MapContainer>
+    </div>
+  )
+}
