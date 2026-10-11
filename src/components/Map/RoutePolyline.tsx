@@ -3,7 +3,7 @@ import { Polyline } from 'react-leaflet'
 import styles from '@/components/Map/RoutePolyline.module.css'
 import { classNames } from '@/lib/classNames'
 
-const LINE_WEIGHT = 5
+const LINE_WEIGHTS = { emission: 4, distance: 7 }
 
 type RoutePolylineProps = {
   positions: LatLngTuple[]
@@ -14,7 +14,7 @@ export default function RoutePolyline({ positions, tone }: RoutePolylineProps) {
   return (
     <Polyline
       positions={positions}
-      pathOptions={{ className: classNames(styles.line, styles[tone]), weight: LINE_WEIGHT }}
+      pathOptions={{ className: classNames(styles.line, styles[tone]), weight: LINE_WEIGHTS[tone] }}
     />
   )
 }

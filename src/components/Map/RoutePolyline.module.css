@@ -6,10 +6,10 @@
 }
 
 .emission {
-  stroke: var(--color-primary);
+  stroke: var(--color-route-emission);
 }
 
 .distance {
-  stroke: var(--color-info);
-  stroke-dasharray: 10 8;
+  stroke: var(--color-route-distance);
+  stroke-dasharray: 8 8;
 }

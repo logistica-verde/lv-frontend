@@ -55,7 +55,12 @@ export default function MapView({
 }: MapViewProps) {
   return (
     <div role="region" aria-label={label} className={styles.wrapper}>
-      <MapContainer center={SAO_PAULO_CENTER} zoom={DEFAULT_ZOOM} className={styles.map}>
+      <MapContainer
+        center={SAO_PAULO_CENTER}
+        zoom={DEFAULT_ZOOM}
+        scrollWheelZoom={false}
+        className={styles.map}
+      >
         <TileLayer attribution={ATTRIBUTION} url={env.tileUrl} />
         <FitBounds positions={fitTo} />
         {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
