@@ -8,6 +8,7 @@ import { DEFAULT_GA_SETTINGS, gaSettingsSchema } from '@/services/schemas/gaSett
 import type { GaSettings } from '@/services/schemas/gaSettings'
 import { roleSchema, userUpdateSchema } from '@/services/schemas/user'
 import type { User, UserUpdate } from '@/services/schemas/user'
+import { vehicleImageSchema } from '@/services/schemas/vehicle'
 import type { Vehicle } from '@/services/schemas/vehicle'
 import { apiUrl } from '@/test/api'
 import { vehicleFixture } from '@/test/fixtures'
@@ -18,6 +19,7 @@ const postedVehicleSchema = z.object({
   placa: z.string(),
   massaKg: z.number(),
   tipoCombustivel: z.string(),
+  imagem: vehicleImageSchema,
 })
 
 const vehicleStatusSchema = z.object({ ativo: z.boolean() })
@@ -203,10 +205,33 @@ describe('AdminPage vehicles', () => {
 
     expect(await screen.findByText('Veículo NEW1A11 cadastrado.')).toBeVisible()
     expect(api.postedVehicles).toEqual([
-      { placa: 'NEW1A11', massaKg: 3000, tipoCombustivel: 'gnv' },
+      { placa: 'NEW1A11', massaKg: 3000, tipoCombustivel: 'gnv', imagem: 'truck' },
     ])
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(await screen.findByRole('rowheader', { name: 'NEW1A11' })).toBeVisible()
+  })
+
+  it('lets the user choose the vehicle image, starting with the truck selected', async () => {
+    const api = useAdminApi()
+    renderWithProviders(<AdminPage />)
+    await screen.findByRole('table')
+    const user = userEvent.setup()
+
+    await user.click(screen.getByRole('button', { name: 'Cadastrar veículo' }))
+    const dialog = screen.getByRole('dialog', { name: 'Cadastrar veículo' })
+    const group = within(dialog).getByRole('group', { name: 'Imagem do veículo' })
+    expect(within(group).getAllByRole('radio')).toHaveLength(6)
+    expect(within(group).getByRole('radio', { name: 'Caminhão' })).toBeChecked()
+    await user.click(within(group).getByRole('radio', { name: 'Van' }))
+    await user.type(within(dialog).getByLabelText('Placa'), 'VAN1A11')
+    await user.type(within(dialog).getByLabelText('Massa (kg)'), '1800')
+    await user.type(within(dialog).getByLabelText('Tipo de combustível'), 'etanol')
+    await user.click(within(dialog).getByRole('button', { name: 'Cadastrar veículo' }))
+
+    expect(await screen.findByText('Veículo VAN1A11 cadastrado.')).toBeVisible()
+    expect(api.postedVehicles).toEqual([
+      { placa: 'VAN1A11', massaKg: 1800, tipoCombustivel: 'etanol', imagem: 'van' },
+    ])
   })
 
   it('keeps the dialog open and shows the API message when registering fails', async () => {

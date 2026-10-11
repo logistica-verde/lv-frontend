@@ -30,7 +30,12 @@ describe('vehicleService', () => {
         return HttpResponse.json(vehicleFixture, { status: 201 })
       }),
     )
-    const input = { placa: 'ABC1D23', massaKg: 7500, tipoCombustivel: 'diesel' }
+    const input = {
+      placa: 'ABC1D23',
+      massaKg: 7500,
+      tipoCombustivel: 'diesel',
+      imagem: 'truck' as const,
+    }
 
     const created = await createVehicle(input)
 

@@ -51,7 +51,12 @@ describe('response schemas', () => {
 })
 
 describe('vehicleInputSchema', () => {
-  const valid = { placa: 'ABC1D23', massaKg: 7500, tipoCombustivel: 'diesel' }
+  const valid = {
+    placa: 'ABC1D23',
+    massaKg: 7500,
+    tipoCombustivel: 'diesel',
+    imagem: 'truck',
+  }
 
   it('accepts a valid vehicle and trims text', () => {
     const parsed = vehicleInputSchema.parse({ ...valid, placa: '  ABC1D23  ' })
@@ -65,8 +70,25 @@ describe('vehicleInputSchema', () => {
     ['zero mass', { ...valid, massaKg: 0 }],
     ['negative mass', { ...valid, massaKg: -5 }],
     ['blank fuel type', { ...valid, tipoCombustivel: '' }],
+    ['unknown image', { ...valid, imagem: 'helicopter' }],
+    ['missing image', { placa: 'ABC1D23', massaKg: 7500, tipoCombustivel: 'diesel' }],
   ])('rejects %s', (_name, input) => {
     expect(vehicleInputSchema.safeParse(input).success).toBe(false)
+  })
+})
+
+describe('vehicleSchema image', () => {
+  it('falls back to the truck when the API sends no image or an unknown one', () => {
+    const withoutImage = Object.fromEntries(
+      Object.entries(vehicleFixture).filter(([key]) => key !== 'imagem'),
+    )
+
+    expect(vehicleSchema.parse(withoutImage).imagem).toBe('truck')
+    expect(vehicleSchema.parse({ ...vehicleFixture, imagem: 'helicopter' }).imagem).toBe('truck')
+  })
+
+  it('keeps a known image', () => {
+    expect(vehicleSchema.parse({ ...vehicleFixture, imagem: 'semi' }).imagem).toBe('semi')
   })
 })
 
