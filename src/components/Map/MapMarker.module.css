@@ -9,6 +9,11 @@
   box-shadow: 0 1px 4px rgb(0 0 0 / 0.4);
 }
 
+.selected {
+  outline: 3px solid var(--color-text);
+  outline-offset: 2px;
+}
+
 .neutral {
   background: var(--color-text-muted);
   color: var(--color-surface);
