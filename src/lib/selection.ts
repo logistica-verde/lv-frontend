@@ -11,6 +11,23 @@ export function toggleSelection(selected: number[], id: number): number[] {
   return [...selected, id]
 }
 
+export function moveSelection(selected: number[], id: number, offset: number): number[] {
+  const from = selected.indexOf(id)
+  const to = from + offset
+  if (from === -1 || to < 0 || to >= selected.length) {
+    return selected
+  }
+  const next = [...selected]
+  next.splice(from, 1)
+  next.splice(to, 0, id)
+  return next
+}
+
+export function addToSelection(selected: number[], ids: number[]): number[] {
+  const additions = ids.filter((id) => !selected.includes(id))
+  return [...selected, ...additions].slice(0, MAX_SELECTED_POINTS)
+}
+
 export function isSelectionReady(count: number): boolean {
   return count >= MIN_SELECTED_POINTS && count <= MAX_SELECTED_POINTS
 }
