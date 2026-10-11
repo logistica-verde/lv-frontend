@@ -17,7 +17,10 @@ function renderApp() {
 
 describe('App', () => {
   beforeEach(() => {
-    server.use(http.get(apiUrl('/api/delivery-points'), () => HttpResponse.json([])))
+    server.use(
+      http.get(apiUrl('/api/delivery-points'), () => HttpResponse.json([])),
+      http.get(apiUrl('/api/vehicles'), () => HttpResponse.json([])),
+    )
   })
 
   it('opens on the planning page inside the app layout', () => {

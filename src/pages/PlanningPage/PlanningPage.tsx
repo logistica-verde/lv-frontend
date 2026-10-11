@@ -10,6 +10,7 @@ import { toggleSelection } from '@/lib/selection'
 import styles from '@/pages/PlanningPage/PlanningPage.module.css'
 import PointForm from '@/pages/PlanningPage/PointForm'
 import PointSelector from '@/pages/PlanningPage/PointSelector'
+import RouteRequestCard from '@/pages/PlanningPage/RouteRequestCard'
 import { describeError } from '@/services/errors'
 import type { DeliveryPoint } from '@/services/schemas/deliveryPoint'
 
@@ -64,6 +65,7 @@ export default function PlanningPage() {
         </MapView>
         <div className={styles.side}>
           <PointSelector points={allPoints} selectedIds={selectedIds} onToggle={handleToggle} />
+          <RouteRequestCard selectedIds={selectedIds} />
           <PointForm
             pickedPosition={pickedPosition}
             onPreviewChange={setPreviewPosition}
