@@ -1,10 +1,19 @@
+import Card from '@/components/Card/Card'
 import ErrorMessage from '@/components/ErrorMessage/ErrorMessage'
 import Skeleton from '@/components/Skeleton/Skeleton'
 import VisuallyHidden from '@/components/VisuallyHidden/VisuallyHidden'
 import { useRoute } from '@/hooks/useRoutes'
-import ComparisonSummary from '@/pages/ComparisonPage/ComparisonSummary'
-import RouteMap from '@/pages/ComparisonPage/RouteMap'
+import {
+  describeDistanceComparison,
+  describeEmissionComparison,
+  emissionSavingPercent,
+  extraDistancePercent,
+} from '@/lib/comparison'
+import ComparisonMap from '@/pages/ComparisonPage/ComparisonMap'
 import styles from '@/pages/ComparisonPage/ComparisonView.module.css'
+import IntegrityPanel from '@/pages/ComparisonPage/IntegrityPanel'
+import MetricsTable from '@/pages/ComparisonPage/MetricsTable'
+import SegmentsTable from '@/pages/ComparisonPage/SegmentsTable'
 import { ApiError, describeError } from '@/services/errors'
 
 type ComparisonViewProps = {
@@ -38,8 +47,8 @@ export default function ComparisonView({ emissionId, distanceId }: ComparisonVie
     return (
       <div role="status" className={styles.loading}>
         <VisuallyHidden>Carregando rotas</VisuallyHidden>
-        <Skeleton height="6rem" />
-        <Skeleton height="20rem" />
+        <Skeleton height="10rem" />
+        <Skeleton height="24rem" />
       </div>
     )
   }
@@ -59,16 +68,27 @@ export default function ComparisonView({ emissionId, distanceId }: ComparisonVie
     return <p role="status">Calculando as rotas…</p>
   }
 
+  const emissionText = describeEmissionComparison(
+    emissionSavingPercent(emissionRoute, distanceRoute),
+  )
+  const distanceText = describeDistanceComparison(
+    extraDistancePercent(emissionRoute, distanceRoute),
+  )
+
   return (
     <div className={styles.results}>
-      <ComparisonSummary emissionRoute={emissionRoute} distanceRoute={distanceRoute} />
-      <div className={styles.maps}>
-        <RouteMap title="Menor emissão" route={emissionRoute} tone="emission" />
-        <RouteMap title="Menor distância" route={distanceRoute} tone="distance" />
-      </div>
-      <p className={styles.note}>
-        As linhas ligam as paradas em linha reta e não representam o traçado das ruas.
+      <p className={styles.lead}>
+        {emissionText} {distanceText}
       </p>
+      <MetricsTable emissionRoute={emissionRoute} distanceRoute={distanceRoute} />
+      <ComparisonMap emissionRoute={emissionRoute} distanceRoute={distanceRoute} />
+      <SegmentsTable emissionRoute={emissionRoute} distanceRoute={distanceRoute} />
+      <Card title="Integridade na blockchain">
+        <div id="integridade" className={styles.integrity}>
+          <IntegrityPanel routeId={emissionRoute.id} title="Menor emissão" />
+          <IntegrityPanel routeId={distanceRoute.id} title="Menor distância" />
+        </div>
+      </Card>
     </div>
   )
 }

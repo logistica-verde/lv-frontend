@@ -50,22 +50,22 @@ describe('IntegrityPanel', () => {
       }),
     )
 
-    renderWithProviders(<IntegrityPanel routeId={7} />)
+    renderWithProviders(<IntegrityPanel routeId={7} title="Menor emissão" />)
 
-    expect(screen.getByText('Verificando integridade')).toBeInTheDocument()
+    expect(screen.getByText('Verificando integridade: Menor emissão')).toBeInTheDocument()
     expect(await screen.findByText('Íntegra')).toBeVisible()
   })
 
   it('confirms a route whose data matches the blockchain and shows the evidence', async () => {
     useIntegrityApi(() => integrityFixture)
 
-    renderWithProviders(<IntegrityPanel routeId={7} />)
+    renderWithProviders(<IntegrityPanel routeId={7} title="Menor emissão" />)
 
     expect(await screen.findByText('Íntegra')).toBeVisible()
     expect(
       screen.getByText('Os dados da rota conferem com o registro na blockchain.'),
     ).toBeVisible()
-    const panel = screen.getByRole('region', { name: 'Integridade na blockchain' })
+    const panel = screen.getByRole('region', { name: 'Integridade: Menor emissão' })
     expect(within(panel).getByText('Hash no banco').nextElementSibling).toHaveTextContent(
       integrityFixture.databaseHash,
     )
@@ -84,9 +84,9 @@ describe('IntegrityPanel', () => {
   it('raises an alert when the data was tampered with, showing both hashes', async () => {
     useIntegrityApi(() => tampered)
 
-    renderWithProviders(<IntegrityPanel routeId={7} />)
+    renderWithProviders(<IntegrityPanel routeId={7} title="Menor emissão" />)
 
-    expect(await screen.findByText('Adulterada')).toBeVisible()
+    expect(await screen.findByText('Alterada')).toBeVisible()
     expect(screen.getByRole('alert')).toHaveTextContent(
       'Os dados da rota no banco diferem do registro na blockchain.',
     )
@@ -97,7 +97,7 @@ describe('IntegrityPanel', () => {
   it('does not raise an alert for a valid route', async () => {
     useIntegrityApi(() => integrityFixture)
 
-    renderWithProviders(<IntegrityPanel routeId={7} />)
+    renderWithProviders(<IntegrityPanel routeId={7} title="Menor emissão" />)
 
     await screen.findByText('Íntegra')
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
@@ -106,7 +106,7 @@ describe('IntegrityPanel', () => {
   it('waits for the anchoring and then confirms by itself', async () => {
     useIntegrityApi((call) => (call < 3 ? notAnchored : integrityFixture))
 
-    renderWithProviders(<IntegrityPanel routeId={7} />)
+    renderWithProviders(<IntegrityPanel routeId={7} title="Menor emissão" />)
 
     expect(await screen.findByText('Aguardando registro')).toBeVisible()
     expect(screen.getAllByText('—').length).toBeGreaterThan(0)
@@ -116,7 +116,7 @@ describe('IntegrityPanel', () => {
   it('gives up polling after the maximum number of attempts', async () => {
     const calls = useIntegrityApi(() => notAnchored)
 
-    renderWithProviders(<IntegrityPanel routeId={7} />)
+    renderWithProviders(<IntegrityPanel routeId={7} title="Menor emissão" />)
 
     await screen.findByText('Aguardando registro')
     await new Promise((resolve) => setTimeout(resolve, 200))
@@ -129,7 +129,7 @@ describe('IntegrityPanel', () => {
 
   it('checks again on demand and shows the new result', async () => {
     const calls = useIntegrityApi((call) => (call === 1 ? notAnchored : integrityFixture))
-    renderWithProviders(<IntegrityPanel routeId={7} />)
+    renderWithProviders(<IntegrityPanel routeId={7} title="Menor emissão" />)
     await screen.findByText('Aguardando registro')
 
     await userEvent.click(screen.getByRole('button', { name: 'Verificar novamente' }))
@@ -149,7 +149,7 @@ describe('IntegrityPanel', () => {
         return HttpResponse.json(integrityFixture)
       }),
     )
-    renderWithProviders(<IntegrityPanel routeId={7} />)
+    renderWithProviders(<IntegrityPanel routeId={7} title="Menor emissão" />)
     await screen.findByText('Íntegra')
 
     await userEvent.click(screen.getByRole('button', { name: 'Verificar novamente' }))
@@ -170,7 +170,7 @@ describe('IntegrityPanel', () => {
           : HttpResponse.json(integrityFixture)
       }),
     )
-    renderWithProviders(<IntegrityPanel routeId={7} />)
+    renderWithProviders(<IntegrityPanel routeId={7} title="Menor emissão" />)
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'O serviço de auditoria em blockchain está indisponível no momento.',

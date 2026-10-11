@@ -1,0 +1,43 @@
+.delta {
+  font-weight: var(--font-weight-strong);
+}
+
+.better {
+  color: var(--color-primary);
+}
+
+.worse {
+  color: var(--color-warning);
+}
+
+.seals {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.sealItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.sealLabel {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-strong);
+}
+
+.evidence {
+  align-self: end;
+}
+
+@media (min-width: 40rem) {
+  .seals {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+    align-items: end;
+  }
+}

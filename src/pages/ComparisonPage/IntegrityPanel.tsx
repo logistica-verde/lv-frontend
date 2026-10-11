@@ -1,46 +1,24 @@
 import { useState } from 'react'
 import Button from '@/components/Button/Button'
 import ErrorMessage from '@/components/ErrorMessage/ErrorMessage'
+import HashText from '@/components/HashText/HashText'
 import Skeleton from '@/components/Skeleton/Skeleton'
 import StatusBadge from '@/components/StatusBadge/StatusBadge'
 import VisuallyHidden from '@/components/VisuallyHidden/VisuallyHidden'
 import { useIntegrity } from '@/hooks/useIntegrity'
 import { formatDateTime } from '@/lib/format'
+import { integrityPresentation } from '@/pages/ComparisonPage/integrityPresentation'
 import styles from '@/pages/ComparisonPage/IntegrityPanel.module.css'
 import { describeError } from '@/services/errors'
-import type { IntegrityStatus } from '@/services/schemas/integrity'
 
 type IntegrityPanelProps = {
   routeId: number
-}
-
-type Presentation = {
-  tone: 'success' | 'danger' | 'warning'
-  label: string
-  message: string
-}
-
-const PRESENTATIONS: Record<IntegrityStatus, Presentation> = {
-  VALID: {
-    tone: 'success',
-    label: 'Íntegra',
-    message: 'Os dados da rota conferem com o registro na blockchain.',
-  },
-  TAMPERED: {
-    tone: 'danger',
-    label: 'Adulterada',
-    message: 'Os dados da rota no banco diferem do registro na blockchain.',
-  },
-  NOT_ANCHORED: {
-    tone: 'warning',
-    label: 'Aguardando registro',
-    message: 'A rota ainda não foi registrada na blockchain. A verificação se repete sozinha.',
-  },
+  title: string
 }
 
 const MISSING = '—'
 
-export default function IntegrityPanel({ routeId }: IntegrityPanelProps) {
+export default function IntegrityPanel({ routeId, title }: IntegrityPanelProps) {
   const integrity = useIntegrity(routeId)
   const [checking, setChecking] = useState(false)
 
@@ -52,7 +30,7 @@ export default function IntegrityPanel({ routeId }: IntegrityPanelProps) {
   if (integrity.isPending) {
     return (
       <div role="status" className={styles.panel}>
-        <VisuallyHidden>Verificando integridade</VisuallyHidden>
+        <VisuallyHidden>{`Verificando integridade: ${title}`}</VisuallyHidden>
         <Skeleton height="1.5rem" />
       </div>
     )
@@ -67,29 +45,46 @@ export default function IntegrityPanel({ routeId }: IntegrityPanelProps) {
   }
 
   const report = integrity.data
-  const presentation = PRESENTATIONS[report.status]
+  const { tone, label, message, Icon } = integrityPresentation[report.status]
 
   return (
-    <section aria-label="Integridade na blockchain" className={styles.panel}>
+    <section aria-label={`Integridade: ${title}`} className={styles.panel}>
       <div className={styles.header}>
-        <h3 className={styles.title}>Integridade na blockchain</h3>
-        <StatusBadge tone={presentation.tone}>{presentation.label}</StatusBadge>
+        <h3 className={styles.title}>{title}</h3>
+        <StatusBadge tone={tone}>
+          <Icon size={14} aria-hidden="true" />
+          {label}
+        </StatusBadge>
       </div>
       <p role={report.status === 'TAMPERED' ? 'alert' : 'status'} className={styles.message}>
-        {presentation.message}
+        {message}
       </p>
       <dl className={styles.details}>
         <div>
           <dt>Hash no banco</dt>
-          <dd className={styles.hash}>{report.databaseHash}</dd>
+          <dd>
+            <HashText full value={report.databaseHash} label={`hash no banco (${title})`} />
+          </dd>
         </div>
         <div>
           <dt>Hash na blockchain</dt>
-          <dd className={styles.hash}>{report.ledgerHash ?? MISSING}</dd>
+          <dd>
+            {report.ledgerHash ? (
+              <HashText full value={report.ledgerHash} label={`hash na blockchain (${title})`} />
+            ) : (
+              MISSING
+            )}
+          </dd>
         </div>
         <div>
           <dt>Transação</dt>
-          <dd className={styles.hash}>{report.txHash ?? MISSING}</dd>
+          <dd>
+            {report.txHash ? (
+              <HashText full value={report.txHash} label={`transação (${title})`} />
+            ) : (
+              MISSING
+            )}
+          </dd>
         </div>
         <div>
           <dt>Bloco</dt>
