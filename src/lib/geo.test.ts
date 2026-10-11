@@ -1,5 +1,39 @@
 import { describe, expect, it } from 'vitest'
-import { parsePositionsKey, positionsKey, SAO_PAULO_CENTER, toLatLng } from '@/lib/geo'
+import {
+  isValidCoordinate,
+  parsePositionsKey,
+  positionsKey,
+  roundCoordinate,
+  SAO_PAULO_CENTER,
+  toLatLng,
+} from '@/lib/geo'
+
+describe('isValidCoordinate', () => {
+  it('accepts a point inside the valid ranges', () => {
+    expect(isValidCoordinate(-23.55, -46.63)).toBe(true)
+  })
+
+  it('accepts the extremes', () => {
+    expect(isValidCoordinate(90, 180)).toBe(true)
+    expect(isValidCoordinate(-90, -180)).toBe(true)
+  })
+
+  it.each([
+    [91, 0],
+    [0, 181],
+    [Number.NaN, 0],
+    [0, Number.POSITIVE_INFINITY],
+  ])('rejects (%s, %s)', (latitude, longitude) => {
+    expect(isValidCoordinate(latitude, longitude)).toBe(false)
+  })
+})
+
+describe('roundCoordinate', () => {
+  it('keeps six decimal places', () => {
+    expect(roundCoordinate(-23.550519876543)).toBe(-23.55052)
+    expect(roundCoordinate(-46.6333123456)).toBe(-46.633312)
+  })
+})
 
 describe('toLatLng', () => {
   it('orders latitude before longitude, as Leaflet expects', () => {
