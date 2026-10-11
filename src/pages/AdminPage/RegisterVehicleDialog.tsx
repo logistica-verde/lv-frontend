@@ -1,11 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import Button from '@/components/Button/Button'
-import Card from '@/components/Card/Card'
+import Modal from '@/components/Modal/Modal'
 import TextField from '@/components/TextField/TextField'
 import { useToast } from '@/hooks/useToast'
 import { useCreateVehicle } from '@/hooks/useVehicles'
-import styles from '@/pages/VehiclesPage/VehicleForm.module.css'
+import styles from '@/pages/AdminPage/AdminPage.module.css'
 import { describeError } from '@/services/errors'
 import { vehicleInputSchema } from '@/services/schemas/vehicle'
 import type { VehicleInput } from '@/services/schemas/vehicle'
@@ -13,7 +13,12 @@ import type { VehicleInput } from '@/services/schemas/vehicle'
 const FUEL_SUGGESTIONS_ID = 'combustiveis-sugeridos'
 const FUEL_SUGGESTIONS = ['diesel', 'gasolina', 'etanol', 'gnv']
 
-export default function VehicleForm() {
+type RegisterVehicleDialogProps = {
+  open: boolean
+  onClose: () => void
+}
+
+export default function RegisterVehicleDialog({ open, onClose }: RegisterVehicleDialogProps) {
   const createVehicle = useCreateVehicle()
   const { notify } = useToast()
   const {
@@ -26,18 +31,26 @@ export default function VehicleForm() {
     mode: 'onTouched',
   })
 
-  const submit = handleSubmit((input) => {
-    createVehicle.mutate(input, {
-      onSuccess: (vehicle) => {
-        notify(`Veículo ${vehicle.placa} cadastrado.`, 'success')
-        reset()
-      },
-      onError: (error) => notify(describeError(error), 'danger'),
-    })
+  const close = () => {
+    reset()
+    onClose()
+  }
+
+  const submit = handleSubmit(async (input) => {
+    try {
+      const vehicle = await createVehicle.mutateAsync(input)
+      notify(`Veículo ${vehicle.placa} cadastrado.`, 'success')
+      close()
+    } catch (error) {
+      notify(
+        error instanceof Error ? describeError(error) : 'Ocorreu um erro inesperado.',
+        'danger',
+      )
+    }
   })
 
   return (
-    <Card title="Cadastrar veículo">
+    <Modal open={open} title="Cadastrar veículo" onClose={close}>
       <form onSubmit={submit} noValidate className={styles.form}>
         <div className={styles.fields}>
           <TextField
@@ -69,11 +82,14 @@ export default function VehicleForm() {
           </datalist>
         </div>
         <div className={styles.actions}>
+          <Button variant="secondary" onClick={close}>
+            Cancelar
+          </Button>
           <Button type="submit" loading={createVehicle.isPending}>
             Cadastrar veículo
           </Button>
         </div>
       </form>
-    </Card>
+    </Modal>
   )
 }

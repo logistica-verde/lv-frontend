@@ -21,7 +21,7 @@ function renderLayout() {
         element: <AppLayout />,
         children: [
           { index: true, element: <p>Início</p> },
-          { path: 'veiculos', element: <p>Veículos</p> },
+          { path: 'administracao', element: <p>Administração</p> },
         ],
       },
     ],
@@ -73,7 +73,7 @@ describe('AppLayout on narrow screens', () => {
     )
     const menu = screen.getByRole('navigation', { name: 'Principal' })
     expect(menu).toBeVisible()
-    expect(screen.getByRole('link', { name: 'Veículos' })).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Administração' })).toBeVisible()
   })
 
   it('closes the menu with the button', async () => {
@@ -102,9 +102,9 @@ describe('AppLayout on narrow screens', () => {
     const router = renderLayout()
     await userEvent.click(screen.getByRole('button', { name: 'Abrir menu' }))
 
-    await userEvent.click(screen.getByRole('link', { name: 'Veículos' }))
+    await userEvent.click(screen.getByRole('link', { name: 'Administração' }))
 
-    expect(router.state.location.pathname).toBe('/veiculos')
+    expect(router.state.location.pathname).toBe('/administracao')
     expect(screen.queryByRole('navigation', { name: 'Principal' })).not.toBeInTheDocument()
   })
 })

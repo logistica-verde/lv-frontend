@@ -89,7 +89,7 @@ describe('VehicleCard', () => {
     expect(await screen.findByText(/Nenhum veículo ativo/)).toBeVisible()
     expect(screen.getByRole('link', { name: 'Cadastrar veículo' })).toHaveAttribute(
       'href',
-      '/veiculos',
+      '/administracao',
     )
   })
 

@@ -31,7 +31,7 @@ export default function VehicleCard({ query, active, selected, onChange }: Vehic
       )}
       {query.isSuccess && active.length === 0 && (
         <p className={styles.empty}>
-          Nenhum veículo ativo. <Link to="/veiculos">Cadastrar veículo</Link>
+          Nenhum veículo ativo. <Link to="/administracao">Cadastrar veículo</Link>
         </p>
       )}
       {query.isSuccess && selected && (
