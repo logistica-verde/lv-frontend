@@ -1,0 +1,237 @@
+import { delay, http, HttpResponse } from 'msw'
+import { z } from 'zod'
+import type { MockDb } from '@/mocks/db'
+import { fakeHash } from '@/mocks/fakeHash'
+import { optimizeFake } from '@/mocks/fakeOptimizer'
+import type { FakePoint } from '@/mocks/fakeOptimizer'
+import type { DeliveryPoint } from '@/services/schemas/deliveryPoint'
+import type { IntegrityReport } from '@/services/schemas/integrity'
+import type { OptimizationCriterion, Route } from '@/services/schemas/route'
+import type { Vehicle } from '@/services/schemas/vehicle'
+
+export type MockOptions = {
+  latencyMs: number
+  completionDelayMs: number
+  anchoringDelayMs: number
+}
+
+const vehicleRequestSchema = z.object({
+  placa: z.string().trim().min(1),
+  massaKg: z.number().positive(),
+  tipoCombustivel: z.string().trim().min(1),
+})
+
+const deliveryPointRequestSchema = z.object({
+  nome: z.string().trim().min(1),
+  endereco: z.string().nullish(),
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+})
+
+const routeRequestSchema = z.object({
+  vehicleId: z.number(),
+  deliveryPointIds: z.array(z.number()).min(2).max(30),
+  criterion: z.enum(['EMISSION', 'DISTANCE']),
+})
+
+const STATUS_TITLES: Record<number, string> = {
+  400: 'Bad Request',
+  404: 'Not Found',
+}
+
+function problem(status: number, detail: string) {
+  return HttpResponse.json(
+    { type: 'about:blank', title: STATUS_TITLES[status], status, detail },
+    { status },
+  )
+}
+
+function toFakePoint(point: DeliveryPoint): FakePoint {
+  return { id: point.id, name: point.nome, latitude: point.latitude, longitude: point.longitude }
+}
+
+function createPendingRoute(
+  db: MockDb,
+  vehicle: Vehicle,
+  criterion: OptimizationCriterion,
+  points: DeliveryPoint[],
+): Route {
+  const route: Route = {
+    id: db.nextRouteId++,
+    vehicleId: vehicle.id,
+    criterion,
+    status: 'PENDING',
+    createdAt: new Date().toISOString(),
+    totalEmissionKg: null,
+    totalDistanceMeters: null,
+    errorMessage: null,
+    points: points.map((point, index) => ({
+      pointId: point.id,
+      name: point.nome,
+      latitude: point.latitude,
+      longitude: point.longitude,
+      visitOrder: index + 1,
+    })),
+    segments: [],
+  }
+  db.routes.set(route.id, route)
+  return route
+}
+
+function completeRoute(
+  db: MockDb,
+  routeId: number,
+  points: DeliveryPoint[],
+  criterion: OptimizationCriterion,
+  options: MockOptions,
+): void {
+  const current = db.routes.get(routeId)
+  if (!current) {
+    return
+  }
+  const result = optimizeFake(points.map(toFakePoint), criterion)
+  db.routes.set(routeId, {
+    ...current,
+    status: 'COMPLETED',
+    totalEmissionKg: result.totalEmissionKg,
+    totalDistanceMeters: result.totalDistanceMeters,
+    points: result.orderedPoints.map((point, index) => ({
+      pointId: point.id,
+      name: point.name,
+      latitude: point.latitude,
+      longitude: point.longitude,
+      visitOrder: index + 1,
+    })),
+    segments: result.legs,
+  })
+  setTimeout(() => {
+    db.anchors.set(routeId, { blockNumber: db.nextBlock++, anchoredAt: new Date().toISOString() })
+  }, options.anchoringDelayMs)
+}
+
+function integrityReportOf(db: MockDb, routeId: number): IntegrityReport {
+  const databaseHash = fakeHash(routeId)
+  const anchor = db.anchors.get(routeId)
+  if (!anchor) {
+    return {
+      operationId: routeId,
+      status: 'NOT_ANCHORED',
+      databaseHash,
+      ledgerHash: null,
+      txHash: null,
+      blockNumber: null,
+      anchoredAt: null,
+    }
+  }
+  return {
+    operationId: routeId,
+    status: 'VALID',
+    databaseHash,
+    ledgerHash: databaseHash,
+    txHash: `0x${fakeHash(routeId + 1000)}`,
+    blockNumber: anchor.blockNumber,
+    anchoredAt: anchor.anchoredAt,
+  }
+}
+
+export function createHandlers(db: MockDb, options: MockOptions) {
+  return [
+    http.get('*/api/vehicles', async () => {
+      await delay(options.latencyMs)
+      return HttpResponse.json(db.vehicles.filter((vehicle) => vehicle.ativo))
+    }),
+
+    http.post('*/api/vehicles', async ({ request }) => {
+      await delay(options.latencyMs)
+      const parsed = vehicleRequestSchema.safeParse(await request.json().catch(() => null))
+      if (!parsed.success) {
+        return problem(400, 'Invalid request content.')
+      }
+      const vehicle: Vehicle = { id: db.nextVehicleId++, ...parsed.data, ativo: true }
+      db.vehicles.push(vehicle)
+      return HttpResponse.json(vehicle, { status: 201 })
+    }),
+
+    http.get('*/api/delivery-points', async () => {
+      await delay(options.latencyMs)
+      return HttpResponse.json(db.deliveryPoints.filter((point) => point.ativo))
+    }),
+
+    http.post('*/api/delivery-points', async ({ request }) => {
+      await delay(options.latencyMs)
+      const parsed = deliveryPointRequestSchema.safeParse(await request.json().catch(() => null))
+      if (!parsed.success) {
+        return problem(400, 'Invalid request content.')
+      }
+      const point: DeliveryPoint = {
+        id: db.nextDeliveryPointId++,
+        nome: parsed.data.nome,
+        endereco: parsed.data.endereco ?? null,
+        latitude: parsed.data.latitude,
+        longitude: parsed.data.longitude,
+        ativo: true,
+      }
+      db.deliveryPoints.push(point)
+      return HttpResponse.json(point, { status: 201 })
+    }),
+
+    http.post('*/api/routes/calculate', async ({ request }) => {
+      await delay(options.latencyMs)
+      const parsed = routeRequestSchema.safeParse(await request.json().catch(() => null))
+      if (!parsed.success) {
+        return problem(400, 'Invalid request content.')
+      }
+      const { vehicleId, deliveryPointIds, criterion } = parsed.data
+      if (new Set(deliveryPointIds).size !== deliveryPointIds.length) {
+        return problem(400, 'deliveryPointIds must not contain duplicates')
+      }
+      const vehicle = db.vehicles.find((candidate) => candidate.id === vehicleId)
+      if (!vehicle) {
+        return problem(404, `Vehicle ${vehicleId} not found`)
+      }
+      if (!vehicle.ativo) {
+        return problem(400, `Vehicle ${vehicleId} is inactive`)
+      }
+      const points: DeliveryPoint[] = []
+      for (const pointId of deliveryPointIds) {
+        const point = db.deliveryPoints.find((candidate) => candidate.id === pointId)
+        if (!point) {
+          return problem(404, `Delivery point ${pointId} not found`)
+        }
+        if (!point.ativo) {
+          return problem(400, `Delivery point ${pointId} is inactive`)
+        }
+        points.push(point)
+      }
+
+      const route = createPendingRoute(db, vehicle, criterion, points)
+      setTimeout(
+        () => completeRoute(db, route.id, points, criterion, options),
+        options.completionDelayMs,
+      )
+      return HttpResponse.json(
+        { id: route.id, status: route.status },
+        { status: 202, headers: { Location: `/api/routes/${route.id}` } },
+      )
+    }),
+
+    http.get('*/api/routes/:id/integrity', async ({ params }) => {
+      await delay(options.latencyMs)
+      const routeId = Number(params['id'])
+      if (!db.routes.has(routeId)) {
+        return problem(404, `Route operation ${routeId} not found`)
+      }
+      return HttpResponse.json(integrityReportOf(db, routeId))
+    }),
+
+    http.get('*/api/routes/:id', async ({ params }) => {
+      await delay(options.latencyMs)
+      const routeId = Number(params['id'])
+      const route = db.routes.get(routeId)
+      if (!route) {
+        return problem(404, `Route operation ${routeId} not found`)
+      }
+      return HttpResponse.json(route)
+    }),
+  ]
+}
