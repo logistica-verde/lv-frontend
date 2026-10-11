@@ -84,4 +84,18 @@ describe('optimizeFake', () => {
 
     expect(byEmission.totalEmissionKg).not.toBe(byDistance.totalEmissionKg)
   })
+
+  it('never lets the emission route emit more than the distance route', () => {
+    const byEmission = optimizeFake(seedPoints, 'EMISSION')
+    const byDistance = optimizeFake(seedPoints, 'DISTANCE')
+
+    expect(byEmission.totalEmissionKg).toBeLessThanOrEqual(byDistance.totalEmissionKg)
+  })
+
+  it('never lets the distance route be longer than the emission route', () => {
+    const byEmission = optimizeFake(seedPoints, 'EMISSION')
+    const byDistance = optimizeFake(seedPoints, 'DISTANCE')
+
+    expect(byDistance.totalDistanceMeters).toBeLessThanOrEqual(byEmission.totalDistanceMeters)
+  })
 })

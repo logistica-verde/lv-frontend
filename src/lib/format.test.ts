@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { formatNumber } from '@/lib/format'
+import { formatKilometers, formatNumber } from '@/lib/format'
+
+describe('formatKilometers', () => {
+  it('converts meters to kilometers in the Brazilian format', () => {
+    expect(formatKilometers(2022.5)).toBe('2,02')
+    expect(formatKilometers(12500)).toBe('12,5')
+  })
+
+  it('formats zero', () => {
+    expect(formatKilometers(0)).toBe('0')
+  })
+})
 
 describe('formatNumber', () => {
   it('uses the Brazilian thousands and decimal separators', () => {

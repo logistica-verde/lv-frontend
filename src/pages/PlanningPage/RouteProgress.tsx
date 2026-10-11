@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { Link } from 'react-router'
 import StatusBadge from '@/components/StatusBadge/StatusBadge'
 import { useRoute } from '@/hooks/useRoutes'
 import type { CalculationIds } from '@/hooks/useRoutes'
@@ -79,6 +80,14 @@ export default function RouteProgress({ calculation }: RouteProgressProps) {
           </li>
         ))}
       </ul>
+      {emissionStatus === 'COMPLETED' && distanceStatus === 'COMPLETED' && (
+        <Link
+          to={`/rotas/${calculation.emission.id}/${calculation.distance.id}`}
+          className={styles.compare}
+        >
+          Ver comparação das rotas
+        </Link>
+      )}
     </div>
   )
 }

@@ -50,10 +50,12 @@ function legBetween(from: FakePoint, to: FakePoint): FakeLeg {
   const hash = pairHash(from.id, to.id)
   const direction = from.id < to.id ? 1 : -1
   const distanceMeters = haversineMeters(from, to)
-  const averageSpeedKmh = 30 + hash * 20
+  const averageSpeedKmh = 20 + hash * 40
   const slopePercent = (hash * 7 - 3) * direction
-  const speedPenalty = 1 + Math.abs(averageSpeedKmh - 45) / 150
-  const emissionKg = (distanceMeters / 1000) * 0.9 * (1 + 0.08 * slopePercent) * speedPenalty
+  const speedPenalty = 1 + Math.abs(averageSpeedKmh - 45) / 50
+  const congestion = 0.5 + pairHash(from.id + 101, to.id + 211) * 2.5
+  const emissionKg =
+    (distanceMeters / 1000) * 0.9 * (1 + 0.2 * slopePercent) * speedPenalty * congestion
 
   return {
     fromPointId: from.id,
@@ -69,35 +71,13 @@ function costOf(leg: FakeLeg, criterion: OptimizationCriterion): number {
   return criterion === 'EMISSION' ? leg.emissionKg : leg.distanceMeters
 }
 
-export function optimizeFake(
-  points: FakePoint[],
-  criterion: OptimizationCriterion,
-): FakeOptimization {
-  const [first, ...rest] = points
-  if (!first) {
-    return { orderedPoints: [], legs: [], totalEmissionKg: 0, totalDistanceMeters: 0 }
-  }
+const EXACT_SEARCH_LIMIT = 9
 
-  const orderedPoints: FakePoint[] = [first]
-  const legs: FakeLeg[] = []
-  let remaining = rest
-  let current = first
-
-  while (remaining.length > 0) {
-    const candidates = remaining.map((candidate) => legBetween(current, candidate))
-    const best = candidates.reduce((winner, leg) =>
-      costOf(leg, criterion) < costOf(winner, criterion) ? leg : winner,
-    )
-    const next = remaining.find((candidate) => candidate.id === best.toPointId)
-    if (!next) {
-      break
-    }
-    legs.push(best)
-    orderedPoints.push(next)
-    remaining = remaining.filter((candidate) => candidate.id !== next.id)
-    current = next
-  }
-
+function assemble(orderedPoints: FakePoint[]): FakeOptimization {
+  const legs = orderedPoints.slice(1).map((point, index) => {
+    const previous = orderedPoints[index]
+    return previous ? legBetween(previous, point) : legBetween(point, point)
+  })
   return {
     orderedPoints,
     legs,
@@ -110,4 +90,74 @@ export function optimizeFake(
       1,
     ),
   }
+}
+
+function greedyOrder(points: FakePoint[], criterion: OptimizationCriterion): FakePoint[] {
+  const [first, ...rest] = points
+  if (!first) {
+    return []
+  }
+
+  const order: FakePoint[] = [first]
+  let remaining = rest
+  let current = first
+
+  while (remaining.length > 0) {
+    const candidates = remaining.map((candidate) => legBetween(current, candidate))
+    const best = candidates.reduce((winner, leg) =>
+      costOf(leg, criterion) < costOf(winner, criterion) ? leg : winner,
+    )
+    const next = remaining.find((candidate) => candidate.id === best.toPointId)
+    if (!next) {
+      break
+    }
+    order.push(next)
+    remaining = remaining.filter((candidate) => candidate.id !== next.id)
+    current = next
+  }
+
+  return order
+}
+
+function exactOrder(points: FakePoint[], criterion: OptimizationCriterion): FakePoint[] {
+  const [first, ...rest] = points
+  if (!first) {
+    return []
+  }
+
+  let bestCost = Number.POSITIVE_INFINITY
+  let bestOrder: FakePoint[] = points
+
+  const visit = (current: FakePoint, remaining: FakePoint[], order: FakePoint[], cost: number) => {
+    if (cost >= bestCost) {
+      return
+    }
+    if (remaining.length === 0) {
+      bestCost = cost
+      bestOrder = order
+      return
+    }
+    remaining.forEach((candidate) => {
+      const legCost = costOf(legBetween(current, candidate), criterion)
+      visit(
+        candidate,
+        remaining.filter((other) => other.id !== candidate.id),
+        [...order, candidate],
+        cost + legCost,
+      )
+    })
+  }
+
+  visit(first, rest, [first], 0)
+  return bestOrder
+}
+
+export function optimizeFake(
+  points: FakePoint[],
+  criterion: OptimizationCriterion,
+): FakeOptimization {
+  if (points.length <= EXACT_SEARCH_LIMIT) {
+    return assemble(exactOrder(points, criterion))
+  }
+  return assemble(greedyOrder(points, criterion))
 }
