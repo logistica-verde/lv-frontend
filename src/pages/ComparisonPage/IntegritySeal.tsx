@@ -3,7 +3,7 @@ import Skeleton from '@/components/Skeleton/Skeleton'
 import StatusBadge from '@/components/StatusBadge/StatusBadge'
 import VisuallyHidden from '@/components/VisuallyHidden/VisuallyHidden'
 import { useIntegrity } from '@/hooks/useIntegrity'
-import { integrityPresentation } from '@/pages/ComparisonPage/integrityPresentation'
+import { integrityPresentation } from '@/lib/integrityPresentation'
 import styles from '@/pages/ComparisonPage/IntegritySeal.module.css'
 
 type IntegritySealProps = {
