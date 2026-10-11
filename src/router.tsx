@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router'
 import type { RouteObject } from 'react-router'
 import AppLayout from '@/components/AppLayout/AppLayout'
+import ComparisonPage from '@/pages/ComparisonPage/ComparisonPage'
 import NotFoundPage from '@/pages/NotFoundPage/NotFoundPage'
 import PlanningPage from '@/pages/PlanningPage/PlanningPage'
 import RouteErrorPage from '@/pages/RouteErrorPage/RouteErrorPage'
@@ -16,6 +17,7 @@ export const routes: RouteObject[] = [
         children: [
           { index: true, element: <PlanningPage /> },
           { path: 'veiculos', element: <VehiclesPage /> },
+          { path: 'rotas/:emissionId/:distanceId', element: <ComparisonPage /> },
           { path: '*', element: <NotFoundPage /> },
         ],
       },
