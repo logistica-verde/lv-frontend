@@ -1,15 +1,19 @@
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.125rem var(--space-2);
-  border-radius: 999px;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
-  font-weight: 600;
+  font-weight: var(--font-weight-strong);
+  line-height: 1.5rem;
   white-space: nowrap;
 }
 
 .neutral {
   background: var(--color-surface-muted);
+  border-color: var(--color-border);
   color: var(--color-text-muted);
 }
 

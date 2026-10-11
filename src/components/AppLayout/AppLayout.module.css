@@ -10,10 +10,11 @@
   left: var(--space-3);
   z-index: 1100;
   padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
   background: var(--color-surface);
   color: var(--color-text);
-  font-weight: 600;
+  font-weight: var(--font-weight-strong);
 }
 
 .skipLink:focus {
@@ -28,54 +29,65 @@
 .headerInner {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2) var(--space-5);
-  max-width: 72rem;
+  align-items: stretch;
+  gap: 0 var(--space-5);
+  max-width: 80rem;
   margin: 0 auto;
-  padding: var(--space-2) var(--space-4);
+  padding: 0 var(--space-4);
 }
 
 .brand {
-  color: var(--color-primary);
-  font-size: var(--font-size-lg);
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  min-height: 3rem;
+  color: var(--color-text);
+  font-weight: var(--font-weight-strong);
   text-decoration: none;
+}
+
+.brand:hover {
+  color: var(--color-text);
 }
 
 .navList {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1);
+  height: 100%;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+.navList li {
+  display: flex;
+}
+
 .navLink {
   display: inline-flex;
   align-items: center;
-  min-height: 2.75rem;
+  min-height: 3rem;
   padding: 0 var(--space-3);
-  border-radius: var(--radius-md);
-  color: var(--color-text);
-  font-weight: 600;
+  border-bottom: 2px solid transparent;
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-strong);
   text-decoration: none;
+  transition: color 150ms ease;
 }
 
 .navLink:hover {
-  background: var(--color-surface-muted);
+  color: var(--color-text);
 }
 
 .active {
-  background: var(--color-surface-muted);
-  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  color: var(--color-text);
 }
 
 .main {
   flex: 1;
   width: 100%;
-  max-width: 72rem;
+  max-width: 80rem;
   margin: 0 auto;
   padding: var(--space-5) var(--space-4);
 }
