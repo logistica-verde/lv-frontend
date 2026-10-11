@@ -3,6 +3,8 @@ import { useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { Link, NavLink, Outlet } from 'react-router'
 import styles from '@/components/AppLayout/AppLayout.module.css'
+import StatusBadge from '@/components/StatusBadge/StatusBadge'
+import { isMockMode } from '@/config/env'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { classNames } from '@/lib/classNames'
 import { navItems } from '@/navigation'
@@ -51,6 +53,14 @@ export default function AppLayout() {
           <Link to="/" className={styles.brand}>
             Logística Verde
           </Link>
+          {isMockMode() && (
+            <span
+              className={styles.mock}
+              title="Esta interface usa a API simulada. Os dados não são reais."
+            >
+              <StatusBadge tone="warning">Dados simulados</StatusBadge>
+            </span>
+          )}
           {isWide ? (
             <nav aria-label="Principal">{links}</nav>
           ) : (
