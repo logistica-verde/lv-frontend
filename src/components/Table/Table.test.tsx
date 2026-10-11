@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
-import Table, { Td, Th } from '@/components/Table/Table'
+import userEvent from '@testing-library/user-event'
+import { describe, expect, it, vi } from 'vitest'
+import Table, { SortableTh, Td, Th } from '@/components/Table/Table'
 
 function renderTable(maxHeight?: string) {
   return render(
@@ -53,5 +54,49 @@ describe('Table', () => {
     const { container } = renderTable()
 
     expect(container.firstElementChild).not.toHaveAttribute('style')
+  })
+})
+
+describe('SortableTh', () => {
+  function renderSortable(direction: 'asc' | 'desc' | null, onSort = vi.fn()) {
+    render(
+      <Table caption="Operações">
+        <thead>
+          <tr>
+            <SortableTh direction={direction} onSort={onSort} numeric>
+              Emissão
+            </SortableTh>
+          </tr>
+        </thead>
+      </Table>,
+    )
+    return onSort
+  }
+
+  it.each([
+    ['asc', 'ascending'],
+    ['desc', 'descending'],
+    [null, 'none'],
+  ] as const)('announces the %s sorting as %s', (direction, expected) => {
+    renderSortable(direction)
+
+    expect(screen.getByRole('columnheader', { name: 'Emissão' })).toHaveAttribute(
+      'aria-sort',
+      expected,
+    )
+  })
+
+  it('is operated with a button named after the column', async () => {
+    const onSort = renderSortable(null)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Emissão' }))
+
+    expect(onSort).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the numeric alignment', () => {
+    renderSortable('asc')
+
+    expect(screen.getByRole('columnheader', { name: 'Emissão' })).toHaveClass('numeric')
   })
 })
