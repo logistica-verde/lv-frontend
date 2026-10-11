@@ -1,4 +1,5 @@
 import type { LatLngTuple } from 'leaflet'
+import { Route } from 'lucide-react'
 import { useState } from 'react'
 import Button from '@/components/Button/Button'
 import ErrorMessage from '@/components/ErrorMessage/ErrorMessage'
@@ -87,14 +88,20 @@ export default function PlanningPage() {
 
   const panel = (
     <div className={styles.panel}>
-      <h1 className={styles.title}>Nova rota</h1>
+      <header className={styles.heading}>
+        <h1 className={styles.title}>Nova rota</h1>
+        <p className={styles.subtitle}>
+          Escolha o veículo e os pontos de entrega para comparar a rota de menor emissão com a de
+          menor distância.
+        </p>
+      </header>
       <VehicleCard query={vehicles} active={active} selected={vehicle} onChange={choose} />
       {points.isError && (
         <ErrorMessage message={describeError(points.error)} onRetry={() => points.refetch()} />
       )}
       <PointsList
         points={selectedPoints}
-        onAdd={() => setDialog({ tab: 'existing', position: null })}
+        onAdd={(tab) => setDialog({ tab, position: null })}
         onMove={(pointId, offset) => setRequestedIds(moveSelection(selectedIds, pointId, offset))}
         onRemove={(pointId) => setRequestedIds(selectedIds.filter((id) => id !== pointId))}
       />
@@ -105,6 +112,7 @@ export default function PlanningPage() {
           onClick={calculate}
           className={styles.calculate}
         >
+          <Route size={16} aria-hidden="true" />
           Calcular rotas
         </Button>
         {calculation && (
@@ -123,6 +131,18 @@ export default function PlanningPage() {
       label="Mapa dos pontos de entrega"
       fitTo={registered.map(toLatLng)}
       onMapClick={setDraft}
+      legend={
+        <ul className={styles.legend} aria-label="Legenda do mapa">
+          <li>
+            <span className={`${styles.swatch} ${styles.swatchSelected}`} aria-hidden="true" />
+            Na rota
+          </li>
+          <li>
+            <span className={styles.swatch} aria-hidden="true" />
+            Disponível
+          </li>
+        </ul>
+      }
       overlay={
         draft && (
           <div className={styles.draft}>

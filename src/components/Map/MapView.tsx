@@ -64,6 +64,7 @@ type MapViewProps = {
   fitTo?: LatLngTuple[]
   onMapClick?: (position: LatLngTuple) => void
   overlay?: ReactNode
+  legend?: ReactNode
   children?: ReactNode
 }
 
@@ -72,6 +73,7 @@ export default function MapView({
   fitTo = NO_POSITIONS,
   onMapClick,
   overlay,
+  legend,
   children,
 }: MapViewProps) {
   return (
@@ -87,6 +89,7 @@ export default function MapView({
         {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
         {children}
       </MapContainer>
+      {legend && <div className={styles.legend}>{legend}</div>}
       {overlay && <div className={styles.overlay}>{overlay}</div>}
     </div>
   )

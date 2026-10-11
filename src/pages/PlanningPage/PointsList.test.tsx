@@ -38,16 +38,27 @@ describe('PointsList', () => {
       'listitem',
     )
     expect(items.map((item) => item.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
-      '1Ponto 1',
-      '2Ponto 2',
-      '3Ponto 3',
+      '1Ponto 1Rua 1',
+      '2Ponto 2Rua 2',
+      '3Ponto 3Rua 3',
     ])
   })
 
-  it('shows the address of a point as a tooltip', () => {
+  it('shows the address of a point under its name', () => {
     renderList(makePoints(1))
 
-    expect(screen.getByText('Ponto 1')).toHaveAttribute('title', 'Rua 1')
+    expect(screen.getByText('Rua 1')).toBeVisible()
+    expect(screen.getByText('Ponto 1').closest('[title]')).toHaveAttribute('title', 'Rua 1')
+  })
+
+  it('offers quick ways to add the first points when the list is empty', async () => {
+    const { onAdd } = renderList([])
+
+    await userEvent.click(screen.getByRole('button', { name: 'Buscar endereço' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Importar CSV' }))
+
+    expect(onAdd).toHaveBeenNthCalledWith(1, 'address')
+    expect(onAdd).toHaveBeenNthCalledWith(2, 'csv')
   })
 
   it('invites the user to add the first point when the list is empty', async () => {
@@ -58,6 +69,7 @@ describe('PointsList', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Adicionar ponto' }))
 
     expect(onAdd).toHaveBeenCalledTimes(1)
+    expect(onAdd).toHaveBeenCalledWith('existing')
   })
 
   it('asks to move a point up or down by name', async () => {

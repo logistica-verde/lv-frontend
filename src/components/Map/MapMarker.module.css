@@ -14,8 +14,9 @@
 }
 
 .neutral {
-  background: var(--color-text-muted);
-  color: var(--color-surface);
+  border-color: var(--color-text-muted);
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 
 .emission {
