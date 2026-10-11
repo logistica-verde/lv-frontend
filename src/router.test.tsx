@@ -20,8 +20,8 @@ describe('app routes', () => {
   it('shows the planning page at the root', () => {
     renderRoutes(routes, '/')
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Planejamento de rotas' })).toBeVisible()
-    expect(document.title).toBe('Planejamento de rotas · Logística Verde')
+    expect(screen.getByRole('heading', { level: 1, name: 'Nova rota' })).toBeVisible()
+    expect(document.title).toBe('Nova rota · Logística Verde')
   })
 
   it('wraps pages in the layout with a labelled main navigation', () => {
@@ -35,10 +35,7 @@ describe('app routes', () => {
   it('marks the current section in the navigation', () => {
     renderRoutes(routes, '/')
 
-    expect(screen.getByRole('link', { name: 'Planejamento' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    )
+    expect(screen.getByRole('link', { name: 'Nova rota' })).toHaveAttribute('aria-current', 'page')
   })
 
   it('offers a skip link to the main content', () => {
@@ -72,7 +69,7 @@ describe('app routes', () => {
     await userEvent.click(screen.getByRole('link', { name: 'Voltar ao planejamento' }))
 
     expect(router.state.location.pathname).toBe('/')
-    expect(screen.getByRole('heading', { level: 1, name: 'Planejamento de rotas' })).toBeVisible()
+    expect(screen.getByRole('heading', { level: 1, name: 'Nova rota' })).toBeVisible()
   })
 })
 
