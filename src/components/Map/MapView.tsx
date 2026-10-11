@@ -1,6 +1,6 @@
 import 'leaflet/dist/leaflet.css'
 import type { LatLngTuple } from 'leaflet'
-import { useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { MapContainer, TileLayer, useMap } from 'react-leaflet'
 import MapClickHandler from '@/components/Map/MapClickHandler'
@@ -23,6 +23,25 @@ function FitBounds({ positions }: FitBoundsProps) {
   const map = useMap()
   const key = positionsKey(positions)
   const target = useMemo(() => parsePositionsKey(key), [key])
+  const [resizes, setResizes] = useState(0)
+
+  const handleResize = useCallback(() => setResizes((count) => count + 1), [])
+
+  useEffect(() => {
+    map.on('resize', handleResize)
+    return () => {
+      map.off('resize', handleResize)
+    }
+  }, [map, handleResize])
+
+  useEffect(() => {
+    if (typeof ResizeObserver === 'undefined') {
+      return
+    }
+    const observer = new ResizeObserver(() => map.invalidateSize())
+    observer.observe(map.getContainer())
+    return () => observer.disconnect()
+  }, [map])
 
   useEffect(() => {
     const size = map.getSize()
@@ -35,7 +54,7 @@ function FitBounds({ positions }: FitBoundsProps) {
       return
     }
     map.fitBounds(target, { padding: [FIT_PADDING, FIT_PADDING], maxZoom: MAX_FIT_ZOOM })
-  }, [map, target])
+  }, [map, target, resizes])
 
   return null
 }

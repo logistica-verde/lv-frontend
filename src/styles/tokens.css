@@ -55,8 +55,6 @@
   --color-info-bg: #e9eef5;
 
   --shadow-float: 0 4px 12px rgb(16 24 40 / 0.12);
-
-  --map-tile-filter: grayscale(1) contrast(0.9) brightness(1.05);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -90,7 +88,5 @@
     --color-info-bg: #18263a;
 
     --shadow-float: 0 4px 12px rgb(0 0 0 / 0.5);
-
-    --map-tile-filter: invert(1) hue-rotate(180deg) grayscale(1) brightness(0.8) contrast(0.95);
   }
 }
