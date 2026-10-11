@@ -35,6 +35,24 @@ const routeRequestSchema = z.object({
   criterion: z.enum(['EMISSION', 'DISTANCE']),
 })
 
+const listQuerySchema = z.object({
+  from: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  to: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  vehicleId: z.coerce.number().int().positive().optional(),
+  criterion: z.enum(['EMISSION', 'DISTANCE']).optional(),
+  integrity: z.enum(['VALID', 'TAMPERED', 'NOT_ANCHORED']).optional(),
+  sort: z.enum(['createdAt', 'totalEmissionKg', 'totalDistanceMeters']).default('createdAt'),
+  direction: z.enum(['asc', 'desc']).default('desc'),
+  page: z.coerce.number().int().min(1).default(1),
+  size: z.coerce.number().int().min(1).max(200).default(10),
+})
+
 const STATUS_TITLES: Record<number, string> = {
   400: 'Bad Request',
   404: 'Not Found',
@@ -120,6 +138,17 @@ function completeRoute(
 function integrityReportOf(db: MockDb, routeId: number): IntegrityReport {
   const databaseHash = fakeHash(routeId)
   const anchor = db.anchors.get(routeId)
+  if (anchor && db.tampered.has(routeId)) {
+    return {
+      operationId: routeId,
+      status: 'TAMPERED',
+      databaseHash,
+      ledgerHash: fakeHash(routeId + 5000),
+      txHash: `0x${fakeHash(routeId + 1000)}`,
+      blockNumber: anchor.blockNumber,
+      anchoredAt: anchor.anchoredAt,
+    }
+  }
   if (!anchor) {
     return {
       operationId: routeId,
@@ -221,6 +250,58 @@ export function createHandlers(db: MockDb, options: MockOptions) {
         { id: route.id, status: route.status },
         { status: 202, headers: { Location: `/api/routes/${route.id}` } },
       )
+    }),
+
+    http.get('*/api/routes', async ({ request }) => {
+      await delay(options.latencyMs)
+      const parsed = listQuerySchema.safeParse(
+        Object.fromEntries(new URL(request.url).searchParams),
+      )
+      if (!parsed.success) {
+        return problem(400, 'Invalid query parameters.')
+      }
+      const query = parsed.data
+      const plates = new Map(db.vehicles.map((vehicle) => [vehicle.id, vehicle.placa]))
+      const matching = Array.from(db.routes.values())
+        .filter((route) => !query.from || route.createdAt.slice(0, 10) >= query.from)
+        .filter((route) => !query.to || route.createdAt.slice(0, 10) <= query.to)
+        .filter((route) => query.vehicleId === undefined || route.vehicleId === query.vehicleId)
+        .filter((route) => !query.criterion || route.criterion === query.criterion)
+        .filter(
+          (route) => !query.integrity || integrityReportOf(db, route.id).status === query.integrity,
+        )
+      const factor = query.direction === 'asc' ? 1 : -1
+      matching.sort((first, second) => {
+        const left = first[query.sort]
+        const right = second[query.sort]
+        if (left === right) {
+          return second.id - first.id
+        }
+        if (left === null) {
+          return 1
+        }
+        if (right === null) {
+          return -1
+        }
+        return (left < right ? -1 : 1) * factor
+      })
+      const start = (query.page - 1) * query.size
+      return HttpResponse.json({
+        items: matching.slice(start, start + query.size).map((route) => ({
+          id: route.id,
+          createdAt: route.createdAt,
+          vehicleId: route.vehicleId,
+          vehiclePlate: plates.get(route.vehicleId) ?? '—',
+          criterion: route.criterion,
+          status: route.status,
+          totalEmissionKg: route.totalEmissionKg,
+          totalDistanceMeters: route.totalDistanceMeters,
+          integrityStatus: integrityReportOf(db, route.id).status,
+        })),
+        total: matching.length,
+        page: query.page,
+        size: query.size,
+      })
     }),
 
     http.get('*/geocode', async ({ request }) => {
