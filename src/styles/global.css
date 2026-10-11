@@ -41,6 +41,14 @@ p {
   margin: 0 0 var(--space-3);
 }
 
+a {
+  color: var(--color-primary);
+}
+
+a:hover {
+  color: var(--color-primary-hover);
+}
+
 :focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
