@@ -21,3 +21,14 @@ export function formatKilometers(meters: number): string {
 export function formatDateTime(isoDate: string): string {
   return dateTimeFormat.format(new Date(isoDate))
 }
+
+export function formatSignedPercent(value: number | null): string {
+  if (value === null) {
+    return '—'
+  }
+  const magnitude = Math.round(Math.abs(value) * 100) / 100
+  if (magnitude === 0) {
+    return '0%'
+  }
+  return `${value > 0 ? '+' : '−'}${decimalFormat.format(magnitude)}%`
+}
