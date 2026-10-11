@@ -60,6 +60,21 @@ describe('app routes', () => {
     expect(document.title).toBe('Veículos · Logística Verde')
   })
 
+  it('opens the history page from the navigation', async () => {
+    server.use(
+      http.get(apiUrl('/api/routes'), () =>
+        HttpResponse.json({ items: [], total: 0, page: 1, size: 10 }),
+      ),
+    )
+    const router = renderRoutes(routes, '/')
+
+    await userEvent.click(screen.getByRole('link', { name: 'Histórico' }))
+
+    expect(router.state.location.pathname).toBe('/historico')
+    expect(screen.getByRole('heading', { level: 1, name: 'Histórico de operações' })).toBeVisible()
+    expect(document.title).toBe('Histórico de operações · Logística Verde')
+  })
+
   it('shows a not found page for unknown addresses and a way back', async () => {
     const router = renderRoutes(routes, '/rota-que-nao-existe')
 
