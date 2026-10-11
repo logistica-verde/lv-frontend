@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { formatDateTime, formatKilometers, formatNumber, formatSignedPercent } from '@/lib/format'
+import {
+  formatDateTime,
+  formatKilometers,
+  formatNumber,
+  formatShortDateTime,
+  formatSignedPercent,
+} from '@/lib/format'
 
 describe('formatSignedPercent', () => {
   it('marks growth with a plus sign', () => {
@@ -17,6 +23,12 @@ describe('formatSignedPercent', () => {
 
   it('shows a dash when there is no value', () => {
     expect(formatSignedPercent(null)).toBe('—')
+  })
+})
+
+describe('formatShortDateTime', () => {
+  it('shows day, month, year and minutes in Brasília time, without seconds', () => {
+    expect(formatShortDateTime('2026-10-05T12:00:05Z')).toMatch(/^05\/10\/2026.*09:00$/)
   })
 })
 

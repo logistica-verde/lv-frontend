@@ -14,10 +14,10 @@ class FakeResizeObserver {
   disconnect = () => undefined
 }
 
-function Probe({ height }: { height: number }) {
-  const { ref, rows } = useFitRows(36, 5)
+function Probe({ height, reserved = 0 }: { height: number; reserved?: number }) {
+  const { ref, rows, ready } = useFitRows(36, 5, reserved)
   return (
-    <div ref={ref} data-testid="box" data-height={height}>
+    <div ref={ref} data-testid="box" data-height={height} data-ready={String(ready)}>
       {rows}
     </div>
   )
@@ -69,5 +69,39 @@ describe('useFitRows', () => {
     act(() => trigger())
 
     expect(box).toHaveTextContent('5')
+  })
+
+  it('discounts the space reserved for a header', () => {
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver)
+    render(<Probe height={0} reserved={40} />)
+    const box = screen.getByTestId('box')
+    Object.defineProperty(box, 'clientHeight', { value: 220, configurable: true })
+
+    act(() => trigger())
+
+    expect(box).toHaveTextContent('5')
+    Object.defineProperty(box, 'clientHeight', { value: 150, configurable: true })
+    act(() => trigger())
+    expect(box).toHaveTextContent('3')
+  })
+
+  it('is ready at once when the browser cannot observe sizes', () => {
+    vi.stubGlobal('ResizeObserver', undefined)
+
+    render(<Probe height={0} />)
+
+    expect(screen.getByTestId('box')).toHaveAttribute('data-ready', 'true')
+  })
+
+  it('becomes ready only after the container was measured', () => {
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver)
+    render(<Probe height={0} />)
+    const box = screen.getByTestId('box')
+    expect(box).toHaveAttribute('data-ready', 'false')
+
+    Object.defineProperty(box, 'clientHeight', { value: 200, configurable: true })
+    act(() => trigger())
+
+    expect(box).toHaveAttribute('data-ready', 'true')
   })
 })
