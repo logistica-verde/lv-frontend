@@ -1,1 +1,3 @@
 export const ROUTE_POLL_INTERVAL_MS = 1500
+export const ANCHOR_POLL_INTERVAL_MS = 3000
+export const ANCHOR_MAX_POLLS = 40

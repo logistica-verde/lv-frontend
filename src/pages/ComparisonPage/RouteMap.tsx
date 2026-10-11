@@ -3,6 +3,7 @@ import MapMarker from '@/components/Map/MapMarker'
 import MapView from '@/components/Map/MapView'
 import RoutePolyline from '@/components/Map/RoutePolyline'
 import { toLatLng } from '@/lib/geo'
+import IntegrityPanel from '@/pages/ComparisonPage/IntegrityPanel'
 import styles from '@/pages/ComparisonPage/RouteMap.module.css'
 import type { Route } from '@/services/schemas/route'
 
@@ -36,6 +37,7 @@ export default function RouteMap({ title, route, tone }: RouteMapProps) {
           <li key={stop.pointId}>{stop.name}</li>
         ))}
       </ol>
+      <IntegrityPanel routeId={route.id} />
     </Card>
   )
 }

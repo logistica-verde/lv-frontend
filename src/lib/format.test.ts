@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { formatKilometers, formatNumber } from '@/lib/format'
+import { formatDateTime, formatKilometers, formatNumber } from '@/lib/format'
+
+describe('formatDateTime', () => {
+  it('shows the Brasília time of a UTC instant, day first', () => {
+    expect(formatDateTime('2026-10-05T12:00:05Z')).toMatch(/^05\/10\/2026.*09:00:05$/)
+  })
+
+  it('rolls over to the previous day when the UTC time is early in the morning', () => {
+    expect(formatDateTime('2026-10-05T01:30:00Z')).toMatch(/^04\/10\/2026.*22:30:00$/)
+  })
+})
 
 describe('formatKilometers', () => {
   it('converts meters to kilometers in the Brazilian format', () => {
