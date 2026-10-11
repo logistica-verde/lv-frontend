@@ -4,7 +4,7 @@ import { ApiError, NetworkError, ResponseFormatError } from '@/services/errors'
 import { problemDetailSchema } from '@/services/schemas/problemDetail'
 
 type RequestOptions = {
-  method?: 'GET' | 'POST'
+  method?: 'GET' | 'POST' | 'PATCH' | 'PUT'
   body?: object
   signal?: AbortSignal
 }
