@@ -5,8 +5,17 @@
   background: var(--color-surface);
 }
 
+.fill {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
 .header {
   display: flex;
+  flex-shrink: 0;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
@@ -21,4 +30,11 @@
 .actions {
   display: flex;
   gap: var(--space-2);
+}
+
+.fill .body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
 }

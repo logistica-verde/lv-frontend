@@ -6,15 +6,16 @@ import { classNames } from '@/lib/classNames'
 type TableProps = {
   caption: string
   maxHeight?: string
+  dense?: boolean
   children: ReactNode
 }
 
-export default function Table({ caption, maxHeight, children }: TableProps) {
+export default function Table({ caption, maxHeight, dense = false, children }: TableProps) {
   const style: CSSProperties | undefined = maxHeight ? { maxHeight } : undefined
 
   return (
     <div className={styles.scroll} style={style}>
-      <table className={styles.table}>
+      <table className={classNames(styles.table, dense && styles.dense)}>
         <caption>
           <VisuallyHidden>{caption}</VisuallyHidden>
         </caption>

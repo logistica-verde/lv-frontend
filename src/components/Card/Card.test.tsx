@@ -20,6 +20,18 @@ describe('Card', () => {
     expect(screen.getByRole('button', { name: 'Novo' })).toBeInTheDocument()
   })
 
+  it('can fill the height its parent gives it', () => {
+    render(<Card fill>Conteúdo</Card>)
+
+    expect(screen.getByText('Conteúdo').closest('section')).toHaveClass('fill')
+  })
+
+  it('does not fill by default', () => {
+    render(<Card>Conteúdo</Card>)
+
+    expect(screen.getByText('Conteúdo').closest('section')).not.toHaveClass('fill')
+  })
+
   it('omits the header when there is no title or action', () => {
     render(<Card>Conteúdo</Card>)
 
