@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import Button from '@/components/Button/Button'
 import { ToastContext } from '@/components/Toast/ToastContext'
 import type { ToastApi, ToastTone } from '@/components/Toast/ToastContext'
@@ -54,20 +55,23 @@ export default function ToastProvider({ children }: ToastProviderProps) {
   return (
     <ToastContext.Provider value={api}>
       {children}
-      <div role="region" aria-label="Notificações" className={styles.region}>
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            role={toast.tone === 'danger' ? 'alert' : 'status'}
-            className={classNames(styles.toast, styles[toast.tone])}
-          >
-            <span className={styles.message}>{toast.message}</span>
-            <Button variant="ghost" size="sm" onClick={() => dismiss(toast.id)}>
-              Fechar
-            </Button>
-          </div>
-        ))}
-      </div>
+      {createPortal(
+        <div role="region" aria-label="Notificações" className={styles.region} data-modal-exempt="">
+          {toasts.map((toast) => (
+            <div
+              key={toast.id}
+              role={toast.tone === 'danger' ? 'alert' : 'status'}
+              className={classNames(styles.toast, styles[toast.tone])}
+            >
+              <span className={styles.message}>{toast.message}</span>
+              <Button variant="ghost" size="sm" onClick={() => dismiss(toast.id)}>
+                Fechar
+              </Button>
+            </div>
+          ))}
+        </div>,
+        document.body,
+      )}
     </ToastContext.Provider>
   )
 }
