@@ -11,7 +11,10 @@ import { server } from '@/test/server'
 
 describe('app routes', () => {
   beforeEach(() => {
-    server.use(http.get(apiUrl('/api/delivery-points'), () => HttpResponse.json([])))
+    server.use(
+      http.get(apiUrl('/api/delivery-points'), () => HttpResponse.json([])),
+      http.get(apiUrl('/api/vehicles'), () => HttpResponse.json([])),
+    )
   })
 
   it('shows the planning page at the root', () => {

@@ -1,12 +1,12 @@
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { delay, http, HttpResponse } from 'msw'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import PlanningPage from '@/pages/PlanningPage/PlanningPage'
 import type { DeliveryPoint } from '@/services/schemas/deliveryPoint'
 import { apiUrl } from '@/test/api'
-import { deliveryPointFixture } from '@/test/fixtures'
+import { deliveryPointFixture, vehicleFixture } from '@/test/fixtures'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { server } from '@/test/server'
 
@@ -48,6 +48,10 @@ function useDeliveryPointsApi(initial: DeliveryPoint[]): FakeApi {
   )
   return api
 }
+
+beforeEach(() => {
+  server.use(http.get(apiUrl('/api/vehicles'), () => HttpResponse.json([vehicleFixture])))
+})
 
 describe('PlanningPage points', () => {
   it('shows the map and a loading state while the points load', async () => {
