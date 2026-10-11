@@ -2,6 +2,7 @@ import { delay, http, HttpResponse } from 'msw'
 import { z } from 'zod'
 import type { MockDb } from '@/mocks/db'
 import { seedAddresses } from '@/mocks/addresses'
+import { generateRun } from '@/mocks/experiments'
 import { fakeHash } from '@/mocks/fakeHash'
 import { optimizeFake } from '@/mocks/fakeOptimizer'
 import type { FakePoint } from '@/mocks/fakeOptimizer'
@@ -14,6 +15,7 @@ export type MockOptions = {
   latencyMs: number
   completionDelayMs: number
   anchoringDelayMs: number
+  experimentRunDelayMs?: number
 }
 
 const vehicleRequestSchema = z.object({
@@ -34,6 +36,13 @@ const routeRequestSchema = z.object({
   deliveryPointIds: z.array(z.number()).min(2).max(30),
   criterion: z.enum(['EMISSION', 'DISTANCE']),
 })
+
+const experimentRequestSchema = z.object({
+  instances: z.array(z.number().int().positive()).min(1).max(10),
+  seeds: z.array(z.number().int().positive()).min(1).max(10),
+})
+
+const DEFAULT_EXPERIMENT_RUN_DELAY_MS = 400
 
 const listQuerySchema = z.object({
   from: z
@@ -302,6 +311,53 @@ export function createHandlers(db: MockDb, options: MockOptions) {
         page: query.page,
         size: query.size,
       })
+    }),
+
+    http.post('*/api/experiments', async ({ request }) => {
+      await delay(options.latencyMs)
+      const parsed = experimentRequestSchema.safeParse(await request.json().catch(() => null))
+      if (!parsed.success) {
+        return problem(400, 'Invalid request content.')
+      }
+      const { instances, seeds } = parsed.data
+      const id = db.nextExperimentId++
+      const total = instances.length * seeds.length
+      db.experiments.push({
+        id,
+        status: 'PENDING',
+        createdAt: new Date().toISOString(),
+        instances,
+        seeds,
+        progress: { completed: 0, total },
+        runs: [],
+        errorMessage: null,
+      })
+      const pairs = instances.flatMap((size) => seeds.map((seed) => ({ size, seed })))
+      const step = options.experimentRunDelayMs ?? DEFAULT_EXPERIMENT_RUN_DELAY_MS
+      pairs.forEach(({ size, seed }, index) => {
+        setTimeout(
+          () => {
+            const current = db.experiments.find((experiment) => experiment.id === id)
+            if (!current) {
+              return
+            }
+            const runs = [...current.runs, generateRun(size, seed)]
+            Object.assign(current, {
+              runs,
+              progress: { completed: runs.length, total },
+              status: runs.length === total ? 'COMPLETED' : 'PENDING',
+            })
+          },
+          (index + 1) * step,
+        )
+      })
+      return HttpResponse.json({ id, status: 'PENDING' }, { status: 202 })
+    }),
+
+    http.get('*/api/experiments/latest', async () => {
+      await delay(options.latencyMs)
+      const latest = db.experiments.at(-1)
+      return latest ? HttpResponse.json(latest) : problem(404, 'No experiment has been run yet.')
     }),
 
     http.get('*/geocode', async ({ request }) => {

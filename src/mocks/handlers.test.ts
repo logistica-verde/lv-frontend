@@ -4,6 +4,7 @@ import { createHandlers } from '@/mocks/handlers'
 import { seedDeliveryPoints, seedVehicles } from '@/mocks/seed'
 import { seedHistory } from '@/mocks/history'
 import { createDeliveryPoint, listDeliveryPoints } from '@/services/deliveryPointService'
+import { getLatestExperiment, startExperiment } from '@/services/experimentService'
 import { listOperations } from '@/services/operationService'
 import { ApiError } from '@/services/errors'
 import { getIntegrity } from '@/services/integrityService'
@@ -14,7 +15,14 @@ import { server } from '@/test/server'
 
 function useMockApi() {
   const db = createDb({ vehicles: seedVehicles, deliveryPoints: seedDeliveryPoints })
-  server.use(...createHandlers(db, { latencyMs: 0, completionDelayMs: 30, anchoringDelayMs: 30 }))
+  server.use(
+    ...createHandlers(db, {
+      latencyMs: 0,
+      completionDelayMs: 30,
+      anchoringDelayMs: 30,
+      experimentRunDelayMs: 5,
+    }),
+  )
   return db
 }
 
@@ -368,5 +376,64 @@ describe('seedHistory', () => {
     seedHistory(db)
 
     expect(db.routes.size).toBe(0)
+  })
+})
+
+describe('mock experiments', () => {
+  const input = { instances: [10, 15], seeds: [1, 2] }
+
+  it('has no experiment before one is started', async () => {
+    useMockApi()
+
+    expect(await getLatestExperiment()).toBeNull()
+  })
+
+  it('accepts an experiment, reports its progress and completes every run', async () => {
+    useMockApi()
+
+    const accepted = await startExperiment(input)
+
+    expect(accepted.status).toBe('PENDING')
+    const started = await getLatestExperiment()
+    expect(started).toMatchObject({ id: accepted.id, instances: [10, 15], seeds: [1, 2] })
+    expect(started?.progress.total).toBe(4)
+    await vi.waitFor(async () => {
+      const done = await getLatestExperiment()
+      expect(done?.status).toBe('COMPLETED')
+      expect(done?.runs).toHaveLength(4)
+      expect(done?.progress).toEqual({ completed: 4, total: 4 })
+    }, WAIT)
+  })
+
+  it('produces one run for every instance and seed', async () => {
+    useMockApi()
+    await startExperiment(input)
+
+    await vi.waitFor(async () => expect((await getLatestExperiment())?.runs).toHaveLength(4), WAIT)
+
+    const runs = (await getLatestExperiment())?.runs ?? []
+    expect(runs.map((run) => [run.instanceSize, run.seed])).toEqual([
+      [10, 1],
+      [10, 2],
+      [15, 1],
+      [15, 2],
+    ])
+  })
+
+  it('returns the most recent experiment', async () => {
+    useMockApi()
+    await startExperiment(input)
+    const second = await startExperiment({ instances: [10], seeds: [1] })
+
+    expect((await getLatestExperiment())?.id).toBe(second.id)
+  })
+
+  it('rejects an invalid request with a 400', async () => {
+    useMockApi()
+
+    const failure = startExperiment({ instances: [], seeds: [1] })
+
+    await expect(failure).rejects.toBeInstanceOf(ApiError)
+    await expect(failure).rejects.toMatchObject({ status: 400 })
   })
 })

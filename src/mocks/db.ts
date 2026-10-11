@@ -1,4 +1,5 @@
 import type { DeliveryPoint } from '@/services/schemas/deliveryPoint'
+import type { Experiment } from '@/services/schemas/experiment'
 import type { Route } from '@/services/schemas/route'
 import type { Vehicle } from '@/services/schemas/vehicle'
 
@@ -13,6 +14,8 @@ export type MockDb = {
   routes: Map<number, Route>
   anchors: Map<number, AnchorInfo>
   tampered: Set<number>
+  experiments: Experiment[]
+  nextExperimentId: number
   nextVehicleId: number
   nextDeliveryPointId: number
   nextRouteId: number
@@ -33,6 +36,8 @@ export function createDb(seed: Seed): MockDb {
     routes: new Map(),
     anchors: new Map(),
     tampered: new Set(),
+    experiments: [],
+    nextExperimentId: 1,
     nextVehicleId: Math.max(0, ...seed.vehicles.map((vehicle) => vehicle.id)) + 1,
     nextDeliveryPointId: Math.max(0, ...seed.deliveryPoints.map((point) => point.id)) + 1,
     nextRouteId: 1,
