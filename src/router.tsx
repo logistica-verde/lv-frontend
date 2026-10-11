@@ -4,6 +4,7 @@ import AppLayout from '@/components/AppLayout/AppLayout'
 import NotFoundPage from '@/pages/NotFoundPage/NotFoundPage'
 import PlanningPage from '@/pages/PlanningPage/PlanningPage'
 import RouteErrorPage from '@/pages/RouteErrorPage/RouteErrorPage'
+import VehiclesPage from '@/pages/VehiclesPage/VehiclesPage'
 
 export const routes: RouteObject[] = [
   {
@@ -14,6 +15,7 @@ export const routes: RouteObject[] = [
         errorElement: <RouteErrorPage />,
         children: [
           { index: true, element: <PlanningPage /> },
+          { path: 'veiculos', element: <VehiclesPage /> },
           { path: '*', element: <NotFoundPage /> },
         ],
       },

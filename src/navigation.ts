@@ -4,4 +4,7 @@ export type NavItem = {
   end?: boolean
 }
 
-export const navItems: NavItem[] = [{ to: '/', label: 'Planejamento', end: true }]
+export const navItems: NavItem[] = [
+  { to: '/', label: 'Planejamento', end: true },
+  { to: '/veiculos', label: 'Veículos' },
+]

@@ -1,10 +1,13 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { http, HttpResponse } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
 import AppLayout from '@/components/AppLayout/AppLayout'
 import RouteErrorPage from '@/pages/RouteErrorPage/RouteErrorPage'
 import { routes } from '@/router'
+import { apiUrl } from '@/test/api'
 import { renderRoutes } from '@/test/renderRoutes'
+import { server } from '@/test/server'
 
 describe('app routes', () => {
   it('shows the planning page at the root', () => {
@@ -39,6 +42,18 @@ describe('app routes', () => {
       '#conteudo',
     )
     expect(screen.getByRole('main')).toHaveAttribute('id', 'conteudo')
+  })
+
+  it('opens the vehicles page from the navigation', async () => {
+    server.use(http.get(apiUrl('/api/vehicles'), () => HttpResponse.json([])))
+    const router = renderRoutes(routes, '/')
+
+    await userEvent.click(screen.getByRole('link', { name: 'Veículos' }))
+
+    expect(router.state.location.pathname).toBe('/veiculos')
+    expect(screen.getByRole('heading', { level: 1, name: 'Veículos' })).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Veículos' })).toHaveAttribute('aria-current', 'page')
+    expect(document.title).toBe('Veículos · Logística Verde')
   })
 
   it('shows a not found page for unknown addresses and a way back', async () => {
