@@ -1,0 +1,37 @@
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  height: 4.75rem;
+  padding: var(--space-1) 0;
+  overflow: hidden;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--font-size-sm);
+}
+
+.title {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-strong);
+}
+
+.saving {
+  color: var(--color-primary);
+}
+
+.line {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.label {
+  display: inline-block;
+  min-width: 6.5rem;
+  color: var(--color-text-muted);
+}

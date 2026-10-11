@@ -75,6 +75,30 @@ describe('app routes', () => {
     expect(document.title).toBe('Histórico de operações · Logística Verde')
   })
 
+  it('opens the experiments page from the navigation', async () => {
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe = () => undefined
+        unobserve = () => undefined
+        disconnect = () => undefined
+      },
+    )
+    server.use(
+      http.get(apiUrl('/api/experiments/latest'), () =>
+        HttpResponse.json({ status: 404, detail: 'none' }, { status: 404 }),
+      ),
+    )
+    const router = renderRoutes(routes, '/')
+
+    await userEvent.click(screen.getByRole('link', { name: 'Experimentos' }))
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Experimentos' })).toBeVisible()
+    expect(router.state.location.pathname).toBe('/experimentos')
+    expect(document.title).toBe('Experimentos · Logística Verde')
+    vi.unstubAllGlobals()
+  })
+
   it('shows a not found page for unknown addresses and a way back', async () => {
     const router = renderRoutes(routes, '/rota-que-nao-existe')
 
