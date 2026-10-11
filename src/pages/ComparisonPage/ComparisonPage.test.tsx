@@ -104,18 +104,19 @@ describe('ComparisonPage result', () => {
     expect(cellsOf(within(table).getByRole('row', { name: /Paradas/ }))).toEqual(['3', '3', '—'])
   })
 
-  it('shows the integrity seal of each route with its transaction hash and a link to the evidence', async () => {
+  it('shows the integrity seal of each route with its transaction hash and a link to its verification', async () => {
     useRoutesApi({ 7: emissionRoute, 8: distanceRoute })
     renderRoutes(routes, '/rotas/7/8')
 
     expect(await screen.findByText('Integridade: menor emissão')).toBeVisible()
     expect(screen.getByText('Integridade: menor distância')).toBeVisible()
     await waitFor(() => expect(screen.getAllByText('0xcdcd…cdcd')).toHaveLength(2))
-    expect(screen.getAllByText('Íntegra').length).toBeGreaterThanOrEqual(2)
-    expect(screen.getByRole('link', { name: 'Ver evidências' })).toHaveAttribute(
-      'href',
-      '#integridade',
-    )
+    expect(screen.getAllByText('Íntegra')).toHaveLength(2)
+    expect(
+      screen
+        .getAllByRole('link', { name: 'Ver verificação' })
+        .map((link) => link.getAttribute('href')),
+    ).toEqual(['/verificacao/7', '/verificacao/8'])
   })
 
   it('draws both routes on a single map with a legend that does not rely on color', async () => {
@@ -145,7 +146,7 @@ describe('ComparisonPage result', () => {
     useRoutesApi({ 7: emissionRoute, 8: distanceRoute })
     renderRoutes(routes, '/rotas/7/8')
 
-    expect(await screen.findByText(/não representam o traçado das ruas/)).toBeVisible()
+    expect(await screen.findByText(/Linhas retas, sem o traçado das ruas/)).toBeVisible()
   })
 
   it('lists the segments of the emission route first, with units and a total', async () => {
@@ -167,19 +168,39 @@ describe('ComparisonPage result', () => {
       'Emissão (kg CO₂)',
     ])
     const rows = within(table).getAllByRole('row')
-    const firstRow = rows[1] as HTMLElement
-    const totalRow = rows[rows.length - 1] as HTMLElement
     expect(
-      within(firstRow)
+      within(rows[1] as HTMLElement)
         .getAllByRole('cell')
         .map((cell) => cell.textContent),
     ).toEqual(['1', 'C → A', '1,01', '40', '2', '2'])
-    expect(within(totalRow).getByText('Total')).toBeVisible()
-    expect(
-      within(totalRow)
-        .getAllByRole('cell')
-        .map((cell) => cell.textContent),
-    ).toEqual(['2,02', '—', '—', '5,5'])
+    expect(screen.getByText('Total da rota: 2,02 km · 5,5 kg CO₂')).toBeVisible()
+  })
+
+  it('paginates long routes so the table never needs to scroll', async () => {
+    const segments = Array.from({ length: 9 }, (_, index) => ({
+      fromPointId: 10,
+      toPointId: 11,
+      distanceMeters: 1000 + index,
+      averageSpeedKmh: 40,
+      slopePercent: 1,
+      emissionKg: 1,
+    }))
+    useRoutesApi({ 7: { ...emissionRoute, segments }, 8: distanceRoute })
+    renderRoutes(routes, '/rotas/7/8')
+    const table = await screen.findByRole('table', { name: 'Trechos da rota selecionada' })
+
+    expect(within(table).getAllByRole('row')).toHaveLength(8)
+    expect(screen.getByText('Página 1 de 2')).toBeVisible()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Próxima' }))
+
+    expect(within(table).getAllByRole('row')).toHaveLength(3)
+    expect(screen.getByText('Página 2 de 2')).toBeVisible()
+    expect(within(table).getByRole('cell', { name: '8' })).toBeVisible()
+
+    await userEvent.click(screen.getByRole('radio', { name: 'Menor distância' }))
+
+    expect(screen.queryByText(/Página/)).not.toBeInTheDocument()
   })
 
   it('switches the segments table to the distance route', async () => {
@@ -193,14 +214,6 @@ describe('ComparisonPage result', () => {
     expect(within(table).getByText('A → B')).toBeVisible()
     expect(within(table).getByText('B → C')).toBeVisible()
     expect(within(table).queryByText('C → A')).not.toBeInTheDocument()
-  })
-
-  it('shows the full integrity evidence of each route further down', async () => {
-    useRoutesApi({ 7: emissionRoute, 8: distanceRoute })
-    renderRoutes(routes, '/rotas/7/8')
-
-    expect(await screen.findByRole('region', { name: 'Integridade: Menor emissão' })).toBeVisible()
-    expect(screen.getByRole('region', { name: 'Integridade: Menor distância' })).toBeVisible()
   })
 
   it('admits when the distance route is the one that emits less', async () => {

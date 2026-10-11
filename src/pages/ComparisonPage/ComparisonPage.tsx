@@ -26,7 +26,7 @@ export default function ComparisonPage() {
         <h1>Comparação de rotas</h1>
         <Link to="/" className={styles.back}>
           <ArrowLeft size={16} aria-hidden="true" />
-          Voltar ao planejamento
+          <span className={styles.backText}>Voltar ao planejamento</span>
         </Link>
       </div>
       <ComparisonView emissionId={emission} distanceId={distance} />

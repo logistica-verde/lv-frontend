@@ -22,20 +22,22 @@ export default function ComparisonMap({ emissionRoute, distanceRoute }: Comparis
   const fitTo = [...emissionStops, ...distanceStops].map(toLatLng)
 
   return (
-    <Card title="Rotas no mapa">
-      <MapView label="Mapa comparativo das duas rotas" fitTo={fitTo}>
-        <RoutePolyline tone="distance" positions={distanceStops.map(toLatLng)} />
-        <RoutePolyline tone="emission" positions={emissionStops.map(toLatLng)} />
-        {emissionStops.map((stop) => (
-          <MapMarker
-            key={stop.pointId}
-            position={toLatLng(stop)}
-            title={`${stop.name} (menor distância: ${distanceOrder.get(stop.pointId) ?? '—'}º)`}
-            label={String(stop.visitOrder)}
-            tone="emission"
-          />
-        ))}
-      </MapView>
+    <Card title="Rotas no mapa" fill>
+      <div className={styles.map}>
+        <MapView label="Mapa comparativo das duas rotas" fitTo={fitTo}>
+          <RoutePolyline tone="distance" positions={distanceStops.map(toLatLng)} />
+          <RoutePolyline tone="emission" positions={emissionStops.map(toLatLng)} />
+          {emissionStops.map((stop) => (
+            <MapMarker
+              key={stop.pointId}
+              position={toLatLng(stop)}
+              title={`${stop.name} (menor distância: ${distanceOrder.get(stop.pointId) ?? '—'}º)`}
+              label={String(stop.visitOrder)}
+              tone="emission"
+            />
+          ))}
+        </MapView>
+      </div>
       <ul aria-label="Legenda do mapa" className={styles.legend}>
         <li className={styles.item}>
           <svg width="32" height="8" aria-hidden="true">
@@ -50,8 +52,7 @@ export default function ComparisonMap({ emissionRoute, distanceRoute }: Comparis
           Menor distância (linha tracejada)
         </li>
         <li className={styles.note}>
-          Os números seguem a ordem de visita da rota de menor emissão. As linhas ligam as paradas
-          em linha reta e não representam o traçado das ruas.
+          Números: ordem da menor emissão. Linhas retas, sem o traçado das ruas.
         </li>
       </ul>
     </Card>

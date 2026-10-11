@@ -1,11 +1,14 @@
 .page {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
+  min-height: 0;
 }
 
 .heading {
   display: flex;
+  flex-shrink: 0;
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
@@ -25,4 +28,30 @@
 
 .back:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 40rem) {
+  .backText {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .back {
+    justify-content: center;
+    min-width: var(--control-height-touch);
+    min-height: var(--control-height-touch);
+  }
+
+  .heading {
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+
+  .page {
+    gap: var(--space-2);
+  }
 }

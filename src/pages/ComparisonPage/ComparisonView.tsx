@@ -1,7 +1,8 @@
-import Card from '@/components/Card/Card'
 import ErrorMessage from '@/components/ErrorMessage/ErrorMessage'
 import Skeleton from '@/components/Skeleton/Skeleton'
+import Tabs from '@/components/Tabs/Tabs'
 import VisuallyHidden from '@/components/VisuallyHidden/VisuallyHidden'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useRoute } from '@/hooks/useRoutes'
 import {
   describeDistanceComparison,
@@ -11,10 +12,11 @@ import {
 } from '@/lib/comparison'
 import ComparisonMap from '@/pages/ComparisonPage/ComparisonMap'
 import styles from '@/pages/ComparisonPage/ComparisonView.module.css'
-import IntegrityPanel from '@/pages/ComparisonPage/IntegrityPanel'
 import MetricsTable from '@/pages/ComparisonPage/MetricsTable'
 import SegmentsTable from '@/pages/ComparisonPage/SegmentsTable'
 import { ApiError, describeError } from '@/services/errors'
+
+const DESKTOP_QUERY = '(min-width: 64rem)'
 
 type ComparisonViewProps = {
   emissionId: number
@@ -24,6 +26,7 @@ type ComparisonViewProps = {
 export default function ComparisonView({ emissionId, distanceId }: ComparisonViewProps) {
   const emission = useRoute(emissionId)
   const distance = useRoute(distanceId)
+  const isDesktop = useMediaQuery(DESKTOP_QUERY)
 
   const requestError = emission.error ?? distance.error
   if (requestError instanceof ApiError && requestError.status === 404) {
@@ -47,8 +50,8 @@ export default function ComparisonView({ emissionId, distanceId }: ComparisonVie
     return (
       <div role="status" className={styles.loading}>
         <VisuallyHidden>Carregando rotas</VisuallyHidden>
-        <Skeleton height="10rem" />
-        <Skeleton height="24rem" />
+        <Skeleton height="8rem" />
+        <Skeleton height="100%" />
       </div>
     )
   }
@@ -75,20 +78,50 @@ export default function ComparisonView({ emissionId, distanceId }: ComparisonVie
     extraDistancePercent(emissionRoute, distanceRoute),
   )
 
+  const lead = (
+    <p className={styles.lead}>
+      {emissionText} {distanceText}
+    </p>
+  )
+  const metrics = <MetricsTable emissionRoute={emissionRoute} distanceRoute={distanceRoute} />
+  const map = <ComparisonMap emissionRoute={emissionRoute} distanceRoute={distanceRoute} />
+  const segments = <SegmentsTable emissionRoute={emissionRoute} distanceRoute={distanceRoute} />
+
+  if (!isDesktop) {
+    return (
+      <Tabs
+        label="Seções da comparação"
+        className={styles.tabs}
+        items={[
+          {
+            id: 'metrics',
+            label: 'Métricas',
+            content: (
+              <div className={styles.stack}>
+                {lead}
+                {metrics}
+              </div>
+            ),
+          },
+          { id: 'map', label: 'Mapa', content: <div className={styles.fill}>{map}</div> },
+          {
+            id: 'segments',
+            label: 'Trechos',
+            content: <div className={styles.fill}>{segments}</div>,
+          },
+        ]}
+      />
+    )
+  }
+
   return (
     <div className={styles.results}>
-      <p className={styles.lead}>
-        {emissionText} {distanceText}
-      </p>
-      <MetricsTable emissionRoute={emissionRoute} distanceRoute={distanceRoute} />
-      <ComparisonMap emissionRoute={emissionRoute} distanceRoute={distanceRoute} />
-      <SegmentsTable emissionRoute={emissionRoute} distanceRoute={distanceRoute} />
-      <Card title="Integridade na blockchain">
-        <div id="integridade" className={styles.integrity}>
-          <IntegrityPanel routeId={emissionRoute.id} title="Menor emissão" />
-          <IntegrityPanel routeId={distanceRoute.id} title="Menor distância" />
-        </div>
-      </Card>
+      {lead}
+      {metrics}
+      <div className={styles.workspace}>
+        {map}
+        {segments}
+      </div>
     </div>
   )
 }
