@@ -6,12 +6,13 @@ type CardProps = {
   title?: string
   actions?: ReactNode
   fill?: boolean
+  className?: string
   children: ReactNode
 }
 
-export default function Card({ title, actions, fill = false, children }: CardProps) {
+export default function Card({ title, actions, fill = false, className, children }: CardProps) {
   return (
-    <section className={classNames(styles.card, fill && styles.fill)}>
+    <section className={classNames(styles.card, fill && styles.fill, className)}>
       {(title || actions) && (
         <header className={styles.header}>
           {title && <h2 className={styles.title}>{title}</h2>}

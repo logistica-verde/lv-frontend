@@ -48,6 +48,35 @@ describe('AppLayout on wide screens', () => {
   })
 })
 
+describe('AppLayout full-bleed pages', () => {
+  function renderWith(handle: { fullBleed: boolean } | undefined) {
+    stubViewport(true)
+    const router = createMemoryRouter(
+      [
+        {
+          path: '/',
+          element: <AppLayout />,
+          children: [{ index: true, element: <p>Início</p>, handle }],
+        },
+      ],
+      { initialEntries: ['/'] },
+    )
+    render(<RouterProvider router={router} />)
+  }
+
+  it('removes the page padding when the route asks for the full area', () => {
+    renderWith({ fullBleed: true })
+
+    expect(screen.getByRole('main')).toHaveClass('bleed')
+  })
+
+  it('keeps the padding for ordinary pages', () => {
+    renderWith(undefined)
+
+    expect(screen.getByRole('main')).not.toHaveClass('bleed')
+  })
+})
+
 describe('AppLayout on narrow screens', () => {
   it('hides the navigation behind a menu button', () => {
     stubViewport(false)
