@@ -48,3 +48,9 @@
 .panel[hidden] {
   display: none;
 }
+
+@media (max-width: 40rem) {
+  .tab {
+    padding: 0 var(--space-2);
+  }
+}

@@ -63,6 +63,7 @@ type MapViewProps = {
   label: string
   fitTo?: LatLngTuple[]
   onMapClick?: (position: LatLngTuple) => void
+  overlay?: ReactNode
   children?: ReactNode
 }
 
@@ -70,6 +71,7 @@ export default function MapView({
   label,
   fitTo = NO_POSITIONS,
   onMapClick,
+  overlay,
   children,
 }: MapViewProps) {
   return (
@@ -85,6 +87,7 @@ export default function MapView({
         {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
         {children}
       </MapContainer>
+      {overlay && <div className={styles.overlay}>{overlay}</div>}
     </div>
   )
 }
