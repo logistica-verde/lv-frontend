@@ -213,6 +213,22 @@ describe('RouteRequestCard calculation', () => {
     expect(screen.getByText('Menor emissão')).toBeVisible()
     expect(screen.getByText('Menor distância')).toBeVisible()
     expect(await screen.findByText('Rotas calculadas.')).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Ver comparação das rotas' })).toHaveAttribute(
+      'href',
+      '/rotas/501/502',
+    )
+  })
+
+  it('does not offer the comparison while a route is still calculating or has failed', async () => {
+    useVehiclesApi([vehicleFixture])
+    useRoutesApi({ failing: 'DISTANCE' })
+    renderCard([10, 11])
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('button', { name: 'Calcular rotas' }))
+
+    expect(await screen.findByText('Falhou')).toBeVisible()
+    expect(screen.queryByRole('link', { name: 'Ver comparação das rotas' })).not.toBeInTheDocument()
   })
 
   it('reports a route that failed with the reason', async () => {
