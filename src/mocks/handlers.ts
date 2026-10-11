@@ -1,6 +1,7 @@
 import { delay, http, HttpResponse } from 'msw'
 import { z } from 'zod'
 import type { MockDb } from '@/mocks/db'
+import { seedAddresses } from '@/mocks/addresses'
 import { fakeHash } from '@/mocks/fakeHash'
 import { optimizeFake } from '@/mocks/fakeOptimizer'
 import type { FakePoint } from '@/mocks/fakeOptimizer'
@@ -44,6 +45,13 @@ function problem(status: number, detail: string) {
     { type: 'about:blank', title: STATUS_TITLES[status], status, detail },
     { status },
   )
+}
+
+function normalizeText(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
 }
 
 function toFakePoint(point: DeliveryPoint): FakePoint {
@@ -213,6 +221,27 @@ export function createHandlers(db: MockDb, options: MockOptions) {
         { id: route.id, status: route.status },
         { status: 202, headers: { Location: `/api/routes/${route.id}` } },
       )
+    }),
+
+    http.get('*/geocode', async ({ request }) => {
+      await delay(options.latencyMs)
+      const query = new URL(request.url).searchParams.get('q') ?? ''
+      const tokens = normalizeText(query).split(/\s+/).filter(Boolean)
+      if (tokens.length === 0) {
+        return HttpResponse.json([])
+      }
+      const matches = seedAddresses
+        .filter((address) => {
+          const text = normalizeText(address.displayName)
+          return tokens.every((token) => text.includes(token))
+        })
+        .slice(0, 5)
+        .map((address) => ({
+          display_name: address.displayName,
+          lat: String(address.latitude),
+          lon: String(address.longitude),
+        }))
+      return HttpResponse.json(matches)
     }),
 
     http.get('*/api/routes/:id/integrity', async ({ params }) => {

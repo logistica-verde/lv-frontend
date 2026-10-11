@@ -207,3 +207,40 @@ describe('mock integrity', () => {
     await expect(getIntegrity(999)).rejects.toMatchObject({ status: 404 })
   })
 })
+
+describe('mock geocoder', () => {
+  async function geocode(query: string) {
+    const response = await fetch(apiUrl(`/geocode?q=${encodeURIComponent(query)}`))
+    return { status: response.status, body: await response.json() }
+  }
+
+  it('finds seeded addresses ignoring case and accents', async () => {
+    useMockApi()
+
+    const { status, body } = await geocode('PRACA DA SE')
+
+    expect(status).toBe(200)
+    expect(body).toHaveLength(1)
+    expect(body[0]).toMatchObject({ lat: '-23.5505', lon: '-46.6333' })
+    expect(body[0].display_name).toContain('Praça da Sé')
+  })
+
+  it('requires every word of the query to match', async () => {
+    useMockApi()
+
+    expect((await geocode('paulista 1578')).body).toHaveLength(1)
+    expect((await geocode('paulista 9999')).body).toEqual([])
+  })
+
+  it('answers with an empty list for an empty query', async () => {
+    useMockApi()
+
+    expect((await geocode('   ')).body).toEqual([])
+  })
+
+  it('returns at most five matches', async () => {
+    useMockApi()
+
+    expect((await geocode('sao paulo')).body.length).toBeLessThanOrEqual(5)
+  })
+})
