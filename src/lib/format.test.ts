@@ -1,5 +1,24 @@
 import { describe, expect, it } from 'vitest'
-import { formatDateTime, formatKilometers, formatNumber } from '@/lib/format'
+import { formatDateTime, formatKilometers, formatNumber, formatSignedPercent } from '@/lib/format'
+
+describe('formatSignedPercent', () => {
+  it('marks growth with a plus sign', () => {
+    expect(formatSignedPercent(12.3456)).toBe('+12,35%')
+  })
+
+  it('marks a reduction with a proper minus sign', () => {
+    expect(formatSignedPercent(-29.375)).toBe('−29,38%')
+  })
+
+  it('shows zero without a sign, even when it rounds to zero', () => {
+    expect(formatSignedPercent(0)).toBe('0%')
+    expect(formatSignedPercent(0.001)).toBe('0%')
+  })
+
+  it('shows a dash when there is no value', () => {
+    expect(formatSignedPercent(null)).toBe('—')
+  })
+})
 
 describe('formatDateTime', () => {
   it('shows the Brasília time of a UTC instant, day first', () => {

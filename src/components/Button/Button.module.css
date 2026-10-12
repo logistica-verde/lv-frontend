@@ -3,27 +3,39 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  min-height: 2.75rem;
-  padding: 0 var(--space-4);
+  min-height: var(--control-height);
+  padding: 0 var(--space-3);
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   font: inherit;
-  font-weight: 600;
+  font-weight: var(--font-weight-strong);
+  line-height: 1;
   cursor: pointer;
   transition:
-    background-color 120ms ease,
-    border-color 120ms ease;
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
 }
 
 .button:disabled {
   cursor: not-allowed;
-  opacity: 0.55;
+  opacity: 0.5;
 }
 
 .sm {
-  min-height: 2.25rem;
-  padding: 0 var(--space-3);
+  min-height: 1.75rem;
+  padding: 0 var(--space-2);
   font-size: var(--font-size-sm);
+}
+
+@media (pointer: coarse) {
+  .button {
+    min-height: var(--control-height-touch);
+  }
+
+  .sm {
+    min-height: var(--control-height-touch);
+  }
 }
 
 .primary {
@@ -38,7 +50,7 @@
 .secondary {
   background: var(--color-surface);
   color: var(--color-text);
-  border-color: var(--color-border-strong);
+  border-color: var(--color-control-border);
 }
 
 .secondary:hover:not(:disabled) {
@@ -56,7 +68,7 @@
 
 .danger {
   background: var(--color-danger);
-  color: var(--color-primary-contrast);
+  color: #ffffff;
 }
 
 .danger:hover:not(:disabled) {

@@ -2,7 +2,7 @@ import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { delay, http, HttpResponse } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
-import IntegrityPanel from '@/pages/ComparisonPage/IntegrityPanel'
+import VerdictCard from '@/pages/VerificationPage/VerdictCard'
 import type { IntegrityReport } from '@/services/schemas/integrity'
 import { apiUrl } from '@/test/api'
 import { integrityFixture } from '@/test/fixtures'
@@ -41,7 +41,7 @@ function useIntegrityApi(respond: (call: number) => IntegrityReport) {
   return () => calls
 }
 
-describe('IntegrityPanel', () => {
+describe('VerdictCard', () => {
   it('shows a loading state while the report is fetched', async () => {
     server.use(
       http.get(apiUrl('/api/routes/7/integrity'), async () => {
@@ -50,46 +50,62 @@ describe('IntegrityPanel', () => {
       }),
     )
 
-    renderWithProviders(<IntegrityPanel routeId={7} />)
+    renderWithProviders(<VerdictCard routeId={7} />)
 
     expect(screen.getByText('Verificando integridade')).toBeInTheDocument()
     expect(await screen.findByText('Íntegra')).toBeVisible()
   })
 
-  it('confirms a route whose data matches the blockchain and shows the evidence', async () => {
+  it('gives a clear verdict for a route whose data matches the blockchain', async () => {
     useIntegrityApi(() => integrityFixture)
 
-    renderWithProviders(<IntegrityPanel routeId={7} />)
+    renderWithProviders(<VerdictCard routeId={7} />)
 
     expect(await screen.findByText('Íntegra')).toBeVisible()
     expect(
       screen.getByText('Os dados da rota conferem com o registro na blockchain.'),
     ).toBeVisible()
-    const panel = screen.getByRole('region', { name: 'Integridade na blockchain' })
-    expect(within(panel).getByText('Hash no banco').nextElementSibling).toHaveTextContent(
-      integrityFixture.databaseHash,
-    )
-    expect(within(panel).getByText('Hash na blockchain').nextElementSibling).toHaveTextContent(
-      integrityFixture.ledgerHash ?? '',
-    )
-    expect(within(panel).getByText('Transação').nextElementSibling).toHaveTextContent(
+    expect(screen.getByText('Os dois hashes são idênticos.')).toBeVisible()
+  })
+
+  it('shows the recalculated and the anchored hashes side by side, in full', async () => {
+    useIntegrityApi(() => integrityFixture)
+    renderWithProviders(<VerdictCard routeId={7} />)
+    await screen.findByText('Íntegra')
+
+    const result = screen.getByRole('region', { name: 'Resultado da verificação' })
+
+    expect(within(result).getByText('Hash recalculado (banco)')).toBeVisible()
+    expect(within(result).getByText('Hash ancorado (blockchain)')).toBeVisible()
+    expect(within(result).getAllByText(integrityFixture.databaseHash)).toHaveLength(2)
+  })
+
+  it('shows the transaction, block and registration date', async () => {
+    useIntegrityApi(() => integrityFixture)
+    renderWithProviders(<VerdictCard routeId={7} />)
+    await screen.findByText('Íntegra')
+
+    const result = screen.getByRole('region', { name: 'Resultado da verificação' })
+
+    expect(within(result).getByText('Transação').nextElementSibling).toHaveTextContent(
       integrityFixture.txHash ?? '',
     )
-    expect(within(panel).getByText('Bloco').nextElementSibling).toHaveTextContent('42')
-    expect(within(panel).getByText('Registrada em').nextElementSibling).toHaveTextContent(
+    expect(within(result).getByText('Bloco').nextElementSibling).toHaveTextContent('42')
+    expect(within(result).getByText('Registrada em').nextElementSibling).toHaveTextContent(
       /05\/10\/2026.*09:00:05/,
     )
   })
 
-  it('raises an alert when the data was tampered with, showing both hashes', async () => {
+  it('raises an alert when the data was altered and says the hashes differ', async () => {
     useIntegrityApi(() => tampered)
 
-    renderWithProviders(<IntegrityPanel routeId={7} />)
+    renderWithProviders(<VerdictCard routeId={7} />)
 
-    expect(await screen.findByText('Adulterada')).toBeVisible()
+    expect(await screen.findByText('Alterada')).toBeVisible()
     expect(screen.getByRole('alert')).toHaveTextContent(
       'Os dados da rota no banco diferem do registro na blockchain.',
     )
+    expect(screen.getByText('Os dois hashes são diferentes.')).toBeVisible()
     expect(screen.getByText(tampered.databaseHash)).toBeVisible()
     expect(screen.getByText('ef'.repeat(32))).toBeVisible()
   })
@@ -97,7 +113,7 @@ describe('IntegrityPanel', () => {
   it('does not raise an alert for a valid route', async () => {
     useIntegrityApi(() => integrityFixture)
 
-    renderWithProviders(<IntegrityPanel routeId={7} />)
+    renderWithProviders(<VerdictCard routeId={7} />)
 
     await screen.findByText('Íntegra')
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
@@ -106,17 +122,18 @@ describe('IntegrityPanel', () => {
   it('waits for the anchoring and then confirms by itself', async () => {
     useIntegrityApi((call) => (call < 3 ? notAnchored : integrityFixture))
 
-    renderWithProviders(<IntegrityPanel routeId={7} />)
+    renderWithProviders(<VerdictCard routeId={7} />)
 
     expect(await screen.findByText('Aguardando registro')).toBeVisible()
     expect(screen.getAllByText('—').length).toBeGreaterThan(0)
+    expect(screen.queryByText(/hashes são/)).not.toBeInTheDocument()
     expect(await screen.findByText('Íntegra')).toBeVisible()
   })
 
   it('gives up polling after the maximum number of attempts', async () => {
     const calls = useIntegrityApi(() => notAnchored)
 
-    renderWithProviders(<IntegrityPanel routeId={7} />)
+    renderWithProviders(<VerdictCard routeId={7} />)
 
     await screen.findByText('Aguardando registro')
     await new Promise((resolve) => setTimeout(resolve, 200))
@@ -129,7 +146,7 @@ describe('IntegrityPanel', () => {
 
   it('checks again on demand and shows the new result', async () => {
     const calls = useIntegrityApi((call) => (call === 1 ? notAnchored : integrityFixture))
-    renderWithProviders(<IntegrityPanel routeId={7} />)
+    renderWithProviders(<VerdictCard routeId={7} />)
     await screen.findByText('Aguardando registro')
 
     await userEvent.click(screen.getByRole('button', { name: 'Verificar novamente' }))
@@ -149,7 +166,7 @@ describe('IntegrityPanel', () => {
         return HttpResponse.json(integrityFixture)
       }),
     )
-    renderWithProviders(<IntegrityPanel routeId={7} />)
+    renderWithProviders(<VerdictCard routeId={7} />)
     await screen.findByText('Íntegra')
 
     await userEvent.click(screen.getByRole('button', { name: 'Verificar novamente' }))
@@ -170,7 +187,7 @@ describe('IntegrityPanel', () => {
           : HttpResponse.json(integrityFixture)
       }),
     )
-    renderWithProviders(<IntegrityPanel routeId={7} />)
+    renderWithProviders(<VerdictCard routeId={7} />)
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'O serviço de auditoria em blockchain está indisponível no momento.',

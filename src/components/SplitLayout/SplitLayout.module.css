@@ -1,0 +1,25 @@
+.split {
+  display: grid;
+  grid-template-columns: minmax(20rem, 26rem) minmax(0, 1fr);
+  gap: var(--space-4);
+  flex: 1;
+  min-height: 0;
+}
+
+.panel {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.map {
+  min-height: 0;
+}
+
+.tabs {
+  flex: 1;
+}
+
+.fill {
+  height: 100%;
+  min-height: 0;
+}

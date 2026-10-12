@@ -1,3 +1,4 @@
+import { ArrowLeft } from 'lucide-react'
 import { Link, useParams } from 'react-router'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import ComparisonView from '@/pages/ComparisonPage/ComparisonView'
@@ -21,10 +22,13 @@ export default function ComparisonPage() {
 
   return (
     <div className={styles.page}>
-      <Link to="/" className={styles.back}>
-        Voltar ao planejamento
-      </Link>
-      <h1>Comparação de rotas</h1>
+      <div className={styles.heading}>
+        <h1>Comparação de rotas</h1>
+        <Link to="/" className={styles.back}>
+          <ArrowLeft size={16} aria-hidden="true" />
+          <span className={styles.backText}>Voltar ao planejamento</span>
+        </Link>
+      </div>
       <ComparisonView emissionId={emission} distanceId={distance} />
     </div>
   )

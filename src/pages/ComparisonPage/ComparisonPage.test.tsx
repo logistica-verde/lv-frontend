@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { delay, http, HttpResponse } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
@@ -23,6 +23,24 @@ const distanceRoute: Route = {
   criterion: 'DISTANCE',
   totalEmissionKg: 8,
   totalDistanceMeters: 1800,
+  segments: [
+    {
+      fromPointId: 10,
+      toPointId: 11,
+      distanceMeters: 900,
+      averageSpeedKmh: 35,
+      slopePercent: 1.5,
+      emissionKg: 3.2,
+    },
+    {
+      fromPointId: 11,
+      toPointId: 12,
+      distanceMeters: 900,
+      averageSpeedKmh: 35,
+      slopePercent: 1.5,
+      emissionKg: 4.8,
+    },
+  ],
   points: [
     { pointId: 10, name: 'A', latitude: -23.55, longitude: -46.63, visitOrder: 1 },
     { pointId: 11, name: 'B', latitude: -23.56, longitude: -46.63, visitOrder: 2 },
@@ -55,75 +73,147 @@ describe('ComparisonPage result', () => {
 
     expect(
       await screen.findByText(
-        'A rota de menor emissão emite 31,25% menos CO₂ que a rota de menor distância.',
+        /A rota de menor emissão emite 31,25% menos CO₂ que a rota de menor distância\. Em troca, a rota de menor emissão percorre 12,36% mais distância\./,
       ),
-    ).toBeVisible()
-    expect(
-      screen.getByText('Em troca, a rota de menor emissão percorre 12,36% mais distância.'),
     ).toBeVisible()
     expect(document.title).toBe('Comparação de rotas · Logística Verde')
   })
 
-  it('tabulates the totals of each route', async () => {
+  it('tabulates the totals of each route with the difference between them', async () => {
     useRoutesApi({ 7: emissionRoute, 8: distanceRoute })
     renderRoutes(routes, '/rotas/7/8')
 
-    const table = await screen.findByRole('table', { name: 'Totais de cada rota' })
+    const table = await screen.findByRole('table', {
+      name: 'Totais de cada rota e diferença entre elas',
+    })
 
-    const emissionRow = within(table).getByRole('row', { name: /Emissão total/ })
-    expect(
-      within(emissionRow)
+    const cellsOf = (row: HTMLElement) =>
+      within(row)
         .getAllByRole('cell')
-        .map((cell) => cell.textContent),
-    ).toEqual(['5,5', '8'])
-    const distanceRow = within(table).getByRole('row', { name: /Distância total/ })
-    expect(
-      within(distanceRow)
-        .getAllByRole('cell')
-        .map((cell) => cell.textContent),
-    ).toEqual(['2,02', '1,8'])
-    const stopsRow = within(table).getByRole('row', { name: /Paradas/ })
-    expect(
-      within(stopsRow)
-        .getAllByRole('cell')
-        .map((cell) => cell.textContent),
-    ).toEqual(['3', '3'])
+        .map((cell) => cell.textContent)
+    expect(cellsOf(within(table).getByRole('row', { name: /Emissão estimada/ }))).toEqual([
+      '5,5',
+      '8',
+      '−31,25%',
+    ])
+    expect(cellsOf(within(table).getByRole('row', { name: /Distância \(km\)/ }))).toEqual([
+      '2,02',
+      '1,8',
+      '+12,36%',
+    ])
+    expect(cellsOf(within(table).getByRole('row', { name: /Paradas/ }))).toEqual(['3', '3', '—'])
   })
 
-  it('shows one map per route with the stops in visit order', async () => {
+  it('shows the integrity seal of each route with its transaction hash and a link to its verification', async () => {
     useRoutesApi({ 7: emissionRoute, 8: distanceRoute })
     renderRoutes(routes, '/rotas/7/8')
 
-    expect(await screen.findByRole('region', { name: 'Mapa da rota: Menor emissão' })).toBeVisible()
-    expect(screen.getByRole('region', { name: 'Mapa da rota: Menor distância' })).toBeVisible()
-    const lists = screen.getAllByRole('list')
+    expect(await screen.findByText('Integridade: menor emissão')).toBeVisible()
+    expect(screen.getByText('Integridade: menor distância')).toBeVisible()
+    await waitFor(() => expect(screen.getAllByText('0xcdcd…cdcd')).toHaveLength(2))
+    expect(screen.getAllByText('Íntegra')).toHaveLength(2)
     expect(
-      within(lists[0]!)
-        .getAllByRole('listitem')
-        .map((item) => item.textContent),
-    ).toEqual(['C', 'A', 'B'])
-    expect(
-      within(lists[1]!)
-        .getAllByRole('listitem')
-        .map((item) => item.textContent),
-    ).toEqual(['A', 'B', 'C'])
+      screen
+        .getAllByRole('link', { name: 'Ver verificação' })
+        .map((link) => link.getAttribute('href')),
+    ).toEqual(['/verificacao/7', '/verificacao/8'])
   })
 
-  it('numbers the markers by visit order', async () => {
+  it('draws both routes on a single map with a legend that does not rely on color', async () => {
     useRoutesApi({ 7: emissionRoute, 8: distanceRoute })
     renderRoutes(routes, '/rotas/7/8')
 
-    const emissionMap = await screen.findByRole('region', { name: 'Mapa da rota: Menor emissão' })
+    expect(
+      await screen.findByRole('region', { name: 'Mapa comparativo das duas rotas' }),
+    ).toBeVisible()
+    const legend = screen.getByRole('list', { name: 'Legenda do mapa' })
+    expect(within(legend).getByText('Menor emissão (linha contínua)')).toBeVisible()
+    expect(within(legend).getByText('Menor distância (linha tracejada)')).toBeVisible()
+  })
 
-    expect(within(emissionMap).getByRole('button', { name: '1. C' })).toBeInTheDocument()
-    expect(within(emissionMap).getByRole('button', { name: '3. B' })).toBeInTheDocument()
+  it('numbers the markers by the emission route and mentions the distance route order', async () => {
+    useRoutesApi({ 7: emissionRoute, 8: distanceRoute })
+    renderRoutes(routes, '/rotas/7/8')
+
+    const map = await screen.findByRole('region', { name: 'Mapa comparativo das duas rotas' })
+
+    expect(within(map).getByRole('button', { name: '1. C (menor distância: 3º)' })).toBeVisible()
+    expect(within(map).getByRole('button', { name: '2. A (menor distância: 1º)' })).toBeVisible()
+    expect(within(map).getByRole('button', { name: '3. B (menor distância: 2º)' })).toBeVisible()
   })
 
   it('warns that the lines are not the street layout', async () => {
     useRoutesApi({ 7: emissionRoute, 8: distanceRoute })
     renderRoutes(routes, '/rotas/7/8')
 
-    expect(await screen.findByText(/não representam o traçado das ruas/)).toBeVisible()
+    expect(await screen.findByText(/Linhas retas, sem o traçado das ruas/)).toBeVisible()
+  })
+
+  it('lists the segments of the emission route first, with units and a total', async () => {
+    useRoutesApi({ 7: emissionRoute, 8: distanceRoute })
+    renderRoutes(routes, '/rotas/7/8')
+
+    const table = await screen.findByRole('table', { name: 'Trechos da rota selecionada' })
+
+    expect(
+      within(table)
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual([
+      'Nº',
+      'Trecho',
+      'Distância (km)',
+      'Velocidade média (km/h)',
+      'Declividade (%)',
+      'Emissão (kg CO₂)',
+    ])
+    const rows = within(table).getAllByRole('row')
+    expect(
+      within(rows[1] as HTMLElement)
+        .getAllByRole('cell')
+        .map((cell) => cell.textContent),
+    ).toEqual(['1', 'C → A', '1,01', '40', '2', '2'])
+    expect(screen.getByText('Total da rota: 2,02 km · 5,5 kg CO₂')).toBeVisible()
+  })
+
+  it('paginates long routes so the table never needs to scroll', async () => {
+    const segments = Array.from({ length: 9 }, (_, index) => ({
+      fromPointId: 10,
+      toPointId: 11,
+      distanceMeters: 1000 + index,
+      averageSpeedKmh: 40,
+      slopePercent: 1,
+      emissionKg: 1,
+    }))
+    useRoutesApi({ 7: { ...emissionRoute, segments }, 8: distanceRoute })
+    renderRoutes(routes, '/rotas/7/8')
+    const table = await screen.findByRole('table', { name: 'Trechos da rota selecionada' })
+
+    expect(within(table).getAllByRole('row')).toHaveLength(8)
+    expect(screen.getByText('Página 1 de 2')).toBeVisible()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Próxima' }))
+
+    expect(within(table).getAllByRole('row')).toHaveLength(3)
+    expect(screen.getByText('Página 2 de 2')).toBeVisible()
+    expect(within(table).getByRole('cell', { name: '8' })).toBeVisible()
+
+    await userEvent.click(screen.getByRole('radio', { name: 'Menor distância' }))
+
+    expect(screen.queryByText(/Página/)).not.toBeInTheDocument()
+  })
+
+  it('switches the segments table to the distance route', async () => {
+    useRoutesApi({ 7: emissionRoute, 8: distanceRoute })
+    renderRoutes(routes, '/rotas/7/8')
+    await screen.findByRole('table', { name: 'Trechos da rota selecionada' })
+
+    await userEvent.click(screen.getByRole('radio', { name: 'Menor distância' }))
+
+    const table = screen.getByRole('table', { name: 'Trechos da rota selecionada' })
+    expect(within(table).getByText('A → B')).toBeVisible()
+    expect(within(table).getByText('B → C')).toBeVisible()
+    expect(within(table).queryByText('C → A')).not.toBeInTheDocument()
   })
 
   it('admits when the distance route is the one that emits less', async () => {
@@ -133,7 +223,7 @@ describe('ComparisonPage result', () => {
 
     expect(
       await screen.findByText(
-        'Neste cenário, a rota de menor distância emite 20% menos CO₂ que a rota de menor emissão.',
+        /Neste cenário, a rota de menor distância emite 20% menos CO₂ que a rota de menor emissão\./,
       ),
     ).toBeVisible()
   })
