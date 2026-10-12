@@ -22,6 +22,8 @@ export const seedVehicles: Vehicle[] = [
   },
 ]
 
+export const MOCK_PASSWORD = 'lv-demo-2026'
+
 export const seedUsers: User[] = [
   {
     id: 1,

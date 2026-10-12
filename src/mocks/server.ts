@@ -14,7 +14,12 @@ const db = createDb({
 seedHistory(db)
 
 const app = createServer(
-  ...createHandlers(db, { latencyMs: 250, completionDelayMs: 2500, anchoringDelayMs: 1500 }),
+  ...createHandlers(db, {
+    latencyMs: 250,
+    completionDelayMs: 2500,
+    anchoringDelayMs: 1500,
+    requireAuth: true,
+  }),
 )
 
 app.listen(PORT, () => {
