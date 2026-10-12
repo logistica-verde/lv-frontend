@@ -1,9 +1,8 @@
-import { Menu, X } from 'lucide-react'
+import { Menu, Route, X } from 'lucide-react'
 import { useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { Link, NavLink, Outlet } from 'react-router'
 import styles from '@/components/AppLayout/AppLayout.module.css'
-import StatusBadge from '@/components/StatusBadge/StatusBadge'
 import { isMockMode } from '@/config/env'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { classNames } from '@/lib/classNames'
@@ -51,6 +50,9 @@ export default function AppLayout() {
       <header className={styles.header} onKeyDown={handleKeyDown}>
         <div className={styles.headerInner}>
           <Link to="/" className={styles.brand}>
+            <span className={styles.brandMark} aria-hidden="true">
+              <Route size={16} />
+            </span>
             Logística Verde
           </Link>
           {isMockMode() && (
@@ -58,7 +60,8 @@ export default function AppLayout() {
               className={styles.mock}
               title="Esta interface usa a API simulada. Os dados não são reais."
             >
-              <StatusBadge tone="warning">Dados simulados</StatusBadge>
+              <span className={styles.mockDot} aria-hidden="true" />
+              Dados simulados
             </span>
           )}
           {isWide ? (
