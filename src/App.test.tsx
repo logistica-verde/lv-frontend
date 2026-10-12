@@ -4,6 +4,7 @@ import { http, HttpResponse } from 'msw'
 import { beforeEach, describe, expect, it } from 'vitest'
 import App from '@/App'
 import { apiUrl } from '@/test/api'
+import { signInAs } from '@/test/session'
 import { server } from '@/test/server'
 
 function renderApp() {
@@ -17,6 +18,7 @@ function renderApp() {
 
 describe('App', () => {
   beforeEach(() => {
+    signInAs('ADMIN')
     server.use(
       http.get(apiUrl('/api/delivery-points'), () => HttpResponse.json([])),
       http.get(apiUrl('/api/vehicles'), () => HttpResponse.json([])),

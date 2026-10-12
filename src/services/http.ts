@@ -1,5 +1,6 @@
 import type { ZodType } from 'zod'
 import { env } from '@/config/env'
+import { clearSession, getSession } from '@/lib/session'
 import { ApiError, NetworkError, ResponseFormatError } from '@/services/errors'
 import { problemDetailSchema } from '@/services/schemas/problemDetail'
 
@@ -7,6 +8,7 @@ type RequestOptions = {
   method?: 'GET' | 'POST' | 'PATCH' | 'PUT'
   body?: object
   signal?: AbortSignal
+  authenticated?: boolean
 }
 
 function buildUrl(path: string): string {
@@ -23,15 +25,21 @@ async function toApiError(response: Response): Promise<ApiError> {
 export async function request<T>(
   path: string,
   schema: ZodType<T>,
-  { method = 'GET', body, signal }: RequestOptions = {},
+  { method = 'GET', body, signal, authenticated = true }: RequestOptions = {},
 ): Promise<T> {
+  const token = authenticated ? getSession()?.token : undefined
+  const headers: Record<string, string> = { Accept: 'application/json' }
+  if (body) {
+    headers['Content-Type'] = 'application/json'
+  }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
   let response: Response
   try {
     response = await fetch(buildUrl(path), {
       method,
-      headers: body
-        ? { Accept: 'application/json', 'Content-Type': 'application/json' }
-        : { Accept: 'application/json' },
+      headers,
       body: body ? JSON.stringify(body) : undefined,
       signal,
     })
@@ -43,6 +51,9 @@ export async function request<T>(
   }
 
   if (!response.ok) {
+    if (response.status === 401 && token) {
+      clearSession()
+    }
     throw await toApiError(response)
   }
 

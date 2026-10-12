@@ -2,6 +2,7 @@ import { delay, http, HttpResponse } from 'msw'
 import { z } from 'zod'
 import type { MockDb } from '@/mocks/db'
 import { seedAddresses } from '@/mocks/addresses'
+import { MOCK_PASSWORD } from '@/mocks/seed'
 import { generateRun } from '@/mocks/experiments'
 import { fakeHash } from '@/mocks/fakeHash'
 import { optimizeFake } from '@/mocks/fakeOptimizer'
@@ -10,7 +11,9 @@ import type { DeliveryPoint } from '@/services/schemas/deliveryPoint'
 import type { IntegrityReport } from '@/services/schemas/integrity'
 import type { OptimizationCriterion, Route } from '@/services/schemas/route'
 import { gaSettingsSchema } from '@/services/schemas/gaSettings'
+import { loginInputSchema } from '@/services/schemas/auth'
 import { userUpdateSchema } from '@/services/schemas/user'
+import type { Role, User } from '@/services/schemas/user'
 import { DEFAULT_VEHICLE_IMAGE, vehicleImageSchema } from '@/services/schemas/vehicle'
 import type { Vehicle } from '@/services/schemas/vehicle'
 
@@ -19,6 +22,7 @@ export type MockOptions = {
   completionDelayMs: number
   anchoringDelayMs: number
   experimentRunDelayMs?: number
+  requireAuth?: boolean
 }
 
 const vehicleRequestSchema = z.object({
@@ -78,6 +82,39 @@ function problem(status: number, detail: string) {
     { type: 'about:blank', title: STATUS_TITLES[status], status, detail },
     { status },
   )
+}
+
+type AccessRule = {
+  method?: string
+  pattern: RegExp
+  roles: Role[]
+}
+
+const ACCESS_RULES: AccessRule[] = [
+  { pattern: /^\/api\/users/, roles: ['ADMIN'] },
+  { pattern: /^\/api\/settings\/ga$/, roles: ['ADMIN'] },
+  { method: 'POST', pattern: /^\/api\/vehicles/, roles: ['ADMIN'] },
+  { method: 'PATCH', pattern: /^\/api\/vehicles/, roles: ['ADMIN'] },
+  { pattern: /^\/api\/routes\/\d+\/integrity$/, roles: ['AUDITOR', 'ADMIN'] },
+  { method: 'POST', pattern: /^\/api\/routes$/, roles: ['OPERATOR', 'ADMIN'] },
+  { method: 'POST', pattern: /^\/api\/delivery-points/, roles: ['OPERATOR', 'ADMIN'] },
+]
+
+const TOKEN_PREFIX = 'Bearer mock-token-'
+
+function authenticate(db: MockDb, request: Request): User | undefined {
+  const header = request.headers.get('Authorization') ?? ''
+  if (!header.startsWith(TOKEN_PREFIX)) {
+    return undefined
+  }
+  const id = Number(header.slice(TOKEN_PREFIX.length))
+  return db.users.find((user) => user.id === id && user.ativo)
+}
+
+function rolesFor(method: string, pathname: string): Role[] | undefined {
+  return ACCESS_RULES.find(
+    (rule) => rule.pattern.test(pathname) && (!rule.method || rule.method === method),
+  )?.roles
 }
 
 function normalizeText(value: string): string {
@@ -188,6 +225,41 @@ function integrityReportOf(db: MockDb, routeId: number): IntegrityReport {
 
 export function createHandlers(db: MockDb, options: MockOptions) {
   return [
+    http.post('*/api/auth/login', async ({ request }) => {
+      await delay(options.latencyMs)
+      const parsed = loginInputSchema.safeParse(await request.json().catch(() => null))
+      if (!parsed.success) {
+        return problem(400, 'Invalid request content.')
+      }
+      const email = parsed.data.email.toLowerCase()
+      const user = db.users.find((candidate) => candidate.email.toLowerCase() === email)
+      if (!user || parsed.data.senha !== MOCK_PASSWORD) {
+        return problem(401, 'Invalid credentials.')
+      }
+      if (!user.ativo) {
+        return problem(403, 'User is inactive.')
+      }
+      return HttpResponse.json({
+        token: `mock-token-${user.id}`,
+        usuario: { id: user.id, nome: user.nome, email: user.email, perfil: user.perfil },
+      })
+    }),
+
+    http.all('*/api/*', ({ request }) => {
+      if (!options.requireAuth) {
+        return undefined
+      }
+      const user = authenticate(db, request)
+      if (!user) {
+        return problem(401, 'Authentication is required.')
+      }
+      const allowed = rolesFor(request.method, new URL(request.url).pathname)
+      if (allowed && !allowed.includes(user.perfil)) {
+        return problem(403, 'Access denied for this profile.')
+      }
+      return undefined
+    }),
+
     http.get('*/api/vehicles', async ({ request }) => {
       await delay(options.latencyMs)
       const includeInactive = new URL(request.url).searchParams.get('includeInactive') === 'true'

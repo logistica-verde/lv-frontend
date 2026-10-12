@@ -64,12 +64,17 @@
 
 .mock {
   display: inline-flex;
-  order: 3;
   align-items: center;
   gap: var(--space-2);
-  margin-left: auto;
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
+}
+
+.end {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-left: auto;
 }
 
 .mockDot {
@@ -140,8 +145,7 @@
   align-self: center;
   width: var(--control-height-touch);
   height: var(--control-height-touch);
-  order: 4;
-  margin-left: var(--space-2);
+  margin-left: auto;
   padding: 0;
   border: 0;
   border-radius: var(--radius-md);
@@ -197,4 +201,10 @@
   max-width: none;
   padding: 0;
   overflow: hidden;
+}
+
+@media (max-width: 63.99rem) {
+  .mock {
+    margin-left: var(--space-3);
+  }
 }
