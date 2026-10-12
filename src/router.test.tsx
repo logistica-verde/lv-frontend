@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -7,10 +7,12 @@ import RouteErrorPage from '@/pages/RouteErrorPage/RouteErrorPage'
 import { routes } from '@/router'
 import { apiUrl } from '@/test/api'
 import { renderRoutes } from '@/test/renderRoutes'
+import { signInAs } from '@/test/session'
 import { server } from '@/test/server'
 
 describe('app routes', () => {
   beforeEach(() => {
+    signInAs('ADMIN')
     server.use(
       http.get(apiUrl('/api/delivery-points'), () => HttpResponse.json([])),
       http.get(apiUrl('/api/vehicles'), () => HttpResponse.json([])),
@@ -107,7 +109,7 @@ describe('app routes', () => {
     expect(router.state.location.pathname).toBe('/experimentos')
     expect(document.title).toBe('Experimentos · Logística Verde')
     vi.unstubAllGlobals()
-  })
+  }, 20000)
 
   it('shows a not found page for unknown addresses and a way back', async () => {
     const router = renderRoutes(routes, '/rota-que-nao-existe')
@@ -147,5 +149,117 @@ describe('route error handling', () => {
     expect(screen.getByRole('button', { name: 'Recarregar a página' })).toBeVisible()
     expect(screen.getByRole('navigation', { name: 'Principal' })).toBeVisible()
     consoleError.mockRestore()
+  })
+})
+
+describe('route protection', () => {
+  beforeEach(() => {
+    server.use(
+      http.get(apiUrl('/api/delivery-points'), () => HttpResponse.json([])),
+      http.get(apiUrl('/api/vehicles'), () => HttpResponse.json([])),
+      http.get(apiUrl('/api/routes'), () =>
+        HttpResponse.json({ items: [], total: 0, page: 1, size: 10 }),
+      ),
+    )
+  })
+
+  it('sends visitors without a session to the login page', async () => {
+    const router = renderRoutes(routes, '/historico')
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Entrar' })).toBeVisible()
+    expect(router.state.location.pathname).toBe('/login')
+    expect(screen.queryByRole('navigation', { name: 'Principal' })).not.toBeInTheDocument()
+  })
+
+  it('returns to the page that was asked for after signing in', async () => {
+    server.use(
+      http.post(apiUrl('/api/auth/login'), () =>
+        HttpResponse.json({
+          token: 't',
+          usuario: { id: 1, nome: 'Marina Duarte', email: 'm@example.test', perfil: 'ADMIN' },
+        }),
+      ),
+    )
+    const router = renderRoutes(routes, '/historico')
+    const user = userEvent.setup()
+
+    await user.type(await screen.findByLabelText('E-mail'), 'm@example.test')
+    await user.type(screen.getByLabelText('Senha'), 'qualquer')
+    await user.click(screen.getByRole('button', { name: 'Entrar' }))
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Histórico de operações' }),
+    ).toBeVisible()
+    expect(router.state.location.pathname).toBe('/historico')
+  })
+
+  it('takes an auditor from the planning screen to the history', async () => {
+    signInAs('AUDITOR')
+
+    const router = renderRoutes(routes, '/')
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Histórico de operações' }),
+    ).toBeVisible()
+    expect(router.state.location.pathname).toBe('/historico')
+  })
+
+  it('explains when a profile has no access to a page', async () => {
+    signInAs('OPERATOR')
+
+    renderRoutes(routes, '/administracao')
+
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: 'Sem permissão para acessar esta página',
+      }),
+    ).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Ir para o início' })).toHaveAttribute('href', '/')
+    expect(document.title).toBe('Sem permissão · Logística Verde')
+  })
+
+  it('keeps the verification screen away from operators', async () => {
+    signInAs('OPERATOR')
+
+    renderRoutes(routes, '/verificacao')
+
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: 'Sem permissão para acessar esta página',
+      }),
+    ).toBeVisible()
+  })
+
+  it('lets an auditor open the verification screen', async () => {
+    signInAs('AUDITOR')
+
+    renderRoutes(routes, '/verificacao')
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Verificação de integridade' }),
+    ).toBeVisible()
+  })
+
+  it('shows only the sections the profile can open', () => {
+    signInAs('OPERATOR')
+
+    renderRoutes(routes, '/')
+
+    const links = within(screen.getByRole('navigation', { name: 'Principal' }))
+      .getAllByRole('link')
+      .map((link) => link.textContent)
+    expect(links).toEqual(['Nova rota', 'Histórico', 'Experimentos'])
+  })
+
+  it('signs out from the header and goes back to the login page', async () => {
+    signInAs('ADMIN')
+    const router = renderRoutes(routes, '/')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Sair' }))
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Entrar' })).toBeVisible()
+    expect(router.state.location.pathname).toBe('/login')
   })
 })

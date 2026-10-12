@@ -3,9 +3,11 @@ import { useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { Link, NavLink, Outlet, useMatches } from 'react-router'
 import { z } from 'zod'
+import AccountBar from '@/components/AppLayout/AccountBar'
 import styles from '@/components/AppLayout/AppLayout.module.css'
 import { isMockMode } from '@/config/env'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useSession } from '@/hooks/useSession'
 import { classNames } from '@/lib/classNames'
 import { navItems } from '@/navigation'
 
@@ -17,6 +19,7 @@ export default function AppLayout() {
   const isWide = useMediaQuery(WIDE_QUERY)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuButton = useRef<HTMLButtonElement>(null)
+  const session = useSession()
   const fullBleed = useMatches().some((match) => fullBleedSchema.safeParse(match.handle).success)
 
   const closeMenu = () => setMenuOpen(false)
@@ -28,9 +31,13 @@ export default function AppLayout() {
     }
   }
 
+  const visibleItems = navItems.filter(
+    (item) => !session || item.roles.includes(session.usuario.perfil),
+  )
+
   const links = (
     <ul className={styles.navList}>
-      {navItems.map((item) => (
+      {visibleItems.map((item) => (
         <li key={item.to}>
           <NavLink
             to={item.to}
@@ -43,6 +50,16 @@ export default function AppLayout() {
         </li>
       ))}
     </ul>
+  )
+
+  const mockNotice = isMockMode() && (
+    <span
+      className={styles.mock}
+      title="Esta interface usa a API simulada. Os dados não são reais."
+    >
+      <span className={styles.mockDot} aria-hidden="true" />
+      Dados simulados
+    </span>
   )
 
   return (
@@ -58,19 +75,17 @@ export default function AppLayout() {
             </span>
             Logística Verde
           </Link>
-          {isMockMode() && (
-            <span
-              className={styles.mock}
-              title="Esta interface usa a API simulada. Os dados não são reais."
-            >
-              <span className={styles.mockDot} aria-hidden="true" />
-              Dados simulados
-            </span>
-          )}
           {isWide ? (
-            <nav aria-label="Principal">{links}</nav>
+            <>
+              <nav aria-label="Principal">{links}</nav>
+              <div className={styles.end}>
+                {mockNotice}
+                {session && <AccountBar session={session} variant="bar" />}
+              </div>
+            </>
           ) : (
             <>
+              {mockNotice}
               <button
                 ref={menuButton}
                 type="button"
@@ -89,6 +104,7 @@ export default function AppLayout() {
               {menuOpen && (
                 <nav id={MENU_ID} aria-label="Principal" className={styles.mobileNav}>
                   {links}
+                  {session && <AccountBar session={session} variant="menu" />}
                 </nav>
               )}
             </>
