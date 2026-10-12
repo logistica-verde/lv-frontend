@@ -26,7 +26,7 @@ describe('App', () => {
   it('opens on the planning page inside the app layout', () => {
     renderApp()
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Planejamento de rotas' })).toBeVisible()
+    expect(screen.getByRole('heading', { level: 1, name: 'Nova rota' })).toBeVisible()
     expect(screen.getByRole('navigation', { name: 'Principal' })).toBeVisible()
   })
 

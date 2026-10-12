@@ -1,253 +1,249 @@
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { delay, http, HttpResponse } from 'msw'
-import { beforeEach, describe, expect, it } from 'vitest'
-import { z } from 'zod'
+import { http, HttpResponse } from 'msw'
+import { MemoryRouter } from 'react-router'
+import { describe, expect, it, vi } from 'vitest'
 import PlanningPage from '@/pages/PlanningPage/PlanningPage'
 import type { DeliveryPoint } from '@/services/schemas/deliveryPoint'
 import { apiUrl } from '@/test/api'
+import { useDeliveryPointsApi, useRoutesApi, useVehiclesApi } from '@/test/fakeApi'
 import { deliveryPointFixture, vehicleFixture } from '@/test/fixtures'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { server } from '@/test/server'
 
-const secondPoint: DeliveryPoint = {
-  ...deliveryPointFixture,
-  id: 11,
-  nome: 'MASP',
-  latitude: -23.56,
+vi.mock('@/config/polling', () => ({
+  ROUTE_POLL_INTERVAL_MS: 20,
+  ANCHOR_POLL_INTERVAL_MS: 20,
+  ANCHOR_MAX_POLLS: 3,
+}))
+
+function point(id: number, nome: string): DeliveryPoint {
+  return { ...deliveryPointFixture, id, nome, latitude: -23.5 - id / 100 }
 }
 
-const postedPointSchema = z.object({
-  nome: z.string(),
-  endereco: z.string().optional(),
-  latitude: z.number(),
-  longitude: z.number(),
-})
+const sé = point(1, 'Praça da Sé')
+const masp = point(2, 'MASP')
+const luz = point(3, 'Estação da Luz')
 
-type FakeApi = {
-  points: DeliveryPoint[]
-  posted: z.infer<typeof postedPointSchema>[]
-}
-
-function useDeliveryPointsApi(initial: DeliveryPoint[]): FakeApi {
-  const api: FakeApi = { points: [...initial], posted: [] }
-  server.use(
-    http.get(apiUrl('/api/delivery-points'), () => HttpResponse.json(api.points)),
-    http.post(apiUrl('/api/delivery-points'), async ({ request }) => {
-      const body = postedPointSchema.parse(await request.json())
-      api.posted.push(body)
-      const created = {
-        ...deliveryPointFixture,
-        ...body,
-        endereco: body.endereco ?? null,
-        id: api.points.length + 100,
-      }
-      api.points.push(created)
-      return HttpResponse.json(created, { status: 201 })
-    }),
+function renderPage() {
+  return renderWithProviders(
+    <MemoryRouter>
+      <PlanningPage />
+    </MemoryRouter>,
   )
-  return api
 }
 
-beforeEach(() => {
-  server.use(http.get(apiUrl('/api/vehicles'), () => HttpResponse.json([vehicleFixture])))
-})
+async function addExisting(user: ReturnType<typeof userEvent.setup>, names: string[]) {
+  await user.click(await screen.findByRole('button', { name: 'Adicionar ponto' }))
+  for (const name of names) {
+    await user.click(await screen.findByRole('checkbox', { name: new RegExp(name) }))
+  }
+  await user.click(screen.getByRole('button', { name: `Adicionar selecionados (${names.length})` }))
+}
 
-describe('PlanningPage points', () => {
-  it('shows the map and a loading state while the points load', async () => {
-    server.use(
-      http.get(apiUrl('/api/delivery-points'), async () => {
-        await delay(30)
-        return HttpResponse.json([deliveryPointFixture])
-      }),
-    )
+function listedNames() {
+  return within(screen.getByRole('list', { name: 'Pontos da rota' }))
+    .getAllByRole('listitem')
+    .map((item) => item.querySelector('[title]')?.textContent)
+}
 
-    renderWithProviders(<PlanningPage />)
+describe('PlanningPage', () => {
+  it('opens as the new route screen with the vehicle, an empty point list and the map', async () => {
+    useVehiclesApi([vehicleFixture])
+    useDeliveryPointsApi([sé, masp])
 
-    expect(screen.getByRole('region', { name: 'Mapa dos pontos de entrega' })).toBeInTheDocument()
-    expect(await screen.findByRole('checkbox', { name: 'Praça da Sé' })).toBeInTheDocument()
+    renderPage()
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Nova rota' })).toBeVisible()
+    expect(document.title).toBe('Nova rota · Logística Verde')
+    expect(await screen.findByRole('combobox', { name: 'Placa' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Nenhum ponto na rota' })).toBeVisible()
+    expect(screen.getByRole('region', { name: 'Mapa dos pontos de entrega' })).toBeVisible()
   })
 
-  it('places a marker and a list entry for every delivery point', async () => {
-    useDeliveryPointsApi([deliveryPointFixture, secondPoint])
+  it('marks every registered point on the map', async () => {
+    useVehiclesApi([vehicleFixture])
+    useDeliveryPointsApi([sé, masp])
 
-    renderWithProviders(<PlanningPage />)
+    renderPage()
 
     expect(await screen.findByRole('button', { name: 'Praça da Sé' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'MASP' })).toBeInTheDocument()
-    expect(screen.getAllByRole('checkbox')).toHaveLength(2)
   })
 
-  it('invites the user to create the first point when there is none', async () => {
-    useDeliveryPointsApi([])
+  it('keeps the calculate button disabled until at least two points are in the route', async () => {
+    useVehiclesApi([vehicleFixture])
+    useDeliveryPointsApi([sé, masp, luz])
+    const user = userEvent.setup()
+    renderPage()
+    expect(await screen.findByRole('button', { name: 'Calcular rotas' })).toBeDisabled()
 
-    renderWithProviders(<PlanningPage />)
+    await addExisting(user, ['Praça da Sé'])
+    expect(screen.getByRole('button', { name: 'Calcular rotas' })).toBeDisabled()
+    expect(screen.getByText('1 ponto selecionado. Selecione pelo menos 2.')).toBeVisible()
 
-    expect(await screen.findByRole('heading', { name: 'Nenhum ponto de entrega' })).toBeVisible()
+    await addExisting(user, ['MASP'])
+    expect(screen.getByRole('button', { name: 'Calcular rotas' })).toBeEnabled()
   })
 
-  it('explains a failure and recovers on retry', async () => {
+  it('adds points from the dialog, confirms and numbers them on the map', async () => {
+    useVehiclesApi([vehicleFixture])
+    useDeliveryPointsApi([sé, masp, luz])
+    const user = userEvent.setup()
+    renderPage()
+
+    await addExisting(user, ['MASP', 'Praça da Sé'])
+
+    expect(await screen.findByText('2 pontos adicionados à rota.')).toBeVisible()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(listedNames()).toEqual(['MASP', 'Praça da Sé'])
+    expect(screen.getByRole('heading', { name: 'Pontos de entrega (2)' })).toBeVisible()
+    expect(screen.getByRole('button', { name: '1. MASP' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '2. Praça da Sé' })).toBeInTheDocument()
+  })
+
+  it('creates a point from coordinates and puts it in the route', async () => {
+    useVehiclesApi([vehicleFixture])
+    const api = useDeliveryPointsApi([sé])
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Adicionar ponto' }))
+    await user.click(screen.getByRole('tab', { name: 'Coordenadas' }))
+    await user.type(screen.getByLabelText('Nome'), 'Vila Mariana')
+    await user.type(screen.getByLabelText('Latitude'), '-23.58')
+    await user.type(screen.getByLabelText('Longitude'), '-46.63')
+    await user.click(screen.getByRole('button', { name: 'Adicionar ponto' }))
+
+    expect(await screen.findByText('Ponto Vila Mariana adicionado à rota.')).toBeVisible()
+    expect(api.posted).toEqual([{ nome: 'Vila Mariana', latitude: -23.58, longitude: -46.63 }])
+    expect(listedNames()).toEqual(['Vila Mariana'])
+  })
+
+  it('reorders the points and sends them in the new order', async () => {
+    useVehiclesApi([vehicleFixture])
+    useDeliveryPointsApi([sé, masp, luz])
+    const routes = useRoutesApi()
+    const user = userEvent.setup()
+    renderPage()
+    await addExisting(user, ['Praça da Sé', 'MASP', 'Estação da Luz'])
+
+    await user.click(screen.getByRole('button', { name: 'Mover Estação da Luz para cima' }))
+    await user.click(screen.getByRole('button', { name: 'Mover Estação da Luz para cima' }))
+    expect(listedNames()).toEqual(['Estação da Luz', 'Praça da Sé', 'MASP'])
+
+    await user.click(screen.getByRole('button', { name: 'Calcular rotas' }))
+
+    await waitFor(() => expect(routes.requests).toHaveLength(2))
+    expect(routes.requests.map((request) => request.deliveryPointIds)).toEqual([
+      [3, 1, 2],
+      [3, 1, 2],
+    ])
+  })
+
+  it('removes a point from the route without deleting it', async () => {
+    useVehiclesApi([vehicleFixture])
+    useDeliveryPointsApi([sé, masp])
+    const user = userEvent.setup()
+    renderPage()
+    await addExisting(user, ['Praça da Sé', 'MASP'])
+
+    await user.click(screen.getByRole('button', { name: 'Remover Praça da Sé' }))
+
+    expect(listedNames()).toEqual(['MASP'])
+    expect(screen.getByRole('button', { name: 'Praça da Sé' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Adicionar ponto' }))
+    expect(await screen.findByRole('checkbox', { name: /Praça da Sé/ })).toBeVisible()
+  })
+
+  it('requests both criteria for the chosen vehicle and shows the progress with the elapsed time', async () => {
+    useVehiclesApi([vehicleFixture])
+    useDeliveryPointsApi([sé, masp])
+    const routes = useRoutesApi({ pendingPolls: 100 })
+    const user = userEvent.setup()
+    renderPage()
+    await addExisting(user, ['Praça da Sé', 'MASP'])
+
+    await user.click(screen.getByRole('button', { name: 'Calcular rotas' }))
+
+    await waitFor(() => expect(routes.requests).toHaveLength(2))
+    expect(routes.requests).toEqual(
+      expect.arrayContaining([
+        { vehicleId: 1, deliveryPointIds: [1, 2], criterion: 'EMISSION' },
+        { vehicleId: 1, deliveryPointIds: [1, 2], criterion: 'DISTANCE' },
+      ]),
+    )
+    const status = await screen.findByRole('status', { name: 'Andamento do cálculo' })
+    expect(status).toHaveTextContent('Tempo decorrido')
+  })
+
+  it('lets the user keep working while the routes are being calculated', async () => {
+    useVehiclesApi([vehicleFixture])
+    useDeliveryPointsApi([sé, masp, luz])
+    useRoutesApi({ pendingPolls: 100 })
+    const user = userEvent.setup()
+    renderPage()
+    await addExisting(user, ['Praça da Sé', 'MASP'])
+    await user.click(screen.getByRole('button', { name: 'Calcular rotas' }))
+    await screen.findByRole('status', { name: 'Andamento do cálculo' })
+
+    await user.click(screen.getByRole('button', { name: 'Remover MASP' }))
+
+    expect(listedNames()).toEqual(['Praça da Sé'])
+    expect(screen.getByRole('status', { name: 'Andamento do cálculo' })).toBeVisible()
+  })
+
+  it('finishes with a link to the comparison', async () => {
+    useVehiclesApi([vehicleFixture])
+    useDeliveryPointsApi([sé, masp])
+    useRoutesApi()
+    const user = userEvent.setup()
+    renderPage()
+    await addExisting(user, ['Praça da Sé', 'MASP'])
+
+    await user.click(screen.getByRole('button', { name: 'Calcular rotas' }))
+
+    expect(await screen.findByRole('link', { name: 'Ver comparação das rotas' })).toHaveAttribute(
+      'href',
+      '/rotas/501/502',
+    )
+  })
+
+  it('shows the API message when the calculation is refused', async () => {
+    useVehiclesApi([vehicleFixture])
+    useDeliveryPointsApi([sé, masp])
+    server.use(
+      http.post(apiUrl('/api/routes/calculate'), () =>
+        HttpResponse.json({ status: 400, detail: 'Veículo inexistente.' }, { status: 400 }),
+      ),
+    )
+    const user = userEvent.setup()
+    renderPage()
+    await addExisting(user, ['Praça da Sé', 'MASP'])
+
+    await user.click(screen.getByRole('button', { name: 'Calcular rotas' }))
+
+    expect(await screen.findByText('Veículo inexistente.')).toBeVisible()
+    expect(screen.queryByRole('status', { name: 'Andamento do cálculo' })).not.toBeInTheDocument()
+  })
+
+  it('explains a failure to load the points and recovers on retry', async () => {
+    useVehiclesApi([vehicleFixture])
     let calls = 0
     server.use(
       http.get(apiUrl('/api/delivery-points'), () => {
         calls += 1
         return calls === 1
           ? HttpResponse.json({ status: 500, detail: 'boom' }, { status: 500 })
-          : HttpResponse.json([deliveryPointFixture])
+          : HttpResponse.json([sé])
       }),
     )
-    renderWithProviders(<PlanningPage />)
+    renderPage()
 
     expect(await screen.findByRole('alert')).toHaveTextContent('erro interno')
 
     await userEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }))
 
     expect(await screen.findByRole('button', { name: 'Praça da Sé' })).toBeInTheDocument()
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
-  })
-})
-
-describe('PlanningPage selection', () => {
-  it('explains the limits before anything is selected', async () => {
-    useDeliveryPointsApi([deliveryPointFixture, secondPoint])
-
-    renderWithProviders(<PlanningPage />)
-
-    expect(
-      await screen.findByText('Selecione de 2 a 30 pontos para calcular a rota.'),
-    ).toBeVisible()
-  })
-
-  it('selects points from the list and updates the count and the markers', async () => {
-    useDeliveryPointsApi([deliveryPointFixture, secondPoint])
-    renderWithProviders(<PlanningPage />)
-    const user = userEvent.setup()
-
-    await user.click(await screen.findByRole('checkbox', { name: 'Praça da Sé' }))
-
-    expect(screen.getByText('1 ponto selecionado. Selecione pelo menos 2.')).toBeVisible()
-    expect(screen.getByRole('button', { name: 'Praça da Sé' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    )
-    expect(screen.getByRole('button', { name: 'MASP' })).toHaveAttribute('aria-pressed', 'false')
-
-    await user.click(screen.getByRole('checkbox', { name: 'MASP' }))
-
-    expect(screen.getByText('2 pontos selecionados.')).toBeVisible()
-    expect(screen.getByRole('button', { name: 'MASP' })).toHaveAttribute('aria-pressed', 'true')
-
-    await user.click(screen.getByRole('checkbox', { name: 'MASP' }))
-
-    expect(screen.getByText('1 ponto selecionado. Selecione pelo menos 2.')).toBeVisible()
-    expect(screen.getByRole('button', { name: 'MASP' })).toHaveAttribute('aria-pressed', 'false')
-  })
-
-  it('blocks new selections once the maximum is reached', async () => {
-    const many = Array.from({ length: 31 }, (_, index) => ({
-      ...deliveryPointFixture,
-      id: index + 1,
-      nome: `Ponto ${index + 1}`,
-      latitude: -23.5 - index / 1000,
-    }))
-    useDeliveryPointsApi(many)
-    renderWithProviders(<PlanningPage />)
-    const user = userEvent.setup()
-    await screen.findByRole('checkbox', { name: 'Ponto 1' })
-
-    for (let index = 1; index <= 30; index += 1) {
-      await user.click(screen.getByRole('checkbox', { name: `Ponto ${index}` }))
-    }
-
-    expect(screen.getByText('30 pontos selecionados. Limite máximo atingido.')).toBeVisible()
-    expect(screen.getByRole('checkbox', { name: 'Ponto 31' })).toBeDisabled()
-    expect(screen.getByRole('checkbox', { name: 'Ponto 1' })).toBeEnabled()
-  }, 20000)
-})
-
-describe('PlanningPage new point form', () => {
-  it('asks for the name and coordinates and sends nothing when empty', async () => {
-    const api = useDeliveryPointsApi([deliveryPointFixture])
-    renderWithProviders(<PlanningPage />)
-    await screen.findByRole('checkbox', { name: 'Praça da Sé' })
-
-    await userEvent.click(screen.getByRole('button', { name: 'Cadastrar ponto' }))
-
-    expect(await screen.findByText('Informe o nome')).toBeVisible()
-    expect(screen.getByText('Informe a latitude')).toBeVisible()
-    expect(screen.getByText('Informe a longitude')).toBeVisible()
-    expect(api.posted).toHaveLength(0)
-  })
-
-  it('rejects coordinates outside the valid range', async () => {
-    const api = useDeliveryPointsApi([deliveryPointFixture])
-    renderWithProviders(<PlanningPage />)
-    await screen.findByRole('checkbox', { name: 'Praça da Sé' })
-    const user = userEvent.setup()
-
-    await user.type(screen.getByLabelText('Nome'), 'Longe')
-    await user.type(screen.getByLabelText('Latitude'), '95')
-    await user.type(screen.getByLabelText('Longitude'), '-200')
-    await user.click(screen.getByRole('button', { name: 'Cadastrar ponto' }))
-
-    expect(await screen.findByText('Latitude máxima: 90')).toBeVisible()
-    expect(screen.getByText('Longitude mínima: -180')).toBeVisible()
-    expect(api.posted).toHaveLength(0)
-  })
-
-  it('registers a point, confirms, selects it and clears the form', async () => {
-    const api = useDeliveryPointsApi([deliveryPointFixture])
-    renderWithProviders(<PlanningPage />)
-    await screen.findByRole('checkbox', { name: 'Praça da Sé' })
-    const user = userEvent.setup()
-
-    await user.type(screen.getByLabelText('Nome'), '  Parque Ibirapuera  ')
-    await user.type(screen.getByLabelText('Latitude'), '-23.5874')
-    await user.type(screen.getByLabelText('Longitude'), '-46.6576')
-    await user.click(screen.getByRole('button', { name: 'Cadastrar ponto' }))
-
-    expect(await screen.findByText('Ponto Parque Ibirapuera cadastrado.')).toBeVisible()
-    expect(api.posted).toEqual([
-      { nome: 'Parque Ibirapuera', latitude: -23.5874, longitude: -46.6576 },
-    ])
-    expect(await screen.findByRole('checkbox', { name: 'Parque Ibirapuera' })).toBeChecked()
-    expect(screen.getByLabelText('Nome')).toHaveValue('')
-    expect(screen.getByLabelText('Latitude')).toHaveValue(null)
-  })
-
-  it('shows a preview marker while valid coordinates are typed', async () => {
-    useDeliveryPointsApi([deliveryPointFixture])
-    renderWithProviders(<PlanningPage />)
-    await screen.findByRole('checkbox', { name: 'Praça da Sé' })
-    const user = userEvent.setup()
-
-    expect(screen.queryByRole('button', { name: 'Novo ponto' })).not.toBeInTheDocument()
-
-    await user.type(screen.getByLabelText('Latitude'), '-23.58')
-    await user.type(screen.getByLabelText('Longitude'), '-46.65')
-
-    expect(await screen.findByRole('button', { name: 'Novo ponto' })).toBeInTheDocument()
-  })
-
-  it('keeps what was typed and shows the API message when registering fails', async () => {
-    server.use(
-      http.get(apiUrl('/api/delivery-points'), () => HttpResponse.json([deliveryPointFixture])),
-      http.post(apiUrl('/api/delivery-points'), () =>
-        HttpResponse.json({ status: 400, detail: 'Invalid request content.' }, { status: 400 }),
-      ),
-    )
-    renderWithProviders(<PlanningPage />)
-    await screen.findByRole('checkbox', { name: 'Praça da Sé' })
-    const user = userEvent.setup()
-
-    await user.type(screen.getByLabelText('Nome'), 'Teste')
-    await user.type(screen.getByLabelText('Latitude'), '-23.5')
-    await user.type(screen.getByLabelText('Longitude'), '-46.6')
-    await user.click(screen.getByRole('button', { name: 'Cadastrar ponto' }))
-
-    expect(await screen.findByText('Invalid request content.')).toBeVisible()
-    expect(screen.getByLabelText('Nome')).toHaveValue('Teste')
-    const list = screen.getByRole('list')
-    expect(within(list).getAllByRole('checkbox')).toHaveLength(1)
   })
 })

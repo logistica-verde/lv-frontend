@@ -49,6 +49,11 @@
   color: var(--color-text);
 }
 
+.mock {
+  display: inline-flex;
+  align-items: center;
+}
+
 .navList {
   display: flex;
   flex-wrap: wrap;

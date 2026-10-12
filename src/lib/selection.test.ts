@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   describeSelection,
+  addToSelection,
   isSelectionReady,
   MAX_SELECTED_POINTS,
+  moveSelection,
   toggleSelection,
 } from '@/lib/selection'
 
@@ -61,5 +63,44 @@ describe('describeSelection', () => {
 
   it('warns when the maximum is reached', () => {
     expect(describeSelection(30)).toBe('30 pontos selecionados. Limite máximo atingido.')
+  })
+})
+
+describe('moveSelection', () => {
+  it('moves a point one place up or down', () => {
+    expect(moveSelection([1, 2, 3], 2, -1)).toEqual([2, 1, 3])
+    expect(moveSelection([1, 2, 3], 2, 1)).toEqual([1, 3, 2])
+  })
+
+  it('does not move the first point up or the last point down', () => {
+    expect(moveSelection([1, 2, 3], 1, -1)).toEqual([1, 2, 3])
+    expect(moveSelection([1, 2, 3], 3, 1)).toEqual([1, 2, 3])
+  })
+
+  it('ignores a point that is not in the list', () => {
+    expect(moveSelection([1, 2, 3], 9, 1)).toEqual([1, 2, 3])
+  })
+
+  it('does not change the original list', () => {
+    const original = [1, 2, 3]
+
+    moveSelection(original, 1, 1)
+
+    expect(original).toEqual([1, 2, 3])
+  })
+})
+
+describe('addToSelection', () => {
+  it('appends new points in the given order', () => {
+    expect(addToSelection([1], [5, 3])).toEqual([1, 5, 3])
+  })
+
+  it('skips points that are already selected', () => {
+    expect(addToSelection([1, 2], [2, 3])).toEqual([1, 2, 3])
+  })
+
+  it('never goes past the maximum', () => {
+    expect(addToSelection(manyIds, [999])).toEqual(manyIds)
+    expect(addToSelection(manyIds.slice(0, 29), [100, 101])).toHaveLength(MAX_SELECTED_POINTS)
   })
 })
