@@ -230,7 +230,7 @@ describe('mock integrity', () => {
 
 describe('mock geocoder', () => {
   async function geocode(query: string) {
-    const response = await fetch(apiUrl(`/geocode?q=${encodeURIComponent(query)}`))
+    const response = await fetch(apiUrl(`/api/geocode?q=${encodeURIComponent(query)}`))
     return { status: response.status, body: await response.json() }
   }
 
@@ -252,10 +252,14 @@ describe('mock geocoder', () => {
     expect((await geocode('paulista 9999')).body).toEqual([])
   })
 
-  it('answers with an empty list for an empty query', async () => {
+  it('refuses a query with fewer than three characters, like the API', async () => {
     useMockApi()
 
-    expect((await geocode('   ')).body).toEqual([])
+    for (const query of ['', '   ', 'ab', ' a ']) {
+      const { status, body } = await geocode(query)
+      expect(status).toBe(400)
+      expect(body.detail).toBe('q must have at least 3 characters')
+    }
   })
 
   it('returns at most five matches', async () => {

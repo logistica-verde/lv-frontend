@@ -6,6 +6,7 @@ import { setSession } from '@/lib/session'
 import { login } from '@/services/authService'
 import { getGaSettings } from '@/services/gaSettingsService'
 import { getIntegrity } from '@/services/integrityService'
+import { calculateRoute } from '@/services/routeService'
 import { listUsers } from '@/services/userService'
 import { createVehicle, listVehicles } from '@/services/vehicleService'
 import { apiUrl } from '@/test/api'
@@ -160,6 +161,17 @@ describe('mock access control', () => {
 
     signInSeeded('AUDITOR')
     await expect(getIntegrity(1)).rejects.toMatchObject({ status: 404 })
+  })
+
+  it('keeps the route calculation to operators and administrators', async () => {
+    useMockApi(true)
+    const input = { vehicleId: 1, deliveryPointIds: [1, 2], criterion: 'EMISSION' as const }
+
+    signInSeeded('AUDITOR')
+    await expect(calculateRoute(input)).rejects.toMatchObject({ status: 403 })
+
+    signInSeeded('OPERATOR')
+    expect((await calculateRoute(input)).status).toBe('PENDING')
   })
 
   it('lets an administrator do the administration', async () => {

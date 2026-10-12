@@ -2,7 +2,6 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
-import { env } from '@/config/env'
 import AddPointDialog from '@/pages/PlanningPage/AddPoint/AddPointDialog'
 import type { AddPointTab } from '@/pages/PlanningPage/AddPoint/AddPointDialog'
 import type { DeliveryPoint } from '@/services/schemas/deliveryPoint'
@@ -142,7 +141,7 @@ describe('registered points tab', () => {
 })
 
 describe('address tab', () => {
-  const GEOCODER = env.geocoderUrl
+  const GEOCODER = apiUrl('/api/geocode')
   const result = {
     display_name: 'Avenida Paulista, 1578, Bela Vista, São Paulo, SP, Brasil',
     lat: '-23.5614',
@@ -197,6 +196,45 @@ describe('address tab', () => {
     await user.clear(screen.getByLabelText('Nome do ponto'))
 
     expect(screen.getByRole('button', { name: 'Adicionar ponto' })).toBeDisabled()
+  })
+
+  it('asks for at least three characters instead of searching', async () => {
+    let calls = 0
+    server.use(
+      http.get(GEOCODER, () => {
+        calls += 1
+        return HttpResponse.json([])
+      }),
+    )
+    renderDialog({ initialTab: 'address' })
+    const user = userEvent.setup()
+
+    await search(user, 'ab')
+
+    expect(await screen.findByText('Digite ao menos 3 caracteres do endereço.')).toBeVisible()
+    expect(calls).toBe(0)
+
+    await user.type(screen.getByRole('textbox', { name: 'Endereço' }), 'c')
+
+    expect(screen.queryByText('Digite ao menos 3 caracteres do endereço.')).not.toBeInTheDocument()
+  })
+
+  it('tells when the address search service is unavailable', async () => {
+    server.use(
+      http.get(GEOCODER, () =>
+        HttpResponse.json(
+          { status: 503, detail: 'The address search service is unavailable.' },
+          { status: 503 },
+        ),
+      ),
+    )
+    renderDialog({ initialTab: 'address' })
+
+    await search(userEvent.setup(), 'Avenida Paulista')
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'O serviço de busca de endereços está indisponível no momento.',
+    )
   })
 
   it('tells when nothing was found and suggests the coordinates', async () => {

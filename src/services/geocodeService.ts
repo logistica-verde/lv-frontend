@@ -1,8 +1,6 @@
 import { z } from 'zod'
-import { env } from '@/config/env'
-import { ApiError, NetworkError, ResponseFormatError } from '@/services/errors'
-
-const MAX_RESULTS = 5
+import { AddressSearchUnavailableError, ApiError } from '@/services/errors'
+import { request } from '@/services/http'
 
 const searchResponseSchema = z.array(
   z.object({
@@ -19,31 +17,18 @@ export type AddressMatch = {
 }
 
 export async function searchAddress(query: string, signal?: AbortSignal): Promise<AddressMatch[]> {
-  const url = new URL(env.geocoderUrl, window.location.origin)
-  url.searchParams.set('q', query)
-  url.searchParams.set('format', 'jsonv2')
-  url.searchParams.set('limit', String(MAX_RESULTS))
-  url.searchParams.set('countrycodes', 'br')
-  url.searchParams.set('accept-language', 'pt-BR')
-
-  let response: Response
+  let matches: z.infer<typeof searchResponseSchema>
   try {
-    response = await fetch(url, { headers: { Accept: 'application/json' }, signal })
+    matches = await request(`/api/geocode?q=${encodeURIComponent(query)}`, searchResponseSchema, {
+      signal,
+    })
   } catch (error) {
-    if (signal?.aborted) {
-      throw error
+    if (error instanceof ApiError && error.status === 503) {
+      throw new AddressSearchUnavailableError()
     }
-    throw new NetworkError()
+    throw error
   }
-  if (!response.ok) {
-    throw new ApiError(response.status, response.statusText)
-  }
-
-  const parsed = searchResponseSchema.safeParse(await response.json().catch(() => null))
-  if (!parsed.success) {
-    throw new ResponseFormatError(url.pathname)
-  }
-  return parsed.data
+  return matches
     .map((item) => ({
       label: item.display_name,
       latitude: Number(item.lat),

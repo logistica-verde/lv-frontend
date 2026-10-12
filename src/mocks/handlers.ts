@@ -96,7 +96,7 @@ const ACCESS_RULES: AccessRule[] = [
   { method: 'POST', pattern: /^\/api\/vehicles/, roles: ['ADMIN'] },
   { method: 'PATCH', pattern: /^\/api\/vehicles/, roles: ['ADMIN'] },
   { pattern: /^\/api\/routes\/\d+\/integrity$/, roles: ['AUDITOR', 'ADMIN'] },
-  { method: 'POST', pattern: /^\/api\/routes$/, roles: ['OPERATOR', 'ADMIN'] },
+  { method: 'POST', pattern: /^\/api\/routes\/calculate$/, roles: ['OPERATOR', 'ADMIN'] },
   { method: 'POST', pattern: /^\/api\/delivery-points/, roles: ['OPERATOR', 'ADMIN'] },
 ]
 
@@ -498,13 +498,13 @@ export function createHandlers(db: MockDb, options: MockOptions) {
       return latest ? HttpResponse.json(latest) : problem(404, 'No experiment has been run yet.')
     }),
 
-    http.get('*/geocode', async ({ request }) => {
+    http.get('*/api/geocode', async ({ request }) => {
       await delay(options.latencyMs)
       const query = new URL(request.url).searchParams.get('q') ?? ''
-      const tokens = normalizeText(query).split(/\s+/).filter(Boolean)
-      if (tokens.length === 0) {
-        return HttpResponse.json([])
+      if (query.trim().length < 3) {
+        return problem(400, 'q must have at least 3 characters')
       }
+      const tokens = normalizeText(query).split(/\s+/).filter(Boolean)
       const matches = seedAddresses
         .filter((address) => {
           const text = normalizeText(address.displayName)

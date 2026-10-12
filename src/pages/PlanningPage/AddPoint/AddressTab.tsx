@@ -15,6 +15,8 @@ type AddressTabProps = {
   onAdded: (points: DeliveryPoint[]) => void
 }
 
+const MIN_QUERY_LENGTH = 3
+
 function suggestName(label: string): string {
   return label.split(',')[0]?.trim() ?? label
 }
@@ -24,6 +26,7 @@ export default function AddressTab({ onAdded }: AddressTabProps) {
   const createPoints = useCreateDeliveryPoints()
   const { notify } = useToast()
   const [query, setQuery] = useState('')
+  const [tooShort, setTooShort] = useState(false)
   const [chosen, setChosen] = useState<number | null>(null)
   const [name, setName] = useState('')
 
@@ -33,9 +36,11 @@ export default function AddressTab({ onAdded }: AddressTabProps) {
   const runSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const trimmed = query.trim()
-    if (trimmed === '') {
+    if (trimmed.length < MIN_QUERY_LENGTH) {
+      setTooShort(true)
       return
     }
+    setTooShort(false)
     setChosen(null)
     setName('')
     search.mutate(trimmed)
@@ -77,13 +82,21 @@ export default function AddressTab({ onAdded }: AddressTabProps) {
             autoComplete="off"
             hint="Ex.: Avenida Paulista, 1578"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setQuery(event.target.value)
+              setTooShort(false)
+            }}
           />
         </div>
         <Button type="submit" variant="secondary" loading={search.isPending}>
           Buscar endereço
         </Button>
       </form>
+      {tooShort && (
+        <p role="alert" className={styles.errors}>
+          Digite ao menos {MIN_QUERY_LENGTH} caracteres do endereço.
+        </p>
+      )}
       {search.isError && (
         <p role="alert" className={styles.errors}>
           {describeError(search.error)} Tente de novo ou use as coordenadas.
