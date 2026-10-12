@@ -6,6 +6,14 @@ export function listVehicles(signal?: AbortSignal): Promise<Vehicle[]> {
   return request('/api/vehicles', vehicleListSchema, { signal })
 }
 
+export function listAllVehicles(signal?: AbortSignal): Promise<Vehicle[]> {
+  return request('/api/vehicles?includeInactive=true', vehicleListSchema, { signal })
+}
+
 export function createVehicle(input: VehicleInput): Promise<Vehicle> {
   return request('/api/vehicles', vehicleSchema, { method: 'POST', body: input })
+}
+
+export function setVehicleActive(id: number, ativo: boolean): Promise<Vehicle> {
+  return request(`/api/vehicles/${id}`, vehicleSchema, { method: 'PATCH', body: { ativo } })
 }

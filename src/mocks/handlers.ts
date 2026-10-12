@@ -9,6 +9,8 @@ import type { FakePoint } from '@/mocks/fakeOptimizer'
 import type { DeliveryPoint } from '@/services/schemas/deliveryPoint'
 import type { IntegrityReport } from '@/services/schemas/integrity'
 import type { OptimizationCriterion, Route } from '@/services/schemas/route'
+import { gaSettingsSchema } from '@/services/schemas/gaSettings'
+import { userUpdateSchema } from '@/services/schemas/user'
 import type { Vehicle } from '@/services/schemas/vehicle'
 
 export type MockOptions = {
@@ -23,6 +25,8 @@ const vehicleRequestSchema = z.object({
   massaKg: z.number().positive(),
   tipoCombustivel: z.string().trim().min(1),
 })
+
+const vehicleStatusRequestSchema = z.object({ ativo: z.boolean() })
 
 const deliveryPointRequestSchema = z.object({
   nome: z.string().trim().min(1),
@@ -182,9 +186,69 @@ function integrityReportOf(db: MockDb, routeId: number): IntegrityReport {
 
 export function createHandlers(db: MockDb, options: MockOptions) {
   return [
-    http.get('*/api/vehicles', async () => {
+    http.get('*/api/vehicles', async ({ request }) => {
       await delay(options.latencyMs)
-      return HttpResponse.json(db.vehicles.filter((vehicle) => vehicle.ativo))
+      const includeInactive = new URL(request.url).searchParams.get('includeInactive') === 'true'
+      return HttpResponse.json(
+        includeInactive ? db.vehicles : db.vehicles.filter((vehicle) => vehicle.ativo),
+      )
+    }),
+
+    http.patch('*/api/vehicles/:id', async ({ params, request }) => {
+      await delay(options.latencyMs)
+      const parsed = vehicleStatusRequestSchema.safeParse(await request.json().catch(() => null))
+      if (!parsed.success) {
+        return problem(400, 'Invalid request content.')
+      }
+      const vehicle = db.vehicles.find((candidate) => candidate.id === Number(params['id']))
+      if (!vehicle) {
+        return problem(404, `Vehicle ${String(params['id'])} not found`)
+      }
+      vehicle.ativo = parsed.data.ativo
+      return HttpResponse.json(vehicle)
+    }),
+
+    http.get('*/api/users', async () => {
+      await delay(options.latencyMs)
+      return HttpResponse.json(db.users)
+    }),
+
+    http.patch('*/api/users/:id', async ({ params, request }) => {
+      await delay(options.latencyMs)
+      const parsed = userUpdateSchema.safeParse(await request.json().catch(() => null))
+      if (!parsed.success) {
+        return problem(400, 'Invalid request content.')
+      }
+      const user = db.users.find((candidate) => candidate.id === Number(params['id']))
+      if (!user) {
+        return problem(404, `User ${String(params['id'])} not found`)
+      }
+      const next = { ...user, ...parsed.data }
+      const otherAdmins = db.users.filter(
+        (candidate) => candidate.id !== user.id && candidate.perfil === 'ADMIN' && candidate.ativo,
+      )
+      const losesAdmin =
+        user.perfil === 'ADMIN' && user.ativo && !(next.perfil === 'ADMIN' && next.ativo)
+      if (losesAdmin && otherAdmins.length === 0) {
+        return problem(409, 'The last active administrator cannot be demoted or deactivated.')
+      }
+      Object.assign(user, next)
+      return HttpResponse.json(user)
+    }),
+
+    http.get('*/api/settings/ga', async () => {
+      await delay(options.latencyMs)
+      return HttpResponse.json(db.gaSettings)
+    }),
+
+    http.put('*/api/settings/ga', async ({ request }) => {
+      await delay(options.latencyMs)
+      const parsed = gaSettingsSchema.safeParse(await request.json().catch(() => null))
+      if (!parsed.success) {
+        return problem(400, 'Invalid request content.')
+      }
+      db.gaSettings = parsed.data
+      return HttpResponse.json(db.gaSettings)
     }),
 
     http.post('*/api/vehicles', async ({ request }) => {

@@ -1,16 +1,19 @@
 import type { ComponentProps } from 'react'
 import { useId } from 'react'
+import VisuallyHidden from '@/components/VisuallyHidden/VisuallyHidden'
 import styles from '@/components/SelectField/SelectField.module.css'
 import { classNames } from '@/lib/classNames'
 
 type SelectFieldProps = Omit<ComponentProps<'select'>, 'id'> & {
   label: string
+  hideLabel?: boolean
   hint?: string
   error?: string
 }
 
 export default function SelectField({
   label,
+  hideLabel = false,
   hint,
   error,
   className,
@@ -24,8 +27,8 @@ export default function SelectField({
 
   return (
     <div className={styles.field}>
-      <label htmlFor={id} className={styles.label}>
-        {label}
+      <label htmlFor={id} className={hideLabel ? undefined : styles.label}>
+        {hideLabel ? <VisuallyHidden>{label}</VisuallyHidden> : label}
       </label>
       <select
         id={id}

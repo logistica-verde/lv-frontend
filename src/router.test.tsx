@@ -48,16 +48,26 @@ describe('app routes', () => {
     expect(screen.getByRole('main')).toHaveAttribute('id', 'conteudo')
   })
 
-  it('opens the vehicles page from the navigation', async () => {
+  it('opens the administration page from the navigation', async () => {
     server.use(http.get(apiUrl('/api/vehicles'), () => HttpResponse.json([])))
     const router = renderRoutes(routes, '/')
 
-    await userEvent.click(screen.getByRole('link', { name: 'Veículos' }))
+    await userEvent.click(screen.getByRole('link', { name: 'Administração' }))
 
-    expect(router.state.location.pathname).toBe('/veiculos')
-    expect(screen.getByRole('heading', { level: 1, name: 'Veículos' })).toBeVisible()
-    expect(screen.getByRole('link', { name: 'Veículos' })).toHaveAttribute('aria-current', 'page')
-    expect(document.title).toBe('Veículos · Logística Verde')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Administração' })).toBeVisible()
+    expect(router.state.location.pathname).toBe('/administracao')
+    expect(screen.getByRole('link', { name: 'Administração' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    expect(document.title).toBe('Administração · Logística Verde')
+  })
+
+  it('keeps the old vehicles address working by redirecting to the administration', async () => {
+    const router = renderRoutes(routes, '/veiculos')
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Administração' })).toBeVisible()
+    expect(router.state.location.pathname).toBe('/administracao')
   })
 
   it('opens the history page from the navigation', async () => {

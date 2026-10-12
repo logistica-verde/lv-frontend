@@ -32,7 +32,7 @@ describe('mock vehicles', () => {
   it('lists the seeded vehicles', async () => {
     useMockApi()
 
-    expect(await listVehicles()).toEqual(seedVehicles)
+    expect(await listVehicles()).toEqual(seedVehicles.filter((vehicle) => vehicle.ativo))
   })
 
   it('creates a vehicle that then shows up in the list', async () => {
