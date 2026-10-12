@@ -1,0 +1,45 @@
+.image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.body {
+  fill: var(--color-primary);
+}
+
+.glass {
+  fill: var(--color-surface);
+}
+
+.bed {
+  fill: var(--color-primary-bg);
+  stroke: var(--color-primary);
+  stroke-width: 2;
+}
+
+.chassis {
+  fill: var(--color-text);
+}
+
+.tire {
+  fill: var(--color-text);
+}
+
+.hub {
+  fill: var(--color-surface);
+}
+
+.rim {
+  fill: none;
+  stroke: var(--color-text);
+  stroke-width: 4;
+}
+
+.frame {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 4;
+}

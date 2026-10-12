@@ -3,6 +3,7 @@ import Card from '@/components/Card/Card'
 import ErrorMessage from '@/components/ErrorMessage/ErrorMessage'
 import SelectField from '@/components/SelectField/SelectField'
 import Skeleton from '@/components/Skeleton/Skeleton'
+import VehicleImage from '@/components/VehicleImage/VehicleImage'
 import VisuallyHidden from '@/components/VisuallyHidden/VisuallyHidden'
 import type { useVehicles } from '@/hooks/useVehicles'
 import { formatNumber } from '@/lib/format'
@@ -35,29 +36,32 @@ export default function VehicleCard({ query, active, selected, onChange }: Vehic
         </p>
       )}
       {query.isSuccess && selected && (
-        <>
-          <SelectField
-            label="Placa"
-            value={String(selected.id)}
-            onChange={(event) => onChange(Number(event.target.value))}
-          >
-            {active.map((vehicle) => (
-              <option key={vehicle.id} value={vehicle.id}>
-                {vehicle.placa}
-              </option>
-            ))}
-          </SelectField>
-          <dl className={styles.details}>
-            <div>
-              <dt>Massa</dt>
-              <dd>{formatNumber(selected.massaKg)} kg</dd>
-            </div>
-            <div>
-              <dt>Combustível</dt>
-              <dd>{selected.tipoCombustivel}</dd>
-            </div>
-          </dl>
-        </>
+        <div className={styles.layout}>
+          <VehicleImage image={selected.imagem} className={styles.picture} />
+          <div className={styles.info}>
+            <SelectField
+              label="Placa"
+              value={String(selected.id)}
+              onChange={(event) => onChange(Number(event.target.value))}
+            >
+              {active.map((vehicle) => (
+                <option key={vehicle.id} value={vehicle.id}>
+                  {vehicle.placa}
+                </option>
+              ))}
+            </SelectField>
+            <dl className={styles.details}>
+              <div>
+                <dt>Massa</dt>
+                <dd>{formatNumber(selected.massaKg)} kg</dd>
+              </div>
+              <div>
+                <dt>Combustível</dt>
+                <dd>{selected.tipoCombustivel}</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
       )}
     </Card>
   )

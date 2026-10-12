@@ -3,11 +3,12 @@ import { useForm } from 'react-hook-form'
 import Button from '@/components/Button/Button'
 import Modal from '@/components/Modal/Modal'
 import TextField from '@/components/TextField/TextField'
+import VehicleImagePicker from '@/components/VehicleImagePicker/VehicleImagePicker'
 import { useToast } from '@/hooks/useToast'
 import { useCreateVehicle } from '@/hooks/useVehicles'
 import styles from '@/pages/AdminPage/AdminPage.module.css'
 import { describeError } from '@/services/errors'
-import { vehicleInputSchema } from '@/services/schemas/vehicle'
+import { DEFAULT_VEHICLE_IMAGE, vehicleInputSchema } from '@/services/schemas/vehicle'
 import type { VehicleInput } from '@/services/schemas/vehicle'
 
 const FUEL_SUGGESTIONS_ID = 'combustiveis-sugeridos'
@@ -29,10 +30,11 @@ export default function RegisterVehicleDialog({ open, onClose }: RegisterVehicle
   } = useForm<VehicleInput>({
     resolver: zodResolver(vehicleInputSchema),
     mode: 'onTouched',
+    defaultValues: { imagem: DEFAULT_VEHICLE_IMAGE },
   })
 
   const close = () => {
-    reset()
+    reset({ imagem: DEFAULT_VEHICLE_IMAGE })
     onClose()
   }
 
@@ -81,6 +83,7 @@ export default function RegisterVehicleDialog({ open, onClose }: RegisterVehicle
             ))}
           </datalist>
         </div>
+        <VehicleImagePicker legend="Imagem do veículo" {...register('imagem')} />
         <div className={styles.actions}>
           <Button variant="secondary" onClick={close}>
             Cancelar

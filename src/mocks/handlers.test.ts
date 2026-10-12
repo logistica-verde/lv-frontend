@@ -38,16 +38,26 @@ describe('mock vehicles', () => {
   it('creates a vehicle that then shows up in the list', async () => {
     useMockApi()
 
-    const created = await createVehicle({ placa: 'NEW1A11', massaKg: 3000, tipoCombustivel: 'gnv' })
+    const created = await createVehicle({
+      placa: 'NEW1A11',
+      massaKg: 3000,
+      tipoCombustivel: 'gnv',
+      imagem: 'van',
+    })
 
-    expect(created).toMatchObject({ placa: 'NEW1A11', ativo: true })
+    expect(created).toMatchObject({ placa: 'NEW1A11', imagem: 'van', ativo: true })
     expect(await listVehicles()).toContainEqual(created)
   })
 
   it('rejects an invalid vehicle with a 400 problem detail', async () => {
     useMockApi()
 
-    const failure = createVehicle({ placa: '  ', massaKg: 3000, tipoCombustivel: 'gnv' })
+    const failure = createVehicle({
+      placa: '  ',
+      massaKg: 3000,
+      tipoCombustivel: 'gnv',
+      imagem: 'van',
+    })
 
     await expect(failure).rejects.toMatchObject({
       status: 400,

@@ -9,6 +9,7 @@ import Pagination from '@/components/Pagination/Pagination'
 import Skeleton from '@/components/Skeleton/Skeleton'
 import StatusBadge from '@/components/StatusBadge/StatusBadge'
 import Table, { Td, Th } from '@/components/Table/Table'
+import VehicleImage from '@/components/VehicleImage/VehicleImage'
 import VisuallyHidden from '@/components/VisuallyHidden/VisuallyHidden'
 import { useAllVehicles, useSetVehicleActive } from '@/hooks/useAdmin'
 import { useFitRows } from '@/hooks/useFitRows'
@@ -134,7 +135,12 @@ export default function VehiclesTab() {
             <tbody>
               {visible.map((vehicle) => (
                 <tr key={vehicle.id}>
-                  <Th scope="row">{vehicle.placa}</Th>
+                  <Th scope="row">
+                    <span className={styles.plate}>
+                      <VehicleImage image={vehicle.imagem} className={styles.thumb} />
+                      {vehicle.placa}
+                    </span>
+                  </Th>
                   <Td numeric>{formatNumber(vehicle.massaKg)}</Td>
                   <Td>{vehicle.tipoCombustivel}</Td>
                   <Td>
@@ -150,6 +156,7 @@ export default function VehiclesTab() {
           <ul aria-label="Veículos cadastrados" className={listStyles.list}>
             {visible.map((vehicle) => (
               <li key={vehicle.id} className={listStyles.item}>
+                <VehicleImage image={vehicle.imagem} className={styles.thumb} />
                 <div className={listStyles.main}>
                   <span className={listStyles.title}>{vehicle.placa}</span>
                   <span className={listStyles.meta}>

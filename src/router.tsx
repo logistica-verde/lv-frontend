@@ -16,7 +16,7 @@ export const routes: RouteObject[] = [
       {
         errorElement: <RouteErrorPage />,
         children: [
-          { index: true, element: <PlanningPage /> },
+          { index: true, element: <PlanningPage />, handle: { fullBleed: true } },
           { path: 'historico', element: <HistoryPage /> },
           {
             path: 'experimentos',

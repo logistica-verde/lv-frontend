@@ -1,7 +1,8 @@
 import { Menu, Route, X } from 'lucide-react'
 import { useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
-import { Link, NavLink, Outlet } from 'react-router'
+import { Link, NavLink, Outlet, useMatches } from 'react-router'
+import { z } from 'zod'
 import styles from '@/components/AppLayout/AppLayout.module.css'
 import { isMockMode } from '@/config/env'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
@@ -10,11 +11,13 @@ import { navItems } from '@/navigation'
 
 const WIDE_QUERY = '(min-width: 64rem)'
 const MENU_ID = 'menu-principal'
+const fullBleedSchema = z.object({ fullBleed: z.literal(true) })
 
 export default function AppLayout() {
   const isWide = useMediaQuery(WIDE_QUERY)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuButton = useRef<HTMLButtonElement>(null)
+  const fullBleed = useMatches().some((match) => fullBleedSchema.safeParse(match.handle).success)
 
   const closeMenu = () => setMenuOpen(false)
 
@@ -92,7 +95,11 @@ export default function AppLayout() {
           )}
         </div>
       </header>
-      <main id="conteudo" tabIndex={-1} className={styles.main}>
+      <main
+        id="conteudo"
+        tabIndex={-1}
+        className={classNames(styles.main, fullBleed && styles.bleed)}
+      >
         <Outlet />
       </main>
     </div>

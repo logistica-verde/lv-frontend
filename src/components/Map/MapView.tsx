@@ -6,6 +6,7 @@ import { MapContainer, TileLayer, useMap } from 'react-leaflet'
 import MapClickHandler from '@/components/Map/MapClickHandler'
 import styles from '@/components/Map/MapView.module.css'
 import { env } from '@/config/env'
+import { classNames } from '@/lib/classNames'
 import { DEFAULT_ZOOM, parsePositionsKey, positionsKey, SAO_PAULO_CENTER } from '@/lib/geo'
 
 const ATTRIBUTION =
@@ -17,9 +18,10 @@ const NO_POSITIONS: LatLngTuple[] = []
 
 type FitBoundsProps = {
   positions: LatLngTuple[]
+  insetRight: number
 }
 
-function FitBounds({ positions }: FitBoundsProps) {
+function FitBounds({ positions, insetRight }: FitBoundsProps) {
   const map = useMap()
   const key = positionsKey(positions)
   const target = useMemo(() => parsePositionsKey(key), [key])
@@ -53,8 +55,12 @@ function FitBounds({ positions }: FitBoundsProps) {
       map.setView(only, SINGLE_POINT_ZOOM)
       return
     }
-    map.fitBounds(target, { padding: [FIT_PADDING, FIT_PADDING], maxZoom: MAX_FIT_ZOOM })
-  }, [map, target, resizes])
+    map.fitBounds(target, {
+      paddingTopLeft: [FIT_PADDING, FIT_PADDING],
+      paddingBottomRight: [FIT_PADDING + insetRight, FIT_PADDING],
+      maxZoom: MAX_FIT_ZOOM,
+    })
+  }, [map, target, resizes, insetRight])
 
   return null
 }
@@ -65,6 +71,8 @@ type MapViewProps = {
   onMapClick?: (position: LatLngTuple) => void
   overlay?: ReactNode
   legend?: ReactNode
+  flush?: boolean
+  fitInsetRight?: number
   children?: ReactNode
 }
 
@@ -74,10 +82,16 @@ export default function MapView({
   onMapClick,
   overlay,
   legend,
+  flush = false,
+  fitInsetRight = 0,
   children,
 }: MapViewProps) {
   return (
-    <div role="region" aria-label={label} className={styles.wrapper}>
+    <div
+      role="region"
+      aria-label={label}
+      className={classNames(styles.wrapper, flush && styles.flush)}
+    >
       <MapContainer
         center={SAO_PAULO_CENTER}
         zoom={DEFAULT_ZOOM}
@@ -85,7 +99,7 @@ export default function MapView({
         className={styles.map}
       >
         <TileLayer attribution={ATTRIBUTION} url={env.tileUrl} />
-        <FitBounds positions={fitTo} />
+        <FitBounds positions={fitTo} insetRight={fitInsetRight} />
         {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
         {children}
       </MapContainer>

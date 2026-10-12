@@ -8,6 +8,7 @@ export const vehicleFixture: Vehicle = {
   placa: 'ABC1D23',
   massaKg: 7500,
   tipoCombustivel: 'diesel',
+  imagem: 'truck',
   ativo: true,
 }
 

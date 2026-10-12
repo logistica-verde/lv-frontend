@@ -11,6 +11,7 @@ import type { IntegrityReport } from '@/services/schemas/integrity'
 import type { OptimizationCriterion, Route } from '@/services/schemas/route'
 import { gaSettingsSchema } from '@/services/schemas/gaSettings'
 import { userUpdateSchema } from '@/services/schemas/user'
+import { DEFAULT_VEHICLE_IMAGE, vehicleImageSchema } from '@/services/schemas/vehicle'
 import type { Vehicle } from '@/services/schemas/vehicle'
 
 export type MockOptions = {
@@ -24,6 +25,7 @@ const vehicleRequestSchema = z.object({
   placa: z.string().trim().min(1),
   massaKg: z.number().positive(),
   tipoCombustivel: z.string().trim().min(1),
+  imagem: vehicleImageSchema.default(DEFAULT_VEHICLE_IMAGE),
 })
 
 const vehicleStatusRequestSchema = z.object({ ativo: z.boolean() })

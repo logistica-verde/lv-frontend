@@ -24,3 +24,25 @@
 .empty {
   margin: 0;
 }
+
+.layout {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.picture {
+  flex-shrink: 0;
+  width: 5.5rem;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 40rem) {
+  .picture {
+    width: 4rem;
+  }
+}

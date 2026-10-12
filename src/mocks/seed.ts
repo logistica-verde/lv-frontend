@@ -3,9 +3,23 @@ import type { User } from '@/services/schemas/user'
 import type { Vehicle } from '@/services/schemas/vehicle'
 
 export const seedVehicles: Vehicle[] = [
-  { id: 1, placa: 'ABC1D23', massaKg: 7500, tipoCombustivel: 'diesel', ativo: true },
-  { id: 2, placa: 'XYZ9K88', massaKg: 12000, tipoCombustivel: 'diesel', ativo: true },
-  { id: 3, placa: 'QRS4T56', massaKg: 3500, tipoCombustivel: 'gasolina', ativo: false },
+  { id: 1, placa: 'ABC1D23', massaKg: 7500, tipoCombustivel: 'diesel', imagem: 'vuc', ativo: true },
+  {
+    id: 2,
+    placa: 'XYZ9K88',
+    massaKg: 12000,
+    tipoCombustivel: 'diesel',
+    imagem: 'semi',
+    ativo: true,
+  },
+  {
+    id: 3,
+    placa: 'QRS4T56',
+    massaKg: 3500,
+    tipoCombustivel: 'gasolina',
+    imagem: 'van',
+    ativo: false,
+  },
 ]
 
 export const seedUsers: User[] = [
