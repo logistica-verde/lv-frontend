@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import AppLayout from '@/components/AppLayout/AppLayout'
 import RouteErrorPage from '@/pages/RouteErrorPage/RouteErrorPage'
 import { routes } from '@/router'
@@ -11,6 +11,10 @@ import { signInAs } from '@/test/session'
 import { server } from '@/test/server'
 
 describe('app routes', () => {
+  beforeAll(async () => {
+    await import('@/pages/ExperimentsPage/ExperimentsPage')
+  }, 120000)
+
   beforeEach(() => {
     signInAs('ADMIN')
     server.use(
@@ -109,7 +113,7 @@ describe('app routes', () => {
     expect(router.state.location.pathname).toBe('/experimentos')
     expect(document.title).toBe('Experimentos · Logística Verde')
     vi.unstubAllGlobals()
-  }, 20000)
+  })
 
   it('shows a not found page for unknown addresses and a way back', async () => {
     const router = renderRoutes(routes, '/rota-que-nao-existe')
