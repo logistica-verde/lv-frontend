@@ -1,0 +1,29 @@
+.marker {
+  border: 2px solid var(--color-surface);
+  border-radius: 50%;
+  color: var(--color-primary-contrast);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-strong);
+  line-height: 24px;
+  text-align: center;
+}
+
+.selected {
+  outline: 2px solid var(--color-text);
+  outline-offset: 2px;
+}
+
+.neutral {
+  border-color: var(--color-text-muted);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.emission {
+  background: var(--color-route-emission);
+}
+
+.distance {
+  background: var(--color-route-distance);
+  color: var(--color-surface);
+}

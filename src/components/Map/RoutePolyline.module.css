@@ -1,0 +1,15 @@
+.line {
+  fill: none;
+  stroke-opacity: 0.85;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.emission {
+  stroke: var(--color-route-emission);
+}
+
+.distance {
+  stroke: var(--color-route-distance);
+  stroke-dasharray: 8 8;
+}

@@ -1,10 +1,13 @@
-import styles from '@/App.module.css'
+import { RouterProvider } from 'react-router/dom'
+import ToastProvider from '@/components/Toast/ToastProvider'
+import { createAppRouter } from '@/router'
+
+const router = createAppRouter()
 
 export default function App() {
   return (
-    <main className={styles.app}>
-      <h1>Logística Verde</h1>
-      <p>Roteirização sustentável de cargas com auditoria em blockchain.</p>
-    </main>
+    <ToastProvider>
+      <RouterProvider router={router} />
+    </ToastProvider>
   )
 }

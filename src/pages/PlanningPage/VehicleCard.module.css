@@ -1,0 +1,48 @@
+.details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: var(--space-2) 0 0;
+}
+
+.details div {
+  display: flex;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+}
+
+.details dt {
+  color: var(--color-text-muted);
+}
+
+.details dd {
+  margin: 0;
+}
+
+.empty {
+  margin: 0;
+}
+
+.layout {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.picture {
+  flex-shrink: 0;
+  width: 5.5rem;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 40rem) {
+  .picture {
+    width: 4rem;
+  }
+}

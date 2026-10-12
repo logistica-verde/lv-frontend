@@ -1,0 +1,80 @@
+.scroll {
+  overflow: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table th,
+.table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.dense th,
+.dense td {
+  padding-block: var(--space-1);
+  padding-inline: var(--space-2);
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-strong);
+}
+
+.table tbody th {
+  font-weight: var(--font-weight-regular);
+}
+
+.table tbody tr:last-child th,
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.table tfoot th,
+.table tfoot td {
+  border-top: 1px solid var(--color-border-strong);
+  border-bottom: 0;
+  font-weight: var(--font-weight-strong);
+}
+
+.table .numeric {
+  text-align: right;
+}
+
+@media (max-width: 40rem) {
+  .table th,
+  .table td {
+    padding-inline: var(--space-2);
+  }
+}
+
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.sortButton:hover {
+  color: var(--color-text);
+}
+
+.numeric .sortButton {
+  flex-direction: row-reverse;
+}

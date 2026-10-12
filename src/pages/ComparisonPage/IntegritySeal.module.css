@@ -1,0 +1,7 @@
+.seal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-1) var(--space-2);
+}
