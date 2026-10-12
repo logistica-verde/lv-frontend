@@ -1,9 +1,9 @@
 import HashText from '@/components/HashText/HashText'
 import Skeleton from '@/components/Skeleton/Skeleton'
+import IntegrityBadge from '@/components/IntegrityBadge/IntegrityBadge'
 import StatusBadge from '@/components/StatusBadge/StatusBadge'
 import VisuallyHidden from '@/components/VisuallyHidden/VisuallyHidden'
 import { useIntegrity } from '@/hooks/useIntegrity'
-import { integrityPresentation } from '@/lib/integrityPresentation'
 import styles from '@/pages/ComparisonPage/IntegritySeal.module.css'
 
 type IntegritySealProps = {
@@ -27,14 +27,9 @@ export default function IntegritySeal({ routeId, criterion }: IntegritySealProps
     return <StatusBadge tone="neutral">Não verificada</StatusBadge>
   }
 
-  const { tone, label, Icon } = integrityPresentation[integrity.data.status]
-
   return (
     <div className={styles.seal}>
-      <StatusBadge tone={tone}>
-        <Icon size={14} aria-hidden="true" />
-        {label}
-      </StatusBadge>
+      <IntegrityBadge status={integrity.data.status} />
       {integrity.data.txHash && (
         <HashText value={integrity.data.txHash} label={`transação da rota de ${criterion}`} />
       )}

@@ -1,0 +1,21 @@
+.filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.clear {
+  display: flex;
+  align-items: flex-end;
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 64rem) {
+  .filters {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
+  }
+
+  .clear {
+    grid-column: auto;
+  }
+}

@@ -10,6 +10,15 @@ const dateTimeFormat = new Intl.DateTimeFormat('pt-BR', {
   timeZone: 'America/Sao_Paulo',
 })
 
+const shortDateTimeFormat = new Intl.DateTimeFormat('pt-BR', {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  timeZone: 'America/Sao_Paulo',
+})
+
 export function formatNumber(value: number): string {
   return decimalFormat.format(value)
 }
@@ -31,4 +40,8 @@ export function formatSignedPercent(value: number | null): string {
     return '0%'
   }
   return `${value > 0 ? '+' : '−'}${decimalFormat.format(magnitude)}%`
+}
+
+export function formatShortDateTime(isoDate: string): string {
+  return shortDateTimeFormat.format(new Date(isoDate))
 }

@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw'
 import { z } from 'zod'
 import type { DeliveryPoint } from '@/services/schemas/deliveryPoint'
+import type { OperationPage, OperationSummary } from '@/services/schemas/operation'
 import type { Route } from '@/services/schemas/route'
 import type { Vehicle } from '@/services/schemas/vehicle'
 import { apiUrl } from '@/test/api'
@@ -105,4 +106,32 @@ export function useRoutesApi(options: RoutesOptions = {}): RoutesApi {
     }),
   )
   return api
+}
+
+export const operationFixture: OperationSummary = {
+  id: 7,
+  createdAt: '2026-10-05T12:00:00.000Z',
+  vehicleId: 1,
+  vehiclePlate: 'ABC1D23',
+  criterion: 'EMISSION',
+  status: 'COMPLETED',
+  totalEmissionKg: 5.5,
+  totalDistanceMeters: 2022.5,
+  integrityStatus: 'VALID',
+}
+
+export function useOperationsApi(respond: (params: URLSearchParams) => OperationPage) {
+  const requests: URLSearchParams[] = []
+  server.use(
+    http.get(apiUrl('/api/routes'), ({ request }) => {
+      const params = new URL(request.url).searchParams
+      requests.push(params)
+      return HttpResponse.json(respond(params))
+    }),
+  )
+  return requests
+}
+
+export function pageOf(items: OperationSummary[], total = items.length, page = 1): OperationPage {
+  return { items, total, page, size: items.length || 10 }
 }

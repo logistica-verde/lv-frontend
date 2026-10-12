@@ -58,3 +58,23 @@
     padding-inline: var(--space-2);
   }
 }
+
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.sortButton:hover {
+  color: var(--color-text);
+}
+
+.numeric .sortButton {
+  flex-direction: row-reverse;
+}
