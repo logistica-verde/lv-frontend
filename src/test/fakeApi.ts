@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw'
 import { z } from 'zod'
 import type { DeliveryPoint } from '@/services/schemas/deliveryPoint'
+import type { Experiment, ExperimentRun } from '@/services/schemas/experiment'
 import type { OperationPage, OperationSummary } from '@/services/schemas/operation'
 import type { Route } from '@/services/schemas/route'
 import type { Vehicle } from '@/services/schemas/vehicle'
@@ -134,4 +135,57 @@ export function useOperationsApi(respond: (params: URLSearchParams) => Operation
 
 export function pageOf(items: OperationSummary[], total = items.length, page = 1): OperationPage {
   return { items, total, page, size: items.length || 10 }
+}
+
+function curve(start: number, final: number): number[] {
+  return Array.from({ length: 6 }, (_, index) => start - ((start - final) * index) / 5)
+}
+
+export function experimentRun(
+  instanceSize: number,
+  seed: number,
+  overrides: Partial<ExperimentRun> = {},
+): ExperimentRun {
+  return {
+    instanceSize,
+    seed,
+    distance: {
+      emissionKg: 100,
+      distanceMeters: 20000,
+      executionMs: 1000,
+      convergence: curve(26000, 20000),
+    },
+    emission: {
+      emissionKg: 90,
+      distanceMeters: 20800,
+      executionMs: 1200,
+      convergence: curve(120, 90),
+    },
+    ...overrides,
+  }
+}
+
+export const experimentFixture: Experiment = {
+  id: 1,
+  status: 'COMPLETED',
+  createdAt: '2026-10-05T12:00:00.000Z',
+  instances: [10, 20],
+  seeds: [1, 2],
+  progress: { completed: 4, total: 4 },
+  runs: [experimentRun(10, 1), experimentRun(10, 2), experimentRun(20, 1), experimentRun(20, 2)],
+  errorMessage: null,
+}
+
+export function useExperimentApi(respond: () => Experiment | null) {
+  let calls = 0
+  server.use(
+    http.get(apiUrl('/api/experiments/latest'), () => {
+      calls += 1
+      const experiment = respond()
+      return experiment
+        ? HttpResponse.json(experiment)
+        : HttpResponse.json({ status: 404, detail: 'none' }, { status: 404 })
+    }),
+  )
+  return () => calls
 }
