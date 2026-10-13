@@ -1,5 +1,5 @@
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
 
   --font-sans: 'IBM Plex Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, Consolas, 'Liberation Mono', monospace;
@@ -59,37 +59,37 @@
   --shadow-float: 0 4px 12px rgb(16 24 40 / 0.12);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #0e1513;
-    --color-surface: #141c19;
-    --color-surface-muted: #1a2420;
-    --color-border: #25312d;
-    --color-border-strong: #364540;
-    --color-control-border: #6d7c75;
-    --color-text: #e6ece9;
-    --color-text-muted: #9aa8a2;
+:root[data-theme='dark'] {
+  color-scheme: dark;
 
-    --color-primary: #4fc9a6;
-    --color-primary-hover: #72d8bb;
-    --color-primary-contrast: #04170f;
-    --color-primary-bg: #12302a;
-    --color-focus: #7aa7f5;
-    --color-sidebar: #111a17;
+  --color-bg: #0e1513;
+  --color-surface: #141c19;
+  --color-surface-muted: #1a2420;
+  --color-border: #25312d;
+  --color-border-strong: #364540;
+  --color-control-border: #6d7c75;
+  --color-text: #e6ece9;
+  --color-text-muted: #9aa8a2;
 
-    --color-route-emission: #4fc9a6;
-    --color-route-distance: #a995ec;
+  --color-primary: #4fc9a6;
+  --color-primary-hover: #72d8bb;
+  --color-primary-contrast: #04170f;
+  --color-primary-bg: #12302a;
+  --color-focus: #7aa7f5;
+  --color-sidebar: #111a17;
 
-    --color-danger: #f2766d;
-    --color-danger-hover: #f58f87;
-    --color-danger-bg: #3a1d1b;
-    --color-success: #5fd39a;
-    --color-success-bg: #14301f;
-    --color-warning: #e6b34d;
-    --color-warning-bg: #33280f;
-    --color-info: #8fb0dc;
-    --color-info-bg: #18263a;
+  --color-route-emission: #4fc9a6;
+  --color-route-distance: #a995ec;
 
-    --shadow-float: 0 4px 12px rgb(0 0 0 / 0.5);
-  }
+  --color-danger: #f2766d;
+  --color-danger-hover: #f58f87;
+  --color-danger-bg: #3a1d1b;
+  --color-success: #5fd39a;
+  --color-success-bg: #14301f;
+  --color-warning: #e6b34d;
+  --color-warning-bg: #33280f;
+  --color-info: #8fb0dc;
+  --color-info-bg: #18263a;
+
+  --shadow-float: 0 4px 12px rgb(0 0 0 / 0.5);
 }

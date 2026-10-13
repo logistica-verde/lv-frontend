@@ -3,6 +3,7 @@ import { LogOut } from 'lucide-react'
 import Button from '@/components/Button/Button'
 import styles from '@/components/AppLayout/AccountBar.module.css'
 import IconButton from '@/components/IconButton/IconButton'
+import ThemeToggle from '@/components/ThemeToggle/ThemeToggle'
 import { classNames } from '@/lib/classNames'
 import { clearSession } from '@/lib/session'
 import type { Session } from '@/services/schemas/auth'
@@ -52,6 +53,7 @@ export default function AccountBar({ session, variant }: AccountBarProps) {
     return (
       <div className={styles.menu}>
         {identity}
+        <ThemeToggle />
         <Button variant="secondary" size="sm" onClick={signOut}>
           <LogOut size={16} aria-hidden="true" />
           Sair
@@ -63,6 +65,7 @@ export default function AccountBar({ session, variant }: AccountBarProps) {
   return (
     <div className={styles.sidebar}>
       {identity}
+      <ThemeToggle />
       <IconButton label="Sair" onClick={signOut}>
         <LogOut size={18} aria-hidden="true" />
       </IconButton>

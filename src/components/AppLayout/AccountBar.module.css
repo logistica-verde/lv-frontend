@@ -50,16 +50,14 @@
   color: #ffffff;
 }
 
-@media (prefers-color-scheme: dark) {
-  .auditor {
-    background: #2b2548;
-    color: #cfc3f5;
-  }
+:global(:root[data-theme='dark']) .auditor {
+  background: #2b2548;
+  color: #cfc3f5;
+}
 
-  .admin {
-    background: #e6ece9;
-    color: #16211e;
-  }
+:global(:root[data-theme='dark']) .admin {
+  background: #e6ece9;
+  color: #16211e;
 }
 
 .identity {
