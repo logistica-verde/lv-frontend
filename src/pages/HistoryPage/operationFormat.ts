@@ -10,6 +10,12 @@ export const OPERATION_STATUS = {
   FAILED: { tone: 'danger', label: 'Falhou' },
 } as const
 
+export function formatPointCount(item: OperationSummary): string {
+  return item.pointCount === null || item.pointCount === undefined
+    ? MISSING
+    : String(item.pointCount)
+}
+
 export function formatOperationEmission(item: OperationSummary): string {
   return item.totalEmissionKg === null ? MISSING : formatNumber(item.totalEmissionKg)
 }

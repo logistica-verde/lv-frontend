@@ -10,17 +10,28 @@
   display: flex;
   flex-shrink: 0;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-1) var(--space-4);
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
 }
 
-.heading h1 {
+.titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.titles h1 {
   margin: 0;
 }
 
-.total {
-  flex: 1;
+.subtitle {
+  margin: var(--space-1) 0 0;
   color: var(--color-text-muted);
+}
+
+.range {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
 }
 
 .viewport {

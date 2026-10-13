@@ -10,3 +10,35 @@
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
 }
+
+.numbers {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.number {
+  min-width: 2.25rem;
+  height: 2.25rem;
+  padding: 0 var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.number:hover {
+  background: var(--color-surface-muted);
+}
+
+.current {
+  border-color: var(--color-text);
+  font-weight: var(--font-weight-strong);
+}
+
+.gap {
+  padding: 0 var(--space-1);
+  color: var(--color-text-muted);
+}

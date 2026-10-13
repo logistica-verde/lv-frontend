@@ -1,12 +1,14 @@
 import type { ComponentProps, ReactNode } from 'react'
 import { useId } from 'react'
 import styles from '@/components/TextField/TextField.module.css'
+import VisuallyHidden from '@/components/VisuallyHidden/VisuallyHidden'
 import { classNames } from '@/lib/classNames'
 
 type TextFieldProps = Omit<ComponentProps<'input'>, 'id'> & {
   label: string
   hint?: string
   error?: string
+  hideLabel?: boolean
   labelAction?: ReactNode
   adornment?: ReactNode
 }
@@ -15,6 +17,7 @@ export default function TextField({
   label,
   hint,
   error,
+  hideLabel = false,
   labelAction,
   adornment,
   className,
@@ -40,19 +43,21 @@ export default function TextField({
     />
   )
 
+  const labelNode = (
+    <label htmlFor={id} className={hideLabel ? undefined : styles.label}>
+      {hideLabel ? <VisuallyHidden>{label}</VisuallyHidden> : label}
+    </label>
+  )
+
   return (
     <div className={styles.field}>
       {labelAction ? (
         <div className={styles.labelRow}>
-          <label htmlFor={id} className={styles.label}>
-            {label}
-          </label>
+          {labelNode}
           {labelAction}
         </div>
       ) : (
-        <label htmlFor={id} className={styles.label}>
-          {label}
-        </label>
+        labelNode
       )}
       {adornment ? (
         <div className={styles.control}>

@@ -25,19 +25,29 @@ export default function HistoryFilters({
 
   return (
     <div className={styles.filters}>
-      <TextField
-        label="De"
-        type="date"
-        value={filters.from}
-        error={inverted ? 'A data inicial é maior que a final.' : undefined}
-        onChange={(event) => onChange({ from: event.target.value })}
-      />
-      <TextField
-        label="Até"
-        type="date"
-        value={filters.to}
-        onChange={(event) => onChange({ to: event.target.value })}
-      />
+      <fieldset className={styles.period}>
+        <legend className={styles.legend}>Período</legend>
+        <div className={styles.dates}>
+          <TextField
+            label="De"
+            hideLabel
+            type="date"
+            value={filters.from}
+            error={inverted ? 'A data inicial é maior que a final.' : undefined}
+            onChange={(event) => onChange({ from: event.target.value })}
+          />
+          <span aria-hidden="true" className={styles.dash}>
+            —
+          </span>
+          <TextField
+            label="Até"
+            hideLabel
+            type="date"
+            value={filters.to}
+            onChange={(event) => onChange({ to: event.target.value })}
+          />
+        </div>
+      </fieldset>
       <SelectField
         label="Veículo"
         value={filters.vehicleId === null ? '' : String(filters.vehicleId)}
@@ -45,7 +55,7 @@ export default function HistoryFilters({
           onChange({ vehicleId: event.target.value === '' ? null : Number(event.target.value) })
         }
       >
-        <option value="">Todos</option>
+        <option value="">Todos os veículos</option>
         {vehicles.map((vehicle) => (
           <option key={vehicle.id} value={vehicle.id}>
             {vehicle.placa}
