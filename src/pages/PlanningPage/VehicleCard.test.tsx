@@ -46,7 +46,7 @@ describe('VehicleCard', () => {
     renderCard()
 
     expect(screen.getByText('Carregando veículos')).toBeInTheDocument()
-    expect(await screen.findByRole('combobox', { name: 'Placa' })).toBeVisible()
+    expect(await screen.findByRole('combobox', { name: 'Trocar veículo' })).toBeVisible()
   })
 
   it('preselects the first active vehicle and shows its mass and fuel', async () => {
@@ -54,9 +54,9 @@ describe('VehicleCard', () => {
 
     renderCard()
 
-    expect(await screen.findByRole('combobox', { name: 'Placa' })).toHaveValue('1')
-    expect(screen.getByText('Massa').nextElementSibling).toHaveTextContent('7.500 kg')
-    expect(screen.getByText('Combustível').nextElementSibling).toHaveTextContent('diesel')
+    expect(await screen.findByRole('combobox', { name: 'Trocar veículo' })).toHaveValue('1')
+    expect(screen.getByText('Massa bruta').nextElementSibling).toHaveTextContent('7.500 kg')
+    expect(screen.getByText('Combustível').nextElementSibling).toHaveTextContent('Diesel')
   })
 
   it('shows the data of the vehicle the user picks and reports the choice', async () => {
@@ -64,10 +64,13 @@ describe('VehicleCard', () => {
     const onSelected = vi.fn()
     renderCard(onSelected)
 
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Placa' }), '2')
+    await userEvent.selectOptions(
+      await screen.findByRole('combobox', { name: 'Trocar veículo' }),
+      '2',
+    )
 
-    expect(screen.getByText('Massa').nextElementSibling).toHaveTextContent('12.000 kg')
-    expect(screen.getByText('Combustível').nextElementSibling).toHaveTextContent('gnv')
+    expect(screen.getByText('Massa bruta').nextElementSibling).toHaveTextContent('12.000 kg')
+    expect(screen.getByText('Combustível').nextElementSibling).toHaveTextContent('Gnv')
     expect(onSelected).toHaveBeenLastCalledWith(expect.objectContaining({ id: 2 }))
   })
 
@@ -76,7 +79,7 @@ describe('VehicleCard', () => {
 
     renderCard()
 
-    const select = await screen.findByRole('combobox', { name: 'Placa' })
+    const select = await screen.findByRole('combobox', { name: 'Trocar veículo' })
     expect(select).toHaveValue('2')
     expect(screen.getAllByRole('option')).toHaveLength(1)
   })
@@ -109,6 +112,26 @@ describe('VehicleCard', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }))
 
-    expect(await screen.findByRole('combobox', { name: 'Placa' })).toBeVisible()
+    expect(await screen.findByRole('combobox', { name: 'Trocar veículo' })).toBeVisible()
+  })
+})
+
+describe('VehicleCard presentation', () => {
+  it('shows the plate, the vehicle type and that it is active', async () => {
+    useVehiclesApi([vehicleFixture])
+    renderCard()
+
+    expect(await screen.findByText(vehicleFixture.placa)).toBeVisible()
+    expect(screen.getByText('Caminhão')).toBeVisible()
+    expect(screen.getByText('Situação').nextElementSibling).toHaveTextContent('Ativo')
+  })
+
+  it('describes each option of the selector with plate, type and mass', async () => {
+    useVehiclesApi([vehicleFixture])
+    renderCard()
+
+    expect(
+      await screen.findByRole('option', { name: `${vehicleFixture.placa} · Caminhão · 7.500 kg` }),
+    ).toBeInTheDocument()
   })
 })

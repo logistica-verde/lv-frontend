@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import Button from '@/components/Button/Button'
 import TextField from '@/components/TextField/TextField'
@@ -12,6 +12,7 @@ import type { AddressMatch } from '@/services/geocodeService'
 import type { DeliveryPoint } from '@/services/schemas/deliveryPoint'
 
 type AddressTabProps = {
+  initialQuery?: string
   onAdded: (points: DeliveryPoint[]) => void
 }
 
@@ -21,14 +22,24 @@ function suggestName(label: string): string {
   return label.split(',')[0]?.trim() ?? label
 }
 
-export default function AddressTab({ onAdded }: AddressTabProps) {
+export default function AddressTab({ initialQuery = '', onAdded }: AddressTabProps) {
   const search = useMutation({ mutationFn: (query: string) => searchAddress(query) })
   const createPoints = useCreateDeliveryPoints()
   const { notify } = useToast()
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(initialQuery)
+  const autoSearched = useRef(false)
   const [tooShort, setTooShort] = useState(false)
   const [chosen, setChosen] = useState<number | null>(null)
   const [name, setName] = useState('')
+
+  useEffect(() => {
+    const trimmed = initialQuery.trim()
+    if (autoSearched.current || trimmed.length < MIN_QUERY_LENGTH) {
+      return
+    }
+    autoSearched.current = true
+    search.mutate(trimmed)
+  }, [initialQuery, search])
 
   const matches: AddressMatch[] = search.data ?? []
   const match = chosen === null ? undefined : matches[chosen]

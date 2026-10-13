@@ -56,7 +56,7 @@ describe('PlanningPage', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'Nova rota' })).toBeVisible()
     expect(document.title).toBe('Nova rota · Lastro')
-    expect(await screen.findByRole('combobox', { name: 'Placa' })).toBeVisible()
+    expect(await screen.findByRole('combobox', { name: 'Trocar veículo' })).toBeVisible()
     expect(screen.getByRole('heading', { name: 'Nenhum ponto na rota' })).toBeVisible()
     expect(screen.getByRole('region', { name: 'Mapa dos pontos de entrega' })).toBeVisible()
   })
@@ -97,7 +97,8 @@ describe('PlanningPage', () => {
     expect(await screen.findByText('2 pontos adicionados à rota.')).toBeVisible()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(listedNames()).toEqual(['MASP', 'Praça da Sé'])
-    expect(screen.getByRole('heading', { name: 'Pontos de entrega (2)' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Pontos de entrega' })).toBeVisible()
+    expect(screen.getByText('2 de 30')).toBeVisible()
     expect(screen.getByRole('button', { name: '1. MASP' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '2. Praça da Sé' })).toBeInTheDocument()
   })

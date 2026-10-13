@@ -31,6 +31,7 @@ const FLOATING_INSET_PX = 380
 type DialogState = {
   tab: AddPointTab
   position: LatLngTuple | null
+  query?: string
 }
 
 type Calculation = {
@@ -101,6 +102,7 @@ export default function PlanningPage() {
     <PointsList
       points={selectedPoints}
       onAdd={(tab) => setDialog({ tab, position: null })}
+      onSearchAddress={(query) => setDialog({ tab: 'address', position: null, query })}
       onMove={(pointId, offset) => setRequestedIds(moveSelection(selectedIds, pointId, offset))}
       onRemove={(pointId) => setRequestedIds(selectedIds.filter((id) => id !== pointId))}
     />
@@ -117,6 +119,9 @@ export default function PlanningPage() {
         <Route size={16} aria-hidden="true" />
         Calcular rotas
       </Button>
+      <p className={styles.calculateHint}>
+        Calcula a rota de menor emissão e a de menor distância para os mesmos pontos.
+      </p>
       {calculation && (
         <CalculationStatus
           key={`${calculation.ids.emission.id}-${calculation.ids.distance.id}`}
@@ -144,18 +149,7 @@ export default function PlanningPage() {
       fitInsetRight={isDesktop ? FLOATING_INSET_PX : 0}
       fitTo={registered.map(toLatLng)}
       onMapClick={setDraft}
-      legend={
-        <ul className={styles.legend} aria-label="Legenda do mapa">
-          <li>
-            <span className={`${styles.swatch} ${styles.swatchSelected}`} aria-hidden="true" />
-            Na rota
-          </li>
-          <li>
-            <span className={styles.swatch} aria-hidden="true" />
-            Disponível
-          </li>
-        </ul>
-      }
+      zoomPosition={isDesktop ? 'bottomleft' : undefined}
       overlay={
         draft && (
           <div className={styles.draft}>
@@ -198,7 +192,10 @@ export default function PlanningPage() {
       {isDesktop ? (
         <div className={styles.stage}>
           {map}
-          <h1 className={styles.hiddenTitle}>Nova rota</h1>
+          <div className={styles.titleCard}>
+            <h1 className={styles.stageTitle}>Nova rota</h1>
+            <p className={styles.stageSubtitle}>Centro de São Paulo · mapa do OpenStreetMap</p>
+          </div>
           <div className={styles.floating}>
             <div className={styles.floatingCard}>{vehicleCard}</div>
             {pointsError}
@@ -213,6 +210,7 @@ export default function PlanningPage() {
         open={dialog !== null}
         initialTab={dialog?.tab ?? 'existing'}
         initialPosition={dialog?.position ?? null}
+        initialQuery={dialog?.query}
         selected={selectedPoints}
         registered={registered}
         onClose={() => setDialog(null)}

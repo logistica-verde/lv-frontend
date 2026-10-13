@@ -14,6 +14,7 @@ type AddPointDialogProps = {
   open: boolean
   initialTab: AddPointTab
   initialPosition: LatLngTuple | null
+  initialQuery?: string
   selected: DeliveryPoint[]
   registered: DeliveryPoint[]
   onClose: () => void
@@ -24,6 +25,7 @@ export default function AddPointDialog({
   open,
   initialTab,
   initialPosition,
+  initialQuery,
   selected,
   registered,
   onClose,
@@ -51,7 +53,11 @@ export default function AddPointDialog({
               label: 'Cadastrados',
               content: <ExistingTab available={available} capacity={capacity} onAdded={onAdded} />,
             },
-            { id: 'address', label: 'Endereço', content: <AddressTab onAdded={onAdded} /> },
+            {
+              id: 'address',
+              label: 'Endereço',
+              content: <AddressTab initialQuery={initialQuery} onAdded={onAdded} />,
+            },
             {
               id: 'coordinates',
               label: 'Coordenadas',
