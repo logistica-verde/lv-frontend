@@ -15,6 +15,13 @@ export class NetworkError extends Error {
   }
 }
 
+export class AddressSearchUnavailableError extends Error {
+  constructor() {
+    super('Address search is unavailable')
+    this.name = 'AddressSearchUnavailableError'
+  }
+}
+
 export class ResponseFormatError extends Error {
   constructor(path: string) {
     super(`Unexpected response format from ${path}`)
@@ -25,6 +32,9 @@ export class ResponseFormatError extends Error {
 export function describeError(error: Error): string {
   if (error instanceof NetworkError) {
     return 'Não foi possível conectar à API. Verifique se ela está em execução.'
+  }
+  if (error instanceof AddressSearchUnavailableError) {
+    return 'O serviço de busca de endereços está indisponível no momento.'
   }
   if (error instanceof ResponseFormatError) {
     return 'A API respondeu em um formato inesperado.'

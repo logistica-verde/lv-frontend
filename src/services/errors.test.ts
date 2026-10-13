@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { ApiError, describeError, NetworkError, ResponseFormatError } from '@/services/errors'
+import {
+  AddressSearchUnavailableError,
+  ApiError,
+  describeError,
+  NetworkError,
+  ResponseFormatError,
+} from '@/services/errors'
 
 describe('describeError', () => {
   it('explains that the API is unreachable', () => {
@@ -22,6 +28,12 @@ describe('describeError', () => {
 
   it('explains that the blockchain service is unavailable', () => {
     expect(describeError(new ApiError(503, 'Besu is down'))).toContain('blockchain')
+  })
+
+  it('explains that the address search is unavailable', () => {
+    expect(describeError(new AddressSearchUnavailableError())).toBe(
+      'O serviço de busca de endereços está indisponível no momento.',
+    )
   })
 
   it('does not leak details of server errors', () => {
