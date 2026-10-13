@@ -13,20 +13,20 @@ import VehicleImage from '@/components/VehicleImage/VehicleImage'
 import VisuallyHidden from '@/components/VisuallyHidden/VisuallyHidden'
 import { useAllVehicles, useSetVehicleActive } from '@/hooks/useAdmin'
 import { useFitRows } from '@/hooks/useFitRows'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useToast } from '@/hooks/useToast'
 import { formatNumber } from '@/lib/format'
+import { sliceForPage } from '@/lib/pagination'
 import listStyles from '@/pages/AdminPage/AdminList.module.css'
 import styles from '@/pages/AdminPage/AdminPage.module.css'
 import RegisterVehicleDialog from '@/pages/AdminPage/RegisterVehicleDialog'
-import { describeError } from '@/services/errors'
+import { describeError, failureMessage } from '@/services/errors'
 import type { Vehicle } from '@/services/schemas/vehicle'
 
 const ROW_PX = 41
 const HEADER_PX = 36
 const LIST_ROW_PX = 68
 const FALLBACK_ROWS = 7
-const DESKTOP_QUERY = '(min-width: 64rem)'
 
 type StatusOfProps = {
   vehicle: Vehicle
@@ -44,7 +44,7 @@ export default function VehiclesTab() {
   const vehicles = useAllVehicles()
   const setActive = useSetVehicleActive()
   const { notify } = useToast()
-  const isDesktop = useMediaQuery(DESKTOP_QUERY)
+  const isDesktop = useIsDesktop()
   const { ref, rows } = useFitRows(
     isDesktop ? ROW_PX : LIST_ROW_PX,
     FALLBACK_ROWS,
@@ -59,19 +59,14 @@ export default function VehiclesTab() {
       await setActive.mutateAsync({ id: vehicle.id, ativo })
       notify(`Veículo ${vehicle.placa} ${ativo ? 'reativado' : 'desativado'}.`, 'success')
     } catch (error) {
-      notify(
-        error instanceof Error ? describeError(error) : 'Ocorreu um erro inesperado.',
-        'danger',
-      )
+      notify(failureMessage(error), 'danger')
     } finally {
       setDeactivating(null)
     }
   }
 
   const all = vehicles.data ?? []
-  const pageCount = Math.max(1, Math.ceil(all.length / rows))
-  const page = Math.min(requestedPage, pageCount)
-  const visible = all.slice((page - 1) * rows, page * rows)
+  const { page, pageCount, visible } = sliceForPage(all, requestedPage, rows)
 
   const toggleButton = (vehicle: Vehicle) =>
     vehicle.ativo ? (

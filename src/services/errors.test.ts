@@ -3,6 +3,7 @@ import {
   AddressSearchUnavailableError,
   ApiError,
   describeError,
+  failureMessage,
   NetworkError,
   ResponseFormatError,
 } from '@/services/errors'
@@ -45,5 +46,21 @@ describe('describeError', () => {
 
   it('has a generic message for anything else', () => {
     expect(describeError(new Error('x'))).toBe('Ocorreu um erro inesperado.')
+  })
+})
+
+describe('failureMessage', () => {
+  it('describes an error with the default rules', () => {
+    expect(failureMessage(new NetworkError())).toContain('conectar à API')
+  })
+
+  it('describes an error with the rules it is given', () => {
+    expect(failureMessage(new ApiError(409, 'x'), () => 'Conflito')).toBe('Conflito')
+  })
+
+  it('has a generic message for anything that is not an error', () => {
+    expect(failureMessage('boom')).toBe('Ocorreu um erro inesperado.')
+    expect(failureMessage(undefined)).toBe('Ocorreu um erro inesperado.')
+    expect(failureMessage({ code: 1 })).toBe('Ocorreu um erro inesperado.')
   })
 })

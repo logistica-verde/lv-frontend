@@ -7,6 +7,7 @@ import IconButton from '@/components/IconButton/IconButton'
 import Pagination from '@/components/Pagination/Pagination'
 import { useFitRows } from '@/hooks/useFitRows'
 import { describeSelection } from '@/lib/selection'
+import { sliceForPage } from '@/lib/pagination'
 import type { AddPointTab } from '@/pages/PlanningPage/AddPoint/AddPointDialog'
 import styles from '@/pages/PlanningPage/PointsList.module.css'
 import type { DeliveryPoint } from '@/services/schemas/deliveryPoint'
@@ -25,10 +26,7 @@ export default function PointsList({ points, onAdd, onMove, onRemove }: PointsLi
   const { ref, rows } = useFitRows(ROW_HEIGHT_PX, FALLBACK_ROWS)
   const [requestedPage, setRequestedPage] = useState(1)
 
-  const pageCount = Math.max(1, Math.ceil(points.length / rows))
-  const page = Math.min(requestedPage, pageCount)
-  const firstIndex = (page - 1) * rows
-  const visible = points.slice(firstIndex, firstIndex + rows)
+  const { page, pageCount, firstIndex, visible } = sliceForPage(points, requestedPage, rows)
 
   const move = (pointId: number, offset: number) => {
     const index = points.findIndex((point) => point.id === pointId)

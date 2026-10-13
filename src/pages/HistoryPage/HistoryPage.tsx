@@ -11,7 +11,7 @@ import Skeleton from '@/components/Skeleton/Skeleton'
 import VisuallyHidden from '@/components/VisuallyHidden/VisuallyHidden'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useFitRows } from '@/hooks/useFitRows'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useOperations } from '@/hooks/useOperations'
 import { useVehicles } from '@/hooks/useVehicles'
 import {
@@ -28,7 +28,6 @@ import HistoryTable from '@/pages/HistoryPage/HistoryTable'
 import { describeError } from '@/services/errors'
 import type { OperationSortField } from '@/services/schemas/operation'
 
-const DESKTOP_QUERY = '(min-width: 64rem)'
 const TABLE_ROW_PX = 36
 const TABLE_HEADER_PX = 40
 const LIST_ROW_PX = 76
@@ -42,7 +41,7 @@ export default function HistoryPage() {
   useDocumentTitle('Histórico de operações')
   const [params, setParams] = useSearchParams()
   const state = parseHistoryParams(params)
-  const isDesktop = useMediaQuery(DESKTOP_QUERY)
+  const isDesktop = useIsDesktop()
   const [filtersOpen, setFiltersOpen] = useState(false)
   const { ref, rows, ready } = useFitRows(
     isDesktop ? TABLE_ROW_PX : LIST_ROW_PX,

@@ -2,7 +2,7 @@ import ErrorMessage from '@/components/ErrorMessage/ErrorMessage'
 import Skeleton from '@/components/Skeleton/Skeleton'
 import Tabs from '@/components/Tabs/Tabs'
 import VisuallyHidden from '@/components/VisuallyHidden/VisuallyHidden'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useRoute } from '@/hooks/useRoutes'
 import {
   describeDistanceComparison,
@@ -16,8 +16,6 @@ import MetricsTable from '@/pages/ComparisonPage/MetricsTable'
 import SegmentsTable from '@/pages/ComparisonPage/SegmentsTable'
 import { ApiError, describeError } from '@/services/errors'
 
-const DESKTOP_QUERY = '(min-width: 64rem)'
-
 type ComparisonViewProps = {
   emissionId: number
   distanceId: number
@@ -26,7 +24,7 @@ type ComparisonViewProps = {
 export default function ComparisonView({ emissionId, distanceId }: ComparisonViewProps) {
   const emission = useRoute(emissionId)
   const distance = useRoute(distanceId)
-  const isDesktop = useMediaQuery(DESKTOP_QUERY)
+  const isDesktop = useIsDesktop()
 
   const requestError = emission.error ?? distance.error
   if (requestError instanceof ApiError && requestError.status === 404) {

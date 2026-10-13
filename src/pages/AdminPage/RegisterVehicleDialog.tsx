@@ -7,7 +7,7 @@ import VehicleImagePicker from '@/components/VehicleImagePicker/VehicleImagePick
 import { useToast } from '@/hooks/useToast'
 import { useCreateVehicle } from '@/hooks/useVehicles'
 import styles from '@/pages/AdminPage/AdminPage.module.css'
-import { describeError } from '@/services/errors'
+import { failureMessage } from '@/services/errors'
 import { DEFAULT_VEHICLE_IMAGE, vehicleInputSchema } from '@/services/schemas/vehicle'
 import type { VehicleInput } from '@/services/schemas/vehicle'
 
@@ -44,10 +44,7 @@ export default function RegisterVehicleDialog({ open, onClose }: RegisterVehicle
       notify(`Veículo ${vehicle.placa} cadastrado.`, 'success')
       close()
     } catch (error) {
-      notify(
-        error instanceof Error ? describeError(error) : 'Ocorreu um erro inesperado.',
-        'danger',
-      )
+      notify(failureMessage(error), 'danger')
     }
   })
 

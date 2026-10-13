@@ -53,3 +53,10 @@ export function describeError(error: Error): string {
   }
   return 'Ocorreu um erro inesperado.'
 }
+
+export function failureMessage<T>(
+  error: T,
+  describe: (error: Error) => string = describeError,
+): string {
+  return error instanceof Error ? describe(error) : 'Ocorreu um erro inesperado.'
+}

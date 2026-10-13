@@ -8,7 +8,7 @@ import MapView from '@/components/Map/MapView'
 import SplitLayout from '@/components/SplitLayout/SplitLayout'
 import { useDeliveryPoints } from '@/hooks/useDeliveryPoints'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useCalculateRoutes } from '@/hooks/useRoutes'
 import type { CalculationIds } from '@/hooks/useRoutes'
 import { useToast } from '@/hooks/useToast'
@@ -26,7 +26,6 @@ import { describeError } from '@/services/errors'
 import type { DeliveryPoint } from '@/services/schemas/deliveryPoint'
 
 const NO_POINTS: DeliveryPoint[] = []
-const DESKTOP_QUERY = '(min-width: 64rem)'
 const FLOATING_INSET_PX = 380
 
 type DialogState = {
@@ -52,7 +51,7 @@ export default function PlanningPage() {
   const { vehicles, active, selected: vehicle, choose } = useActiveVehicle()
   const calculateRoutes = useCalculateRoutes()
   const { notify } = useToast()
-  const isDesktop = useMediaQuery(DESKTOP_QUERY)
+  const isDesktop = useIsDesktop()
   const [requestedIds, setRequestedIds] = useState<number[]>([])
   const [draft, setDraft] = useState<LatLngTuple | null>(null)
   const [dialog, setDialog] = useState<DialogState | null>(null)

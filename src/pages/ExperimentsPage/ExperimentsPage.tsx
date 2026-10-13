@@ -9,16 +9,14 @@ import VisuallyHidden from '@/components/VisuallyHidden/VisuallyHidden'
 import { isMockMode } from '@/config/env'
 import { useLatestExperiment, useStartExperiment } from '@/hooks/useExperiments'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useToast } from '@/hooks/useToast'
 import ConvergenceChart from '@/pages/ExperimentsPage/ConvergenceChart'
 import EmissionsChart from '@/pages/ExperimentsPage/EmissionsChart'
 import ExperimentResultsTable from '@/pages/ExperimentsPage/ExperimentResultsTable'
 import styles from '@/pages/ExperimentsPage/ExperimentsPage.module.css'
-import { describeError } from '@/services/errors'
+import { describeError, failureMessage } from '@/services/errors'
 import { DEFAULT_EXPERIMENT_INPUT } from '@/services/schemas/experiment'
-
-const DESKTOP_QUERY = '(min-width: 64rem)'
 
 function describeSetup(instances: number[], seeds: number[]): string {
   const sizes = instances.join(', ')
@@ -30,7 +28,7 @@ export default function ExperimentsPage() {
   const latest = useLatestExperiment()
   const start = useStartExperiment()
   const { notify } = useToast()
-  const isDesktop = useMediaQuery(DESKTOP_QUERY)
+  const isDesktop = useIsDesktop()
 
   const experiment = latest.data ?? null
   const running = experiment?.status === 'PENDING'
@@ -39,10 +37,7 @@ export default function ExperimentsPage() {
     try {
       await start.mutateAsync(DEFAULT_EXPERIMENT_INPUT)
     } catch (error) {
-      notify(
-        error instanceof Error ? describeError(error) : 'Ocorreu um erro inesperado.',
-        'danger',
-      )
+      notify(failureMessage(error), 'danger')
     }
   }
 

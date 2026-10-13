@@ -4,9 +4,10 @@ import EmptyState from '@/components/EmptyState/EmptyState'
 import Pagination from '@/components/Pagination/Pagination'
 import Table, { Td, Th } from '@/components/Table/Table'
 import { useFitRows } from '@/hooks/useFitRows'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { emissionSavingPercent, runKey } from '@/lib/experimentStats'
 import { formatKilometers, formatNumber, formatSignedPercent } from '@/lib/format'
+import { sliceForPage } from '@/lib/pagination'
 import ExperimentRunList from '@/pages/ExperimentsPage/ExperimentRunList'
 import styles from '@/pages/ExperimentsPage/ExperimentsPage.module.css'
 import type { ExperimentRun } from '@/services/schemas/experiment'
@@ -15,14 +16,13 @@ const ROW_PX = 33
 const HEADER_PX = 76
 const LIST_ROW_PX = 76
 const FALLBACK_ROWS = 7
-const DESKTOP_QUERY = '(min-width: 64rem)'
 
 type ExperimentResultsTableProps = {
   runs: ExperimentRun[]
 }
 
 export default function ExperimentResultsTable({ runs }: ExperimentResultsTableProps) {
-  const isDesktop = useMediaQuery(DESKTOP_QUERY)
+  const isDesktop = useIsDesktop()
   const { ref, rows } = useFitRows(
     isDesktop ? ROW_PX : LIST_ROW_PX,
     FALLBACK_ROWS,
@@ -30,9 +30,7 @@ export default function ExperimentResultsTable({ runs }: ExperimentResultsTableP
   )
   const [requestedPage, setRequestedPage] = useState(1)
 
-  const pageCount = Math.max(1, Math.ceil(runs.length / rows))
-  const page = Math.min(requestedPage, pageCount)
-  const visible = runs.slice((page - 1) * rows, page * rows)
+  const { page, pageCount, visible } = sliceForPage(runs, requestedPage, rows)
 
   return (
     <Card title="Resultados por execução" fill>

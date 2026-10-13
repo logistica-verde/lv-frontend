@@ -10,7 +10,7 @@ import VisuallyHidden from '@/components/VisuallyHidden/VisuallyHidden'
 import { useGaSettings, useSaveGaSettings } from '@/hooks/useAdmin'
 import { useToast } from '@/hooks/useToast'
 import styles from '@/pages/AdminPage/AdminPage.module.css'
-import { describeError } from '@/services/errors'
+import { describeError, failureMessage } from '@/services/errors'
 import { DEFAULT_GA_SETTINGS, gaSettingsSchema } from '@/services/schemas/gaSettings'
 import type { GaSettings } from '@/services/schemas/gaSettings'
 
@@ -41,10 +41,7 @@ function GaSettingsForm({ settings }: GaSettingsFormProps) {
       await save.mutateAsync(input)
       notify('Parâmetros do algoritmo genético salvos.', 'success')
     } catch (error) {
-      notify(
-        error instanceof Error ? describeError(error) : 'Ocorreu um erro inesperado.',
-        'danger',
-      )
+      notify(failureMessage(error), 'danger')
     }
   })
 

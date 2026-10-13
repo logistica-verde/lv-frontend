@@ -6,17 +6,16 @@ import { z } from 'zod'
 import AccountBar from '@/components/AppLayout/AccountBar'
 import styles from '@/components/AppLayout/AppLayout.module.css'
 import { isMockMode } from '@/config/env'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useSession } from '@/hooks/useSession'
 import { classNames } from '@/lib/classNames'
 import { navItems } from '@/navigation'
 
-const WIDE_QUERY = '(min-width: 64rem)'
 const MENU_ID = 'menu-principal'
 const fullBleedSchema = z.object({ fullBleed: z.literal(true) })
 
 export default function AppLayout() {
-  const isWide = useMediaQuery(WIDE_QUERY)
+  const isWide = useIsDesktop()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuButton = useRef<HTMLButtonElement>(null)
   const session = useSession()
