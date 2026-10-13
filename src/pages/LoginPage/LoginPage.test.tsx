@@ -60,7 +60,7 @@ describe('LoginPage', () => {
     expect(screen.getByLabelText('E-mail')).toHaveAttribute('type', 'email')
     expect(screen.getByLabelText('Senha')).toHaveAttribute('type', 'password')
     expect(screen.getByRole('button', { name: 'Entrar' })).toBeEnabled()
-    expect(document.title).toBe('Entrar · Logística Verde')
+    expect(document.title).toBe('Entrar · Lastro')
   })
 
   it('asks for both fields and sends nothing when the form is empty', async () => {

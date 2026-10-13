@@ -26,23 +26,25 @@
   --control-height: 2.25rem;
   --control-height-touch: 2.75rem;
 
-  --color-bg: #f8f9fb;
+  --color-bg: #f4f4f2;
   --color-surface: #ffffff;
-  --color-surface-muted: #f1f3f6;
-  --color-border: #e1e5ea;
-  --color-border-strong: #c6ccd4;
-  --color-control-border: #7c8796;
-  --color-text: #1a2028;
-  --color-text-muted: #5b6573;
+  --color-surface-muted: #efefec;
+  --color-border: #e2e2dd;
+  --color-border-strong: #cdcdc6;
+  --color-control-border: #7b8680;
+  --color-text: #16211e;
+  --color-text-muted: #5c6762;
 
-  --color-primary: #0f5f66;
-  --color-primary-hover: #0b4b51;
+  --color-primary: #135c4a;
+  --color-primary-hover: #0d4839;
   --color-primary-contrast: #ffffff;
-  --color-primary-bg: #e6f1f2;
+  --color-primary-bg: #e4f0ec;
   --color-focus: #2f6fdb;
+  --color-sidebar: #f8f8f6;
+  --sidebar-width: 14.5rem;
 
-  --color-route-emission: #0f5f66;
-  --color-route-distance: #64748b;
+  --color-route-emission: #178a6e;
+  --color-route-distance: #7a5cd1;
 
   --color-danger: #b42318;
   --color-danger-hover: #912018;
@@ -59,23 +61,24 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-bg: #0e1217;
-    --color-surface: #151a21;
-    --color-surface-muted: #1b222b;
-    --color-border: #262f3a;
-    --color-border-strong: #384454;
-    --color-control-border: #6b7889;
-    --color-text: #e7ebf0;
-    --color-text-muted: #9aa5b4;
+    --color-bg: #0e1513;
+    --color-surface: #141c19;
+    --color-surface-muted: #1a2420;
+    --color-border: #25312d;
+    --color-border-strong: #364540;
+    --color-control-border: #6d7c75;
+    --color-text: #e6ece9;
+    --color-text-muted: #9aa8a2;
 
-    --color-primary: #45bcc5;
-    --color-primary-hover: #66cdd4;
-    --color-primary-contrast: #06191b;
-    --color-primary-bg: #12292c;
+    --color-primary: #4fc9a6;
+    --color-primary-hover: #72d8bb;
+    --color-primary-contrast: #04170f;
+    --color-primary-bg: #12302a;
     --color-focus: #7aa7f5;
+    --color-sidebar: #111a17;
 
-    --color-route-emission: #45bcc5;
-    --color-route-distance: #8fa0b8;
+    --color-route-emission: #4fc9a6;
+    --color-route-distance: #a995ec;
 
     --color-danger: #f2766d;
     --color-danger-hover: #f58f87;

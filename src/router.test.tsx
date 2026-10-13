@@ -27,7 +27,7 @@ describe('app routes', () => {
     renderRoutes(routes, '/')
 
     expect(screen.getByRole('heading', { level: 1, name: 'Nova rota' })).toBeVisible()
-    expect(document.title).toBe('Nova rota · Logística Verde')
+    expect(document.title).toBe('Nova rota · Lastro')
   })
 
   it('wraps pages in the layout with a labelled main navigation', () => {
@@ -35,7 +35,7 @@ describe('app routes', () => {
 
     expect(screen.getByRole('navigation', { name: 'Principal' })).toBeVisible()
     expect(screen.getByRole('main')).toBeVisible()
-    expect(screen.getByRole('link', { name: 'Logística Verde' })).toHaveAttribute('href', '/')
+    expect(screen.getByRole('link', { name: 'Lastro' })).toHaveAttribute('href', '/')
   })
 
   it('marks the current section in the navigation', () => {
@@ -66,7 +66,7 @@ describe('app routes', () => {
       'aria-current',
       'page',
     )
-    expect(document.title).toBe('Administração · Logística Verde')
+    expect(document.title).toBe('Administração · Lastro')
   })
 
   it('keeps the old vehicles address working by redirecting to the administration', async () => {
@@ -88,7 +88,7 @@ describe('app routes', () => {
 
     expect(router.state.location.pathname).toBe('/historico')
     expect(screen.getByRole('heading', { level: 1, name: 'Histórico de operações' })).toBeVisible()
-    expect(document.title).toBe('Histórico de operações · Logística Verde')
+    expect(document.title).toBe('Histórico de operações · Lastro')
   })
 
   it('opens the experiments page from the navigation', async () => {
@@ -111,7 +111,7 @@ describe('app routes', () => {
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Experimentos' })).toBeVisible()
     expect(router.state.location.pathname).toBe('/experimentos')
-    expect(document.title).toBe('Experimentos · Logística Verde')
+    expect(document.title).toBe('Experimentos · Lastro')
     vi.unstubAllGlobals()
   })
 
@@ -119,7 +119,7 @@ describe('app routes', () => {
     const router = renderRoutes(routes, '/rota-que-nao-existe')
 
     expect(screen.getByRole('heading', { level: 1, name: 'Página não encontrada' })).toBeVisible()
-    expect(document.title).toBe('Página não encontrada · Logística Verde')
+    expect(document.title).toBe('Página não encontrada · Lastro')
 
     await userEvent.click(screen.getByRole('link', { name: 'Voltar ao planejamento' }))
 
@@ -220,7 +220,7 @@ describe('route protection', () => {
       }),
     ).toBeVisible()
     expect(screen.getByRole('link', { name: 'Ir para o início' })).toHaveAttribute('href', '/')
-    expect(document.title).toBe('Sem permissão · Logística Verde')
+    expect(document.title).toBe('Sem permissão · Lastro')
   })
 
   it('keeps the verification screen away from operators', async () => {

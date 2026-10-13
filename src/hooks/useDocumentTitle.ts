@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-const APP_NAME = 'Logística Verde'
+const APP_NAME = 'Lastro'
 
 export function useDocumentTitle(title: string): void {
   useEffect(() => {

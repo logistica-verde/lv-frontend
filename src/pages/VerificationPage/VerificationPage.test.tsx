@@ -38,7 +38,7 @@ describe('VerificationPage', () => {
       screen.getByRole('heading', { level: 1, name: 'Verificação de integridade' }),
     ).toBeVisible()
     expect(screen.getByRole('heading', { name: 'Nenhuma operação selecionada' })).toBeVisible()
-    expect(document.title).toBe('Verificação de integridade · Logística Verde')
+    expect(document.title).toBe('Verificação de integridade · Lastro')
   })
 
   it('verifies the operation in the address and fills the search with its ID', async () => {

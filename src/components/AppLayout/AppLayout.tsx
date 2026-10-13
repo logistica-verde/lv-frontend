@@ -1,10 +1,11 @@
-import { Menu, Route, X } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import { useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { Link, NavLink, Outlet, useMatches } from 'react-router'
 import { z } from 'zod'
 import AccountBar from '@/components/AppLayout/AccountBar'
 import styles from '@/components/AppLayout/AppLayout.module.css'
+import BrandMark from '@/components/BrandMark/BrandMark'
 import { isMockMode } from '@/config/env'
 import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useSession } from '@/hooks/useSession'
@@ -44,6 +45,7 @@ export default function AppLayout() {
             onClick={closeMenu}
             className={({ isActive }) => classNames(styles.navLink, isActive && styles.active)}
           >
+            <item.icon size={18} aria-hidden="true" />
             {item.label}
           </NavLink>
         </li>
@@ -61,62 +63,74 @@ export default function AppLayout() {
     </span>
   )
 
+  const content = (
+    <main
+      id="conteudo"
+      tabIndex={-1}
+      className={classNames(styles.main, fullBleed && styles.bleed)}
+    >
+      <Outlet />
+    </main>
+  )
+
+  const skipLink = (
+    <a href="#conteudo" className={styles.skipLink}>
+      Ir para o conteúdo
+    </a>
+  )
+
+  if (isWide) {
+    return (
+      <div className={styles.shell}>
+        {skipLink}
+        <aside className={styles.sidebar}>
+          <Link to="/" className={styles.brand}>
+            <BrandMark />
+            Lastro
+          </Link>
+          <nav aria-label="Principal" className={styles.sideNav}>
+            {links}
+          </nav>
+          <div className={styles.sidebarEnd}>
+            {mockNotice}
+            {session && <AccountBar session={session} variant="sidebar" />}
+          </div>
+        </aside>
+        {content}
+      </div>
+    )
+  }
+
   return (
     <div className={styles.layout}>
-      <a href="#conteudo" className={styles.skipLink}>
-        Ir para o conteúdo
-      </a>
+      {skipLink}
       <header className={styles.header} onKeyDown={handleKeyDown}>
         <div className={styles.headerInner}>
           <Link to="/" className={styles.brand}>
-            <span className={styles.brandMark} aria-hidden="true">
-              <Route size={16} />
-            </span>
-            Logística Verde
+            <BrandMark size={28} />
+            Lastro
           </Link>
-          {isWide ? (
-            <>
-              <nav aria-label="Principal">{links}</nav>
-              <div className={styles.end}>
-                {mockNotice}
-                {session && <AccountBar session={session} variant="bar" />}
-              </div>
-            </>
-          ) : (
-            <>
-              {mockNotice}
-              <button
-                ref={menuButton}
-                type="button"
-                className={styles.menuButton}
-                aria-expanded={menuOpen}
-                aria-controls={MENU_ID}
-                aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
-                onClick={() => setMenuOpen((open) => !open)}
-              >
-                {menuOpen ? (
-                  <X size={20} aria-hidden="true" />
-                ) : (
-                  <Menu size={20} aria-hidden="true" />
-                )}
-              </button>
-              {menuOpen && (
-                <nav id={MENU_ID} aria-label="Principal" className={styles.mobileNav}>
-                  {links}
-                  {session && <AccountBar session={session} variant="menu" />}
-                </nav>
-              )}
-            </>
+          {mockNotice}
+          <button
+            ref={menuButton}
+            type="button"
+            className={styles.menuButton}
+            aria-expanded={menuOpen}
+            aria-controls={MENU_ID}
+            aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            {menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
+          </button>
+          {menuOpen && (
+            <nav id={MENU_ID} aria-label="Principal" className={styles.mobileNav}>
+              {links}
+              {session && <AccountBar session={session} variant="menu" />}
+            </nav>
           )}
         </div>
       </header>
-      <main
-        id="conteudo"
-        tabIndex={-1}
-        className={classNames(styles.main, fullBleed && styles.bleed)}
-      >
-        <Outlet />
-      </main>
+      {content}
     </div>
   )
 }

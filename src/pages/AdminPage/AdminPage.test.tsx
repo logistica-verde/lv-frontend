@@ -126,7 +126,7 @@ describe('AdminPage', () => {
       'Parâmetros do AG',
     ])
     expect(screen.getByRole('tab', { name: 'Veículos' })).toHaveAttribute('aria-selected', 'true')
-    expect(document.title).toBe('Administração · Logística Verde')
+    expect(document.title).toBe('Administração · Lastro')
   })
 })
 

@@ -57,7 +57,7 @@ describe('ExperimentsPage states', () => {
       await screen.findByRole('heading', { name: 'Nenhum experimento executado' }),
     ).toBeVisible()
     expect(screen.getByRole('button', { name: 'Executar experimentos' })).toBeEnabled()
-    expect(document.title).toBe('Experimentos · Logística Verde')
+    expect(document.title).toBe('Experimentos · Lastro')
   })
 
   it('describes the setup that will run when there is no experiment yet', async () => {

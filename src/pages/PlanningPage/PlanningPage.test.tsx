@@ -55,7 +55,7 @@ describe('PlanningPage', () => {
     renderPage()
 
     expect(screen.getByRole('heading', { level: 1, name: 'Nova rota' })).toBeVisible()
-    expect(document.title).toBe('Nova rota · Logística Verde')
+    expect(document.title).toBe('Nova rota · Lastro')
     expect(await screen.findByRole('combobox', { name: 'Placa' })).toBeVisible()
     expect(screen.getByRole('heading', { name: 'Nenhum ponto na rota' })).toBeVisible()
     expect(screen.getByRole('region', { name: 'Mapa dos pontos de entrega' })).toBeVisible()

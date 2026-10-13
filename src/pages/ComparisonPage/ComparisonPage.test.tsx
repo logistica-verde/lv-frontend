@@ -76,7 +76,7 @@ describe('ComparisonPage result', () => {
         /A rota de menor emissão emite 31,25% menos CO₂ que a rota de menor distância\. Em troca, a rota de menor emissão percorre 12,36% mais distância\./,
       ),
     ).toBeVisible()
-    expect(document.title).toBe('Comparação de rotas · Logística Verde')
+    expect(document.title).toBe('Comparação de rotas · Lastro')
   })
 
   it('tabulates the totals of each route with the difference between them', async () => {
