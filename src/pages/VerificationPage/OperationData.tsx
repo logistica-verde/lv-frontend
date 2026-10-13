@@ -6,7 +6,7 @@ import SegmentedControl from '@/components/SegmentedControl/SegmentedControl'
 import Skeleton from '@/components/Skeleton/Skeleton'
 import Table, { Td, Th } from '@/components/Table/Table'
 import VisuallyHidden from '@/components/VisuallyHidden/VisuallyHidden'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useIsDesktop, useMediaQuery } from '@/hooks/useMediaQuery'
 import { useRoute } from '@/hooks/useRoutes'
 import { formatDateTime, formatNumber } from '@/lib/format'
 import styles from '@/pages/VerificationPage/OperationData.module.css'
@@ -26,7 +26,6 @@ const OPTIONS: { value: Listing; label: string }[] = [
 const CRITERIA = { EMISSION: 'Menor emissão', DISTANCE: 'Menor distância' }
 const DESKTOP_PAGE_SIZE = 6
 const COMPACT_PAGE_SIZE = 3
-const DESKTOP_QUERY = '(min-width: 64rem)'
 const TALL_QUERY = '(min-height: 42rem)'
 const MISSING = '—'
 
@@ -34,7 +33,7 @@ export default function OperationData({ routeId }: OperationDataProps) {
   const route = useRoute(routeId)
   const [listing, setListing] = useState<Listing>('points')
   const [page, setPage] = useState(1)
-  const isDesktop = useMediaQuery(DESKTOP_QUERY)
+  const isDesktop = useIsDesktop()
   const isTall = useMediaQuery(TALL_QUERY)
   const pageSize = isDesktop && isTall ? DESKTOP_PAGE_SIZE : COMPACT_PAGE_SIZE
 

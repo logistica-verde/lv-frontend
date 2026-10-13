@@ -7,14 +7,12 @@ import EmptyState from '@/components/EmptyState/EmptyState'
 import Tabs from '@/components/Tabs/Tabs'
 import TextField from '@/components/TextField/TextField'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 import OperationData from '@/pages/VerificationPage/OperationData'
 import VerdictCard from '@/pages/VerificationPage/VerdictCard'
 import styles from '@/pages/VerificationPage/VerificationPage.module.css'
 import { verificationSchema } from '@/pages/VerificationPage/verificationSchema'
 import type { VerificationInput } from '@/pages/VerificationPage/verificationSchema'
-
-const DESKTOP_QUERY = '(min-width: 64rem)'
 
 function parseId(value: string | undefined): number | null {
   const id = Number(value)
@@ -25,7 +23,7 @@ export default function VerificationPage() {
   useDocumentTitle('Verificação de integridade')
   const { routeId } = useParams()
   const navigate = useNavigate()
-  const isDesktop = useMediaQuery(DESKTOP_QUERY)
+  const isDesktop = useIsDesktop()
   const id = parseId(routeId)
   const {
     register,

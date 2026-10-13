@@ -6,7 +6,7 @@ import HashText from '@/components/HashText/HashText'
 import Skeleton from '@/components/Skeleton/Skeleton'
 import VisuallyHidden from '@/components/VisuallyHidden/VisuallyHidden'
 import { useIntegrity } from '@/hooks/useIntegrity'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { formatDateTime } from '@/lib/format'
 import { integrityPresentation } from '@/lib/integrityPresentation'
 import { classNames } from '@/lib/classNames'
@@ -18,12 +18,11 @@ type VerdictCardProps = {
 }
 
 const MISSING = '—'
-const DESKTOP_QUERY = '(min-width: 64rem)'
 
 export default function VerdictCard({ routeId }: VerdictCardProps) {
   const integrity = useIntegrity(routeId)
   const [checking, setChecking] = useState(false)
-  const isDesktop = useMediaQuery(DESKTOP_QUERY)
+  const isDesktop = useIsDesktop()
 
   const verify = () => {
     setChecking(true)

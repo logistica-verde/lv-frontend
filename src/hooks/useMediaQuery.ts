@@ -21,3 +21,9 @@ export function useMediaQuery(query: string, serverFallback = true): boolean {
 
   return useSyncExternalStore(subscribe, getSnapshot, () => serverFallback)
 }
+
+export const DESKTOP_QUERY = '(min-width: 64rem)'
+
+export function useIsDesktop(): boolean {
+  return useMediaQuery(DESKTOP_QUERY)
+}

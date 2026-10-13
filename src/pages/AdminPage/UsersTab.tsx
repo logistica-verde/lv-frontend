@@ -12,11 +12,12 @@ import Table, { Td, Th } from '@/components/Table/Table'
 import VisuallyHidden from '@/components/VisuallyHidden/VisuallyHidden'
 import { useUpdateUser, useUsers } from '@/hooks/useAdmin'
 import { useFitRows } from '@/hooks/useFitRows'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useToast } from '@/hooks/useToast'
+import { sliceForPage } from '@/lib/pagination'
 import listStyles from '@/pages/AdminPage/AdminList.module.css'
 import styles from '@/pages/AdminPage/AdminPage.module.css'
-import { ApiError, describeError } from '@/services/errors'
+import { ApiError, describeError, failureMessage } from '@/services/errors'
 import { ROLE_LABELS, ROLES } from '@/services/schemas/user'
 import type { Role, User, UserUpdate } from '@/services/schemas/user'
 
@@ -24,7 +25,6 @@ const ROW_PX = 45
 const HEADER_PX = 36
 const LIST_ROW_PX = 68
 const FALLBACK_ROWS = 7
-const DESKTOP_QUERY = '(min-width: 64rem)'
 
 type PendingChange = { kind: 'role'; user: User; role: Role } | { kind: 'deactivate'; user: User }
 
@@ -54,7 +54,7 @@ export default function UsersTab() {
   const users = useUsers()
   const updateUser = useUpdateUser()
   const { notify } = useToast()
-  const isDesktop = useMediaQuery(DESKTOP_QUERY)
+  const isDesktop = useIsDesktop()
   const { ref, rows } = useFitRows(
     isDesktop ? ROW_PX : LIST_ROW_PX,
     FALLBACK_ROWS,
@@ -68,10 +68,7 @@ export default function UsersTab() {
       await updateUser.mutateAsync({ id: user.id, update })
       notify(success, 'success')
     } catch (error) {
-      notify(
-        error instanceof Error ? describeUpdateError(error) : 'Ocorreu um erro inesperado.',
-        'danger',
-      )
+      notify(failureMessage(error, describeUpdateError), 'danger')
     } finally {
       setPending(null)
     }
@@ -92,9 +89,7 @@ export default function UsersTab() {
   }
 
   const all = users.data ?? []
-  const pageCount = Math.max(1, Math.ceil(all.length / rows))
-  const page = Math.min(requestedPage, pageCount)
-  const visible = all.slice((page - 1) * rows, page * rows)
+  const { page, pageCount, visible } = sliceForPage(all, requestedPage, rows)
 
   const roleSelect = (user: User) => (
     <SelectField

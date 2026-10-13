@@ -1,9 +1,7 @@
 import type { ReactNode } from 'react'
 import Tabs from '@/components/Tabs/Tabs'
 import styles from '@/components/SplitLayout/SplitLayout.module.css'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
-
-const DESKTOP_QUERY = '(min-width: 64rem)'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 
 type SplitLayoutProps = {
   panelLabel: string
@@ -13,7 +11,7 @@ type SplitLayoutProps = {
 }
 
 export default function SplitLayout({ panelLabel, mapLabel, panel, map }: SplitLayoutProps) {
-  const isDesktop = useMediaQuery(DESKTOP_QUERY)
+  const isDesktop = useIsDesktop()
 
   if (isDesktop) {
     return (

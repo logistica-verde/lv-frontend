@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { DESKTOP_QUERY, useIsDesktop, useMediaQuery } from '@/hooks/useMediaQuery'
 
 type Listener = () => void
 
@@ -49,5 +49,36 @@ describe('useMediaQuery', () => {
 
     expect(renderHook(() => useMediaQuery('(min-width: 64rem)', true)).result.current).toBe(true)
     expect(renderHook(() => useMediaQuery('(min-width: 64rem)', false)).result.current).toBe(false)
+  })
+})
+
+describe('useIsDesktop', () => {
+  it('asks for screens at least 64rem wide', () => {
+    const queries: string[] = []
+    vi.stubGlobal('matchMedia', (query: string) => {
+      queries.push(query)
+      return {
+        media: query,
+        matches: true,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      }
+    })
+
+    const { result } = renderHook(() => useIsDesktop())
+
+    expect(result.current).toBe(true)
+    expect(queries).toContain(DESKTOP_QUERY)
+    expect(DESKTOP_QUERY).toBe('(min-width: 64rem)')
+  })
+
+  it('follows the screen size', () => {
+    const resize = stubMatchMedia(false)
+    const { result } = renderHook(() => useIsDesktop())
+    expect(result.current).toBe(false)
+
+    act(() => resize(true))
+
+    expect(result.current).toBe(true)
   })
 })
