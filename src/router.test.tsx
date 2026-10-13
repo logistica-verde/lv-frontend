@@ -170,7 +170,7 @@ describe('route protection', () => {
   it('sends visitors without a session to the login page', async () => {
     const router = renderRoutes(routes, '/historico')
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Entrar' })).toBeVisible()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Entrar no Lastro' })).toBeVisible()
     expect(router.state.location.pathname).toBe('/login')
     expect(screen.queryByRole('navigation', { name: 'Principal' })).not.toBeInTheDocument()
   })
@@ -263,7 +263,7 @@ describe('route protection', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Sair' }))
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Entrar' })).toBeVisible()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Entrar no Lastro' })).toBeVisible()
     expect(router.state.location.pathname).toBe('/login')
   })
 })
