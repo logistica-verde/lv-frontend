@@ -65,10 +65,12 @@ export default function AccountBar({ session, variant }: AccountBarProps) {
   return (
     <div className={styles.sidebar}>
       {identity}
-      <ThemeToggle />
-      <IconButton label="Sair" onClick={signOut}>
-        <LogOut size={18} aria-hidden="true" />
-      </IconButton>
+      <div className={styles.actions}>
+        <ThemeToggle />
+        <IconButton label="Sair" onClick={signOut}>
+          <LogOut size={18} aria-hidden="true" />
+        </IconButton>
+      </div>
     </div>
   )
 }
