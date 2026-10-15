@@ -8,6 +8,7 @@ import Tabs from '@/components/Tabs/Tabs'
 import TextField from '@/components/TextField/TextField'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useIsDesktop } from '@/hooks/useMediaQuery'
+import RecentVerifications from '@/pages/VerificationPage/RecentVerifications'
 import OperationData from '@/pages/VerificationPage/OperationData'
 import VerdictCard from '@/pages/VerificationPage/VerdictCard'
 import styles from '@/pages/VerificationPage/VerificationPage.module.css'
@@ -42,7 +43,12 @@ export default function VerificationPage() {
   return (
     <div className={styles.page}>
       <div className={styles.heading}>
-        <h1>Verificação de integridade</h1>
+        <div>
+          <h1>Verificação de integridade</h1>
+          <p className={styles.subtitle}>
+            Compare o hash recalculado a partir do banco com o hash registrado na blockchain.
+          </p>
+        </div>
         <form onSubmit={submit} noValidate className={styles.search}>
           <TextField
             label="ID da operação"
@@ -61,26 +67,33 @@ export default function VerificationPage() {
         </p>
       )}
       {id === null && routeId === undefined && (
-        <Card>
-          <EmptyState
-            title="Nenhuma operação selecionada"
-            description="Informe o ID de uma operação para comparar o hash do banco com o hash ancorado na blockchain."
-          />
-        </Card>
+        <div className={styles.workspace}>
+          <Card>
+            <EmptyState
+              title="Nenhuma operação selecionada"
+              description="Informe o ID de uma operação para comparar o hash do banco com o hash ancorado na blockchain."
+            />
+          </Card>
+          <RecentVerifications />
+        </div>
       )}
       {verdict && data && isDesktop && (
         <div className={styles.workspace}>
           {verdict}
-          {data}
+          <div className={styles.side}>
+            <RecentVerifications />
+            {data}
+          </div>
         </div>
       )}
       {verdict && data && !isDesktop && (
         <Tabs
           label="Seções da verificação"
-          className={styles.tabs}
+
           items={[
             { id: 'verdict', label: 'Veredito', content: verdict },
             { id: 'data', label: 'Dados', content: data },
+            { id: 'recent', label: 'Recentes', content: <RecentVerifications /> },
           ]}
         />
       )}

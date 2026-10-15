@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { Download } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import Button from '@/components/Button/Button'
 import Card from '@/components/Card/Card'
 import ErrorMessage from '@/components/ErrorMessage/ErrorMessage'
@@ -7,6 +8,9 @@ import Skeleton from '@/components/Skeleton/Skeleton'
 import VisuallyHidden from '@/components/VisuallyHidden/VisuallyHidden'
 import { useIntegrity } from '@/hooks/useIntegrity'
 import { useIsDesktop } from '@/hooks/useMediaQuery'
+import { useSession } from '@/hooks/useSession'
+import { downloadJson } from '@/lib/exportJson'
+import { recordVerification } from '@/lib/recentVerifications'
 import { formatDateTime } from '@/lib/format'
 import { integrityPresentation } from '@/lib/integrityPresentation'
 import { classNames } from '@/lib/classNames'
@@ -23,6 +27,20 @@ export default function VerdictCard({ routeId }: VerdictCardProps) {
   const integrity = useIntegrity(routeId)
   const [checking, setChecking] = useState(false)
   const isDesktop = useIsDesktop()
+  const session = useSession()
+  const userId = session?.usuario.id ?? null
+  const checkedId = integrity.data?.operationId
+  const checkedStatus = integrity.data?.status
+
+  useEffect(() => {
+    if (userId !== null && checkedId !== undefined && checkedStatus !== undefined) {
+      recordVerification(userId, {
+        operationId: checkedId,
+        status: checkedStatus,
+        checkedAt: new Date().toISOString(),
+      })
+    }
+  }, [userId, checkedId, checkedStatus])
 
   const verify = () => {
     setChecking(true)
@@ -51,6 +69,7 @@ export default function VerdictCard({ routeId }: VerdictCardProps) {
 
   const report = integrity.data
   const { tone, label, message, Icon } = integrityPresentation[report.status]
+  const download = () => downloadJson(`lastro-comprovante-${report.operationId}.json`, report)
   const bothHashes = report.ledgerHash !== null
   const identical = report.ledgerHash === report.databaseHash
 
@@ -108,6 +127,10 @@ export default function VerdictCard({ routeId }: VerdictCardProps) {
         <div className={styles.actions}>
           <Button variant="secondary" loading={checking} onClick={verify}>
             Verificar novamente
+          </Button>
+          <Button variant="secondary" onClick={download}>
+            <Download size={16} aria-hidden="true" />
+            Baixar comprovante (JSON)
           </Button>
         </div>
       </section>
