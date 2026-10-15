@@ -1,28 +1,35 @@
 .page {
   display: flex;
-  flex: 1;
   flex-direction: column;
   gap: var(--space-3);
-  min-height: 0;
 }
 
 .heading {
   display: flex;
-  flex-shrink: 0;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: var(--space-2) var(--space-4);
 }
 
-.heading h1 {
+.titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.titles h1 {
   margin: 0;
 }
 
 .setup {
-  flex: 1;
-  min-width: 12rem;
-  margin: 0;
+  margin: var(--space-1) 0 0;
   color: var(--color-text-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
 .notice {
@@ -50,37 +57,30 @@
 }
 
 .loading {
-  flex: 1;
-  min-height: 0;
+  height: 12rem;
 }
 
-.workspace {
-  display: grid;
-  flex: 1;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-  gap: var(--space-3);
-  min-height: 0;
-}
-
-.charts {
+.results,
+.stack {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  min-height: 0;
 }
 
-.charts > :first-child {
-  flex: 1.45 1 0;
-  height: auto;
+.charts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
 }
 
-.tabs {
-  flex: 1;
+.chartSlot {
+  display: flex;
+  height: 22rem;
 }
 
-.fill {
-  height: 100%;
-  min-height: 0;
+.tableSlot {
+  display: flex;
+  height: 26rem;
 }
 
 .tableArea {
@@ -114,12 +114,8 @@
   overflow: hidden;
 }
 
-@media (max-width: 63.99rem) {
-  .setup {
-    display: none;
-  }
-
-  .heading {
-    justify-content: space-between;
+@media (min-width: 64rem) {
+  .charts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
