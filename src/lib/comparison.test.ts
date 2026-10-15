@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
+  averageSpeedKmh,
   describeDistanceComparison,
   describeEmissionComparison,
+  emissionPerKm,
   emissionSavingPercent,
   extraDistancePercent,
   percentChange,
+  travelTimeHours,
 } from '@/lib/comparison'
 
 const emissionRoute = { totalEmissionKg: 5.5, totalDistanceMeters: 2022.5 }
@@ -115,5 +118,41 @@ describe('describeDistanceComparison', () => {
 
   it('says nothing when it cannot be calculated', () => {
     expect(describeDistanceComparison(null)).toBeNull()
+  })
+})
+
+describe('trip metrics', () => {
+  const route = {
+    totalEmissionKg: 6,
+    totalDistanceMeters: 3000,
+    segments: [
+      { distanceMeters: 1000, averageSpeedKmh: 20 },
+      { distanceMeters: 2000, averageSpeedKmh: 40 },
+    ],
+  }
+
+  it('adds up the time of every segment', () => {
+    expect(travelTimeHours(route)).toBeCloseTo(0.1, 5)
+  })
+
+  it('divides the distance by that time to get the average speed', () => {
+    expect(averageSpeedKmh(route)).toBeCloseTo(30, 5)
+  })
+
+  it('has no time or speed without segments that move', () => {
+    const still = { ...route, segments: [{ distanceMeters: 500, averageSpeedKmh: 0 }] }
+
+    expect(travelTimeHours({ ...route, segments: [] })).toBeNull()
+    expect(travelTimeHours(still)).toBeNull()
+    expect(averageSpeedKmh(still)).toBeNull()
+  })
+
+  it('divides the emission by the kilometers', () => {
+    expect(emissionPerKm(route)).toBe(2)
+  })
+
+  it('has no emission per kilometer without a distance', () => {
+    expect(emissionPerKm({ ...route, totalDistanceMeters: 0 })).toBeNull()
+    expect(emissionPerKm({ ...route, totalEmissionKg: null })).toBeNull()
   })
 })

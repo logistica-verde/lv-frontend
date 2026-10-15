@@ -4,16 +4,12 @@ import Tabs from '@/components/Tabs/Tabs'
 import VisuallyHidden from '@/components/VisuallyHidden/VisuallyHidden'
 import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useRoute } from '@/hooks/useRoutes'
-import {
-  describeDistanceComparison,
-  describeEmissionComparison,
-  emissionSavingPercent,
-  extraDistancePercent,
-} from '@/lib/comparison'
 import ComparisonMap from '@/pages/ComparisonPage/ComparisonMap'
 import styles from '@/pages/ComparisonPage/ComparisonView.module.css'
+import IntegrityCard from '@/pages/ComparisonPage/IntegrityCard'
 import MetricsTable from '@/pages/ComparisonPage/MetricsTable'
 import SegmentsTable from '@/pages/ComparisonPage/SegmentsTable'
+import SummaryCard from '@/pages/ComparisonPage/SummaryCard'
 import { ApiError, describeError } from '@/services/errors'
 
 type ComparisonViewProps = {
@@ -49,7 +45,7 @@ export default function ComparisonView({ emissionId, distanceId }: ComparisonVie
       <div role="status" className={styles.loading}>
         <VisuallyHidden>Carregando rotas</VisuallyHidden>
         <Skeleton height="8rem" />
-        <Skeleton height="100%" />
+        <Skeleton height="18rem" />
       </div>
     )
   }
@@ -69,44 +65,30 @@ export default function ComparisonView({ emissionId, distanceId }: ComparisonVie
     return <p role="status">Calculando as rotas…</p>
   }
 
-  const emissionText = describeEmissionComparison(
-    emissionSavingPercent(emissionRoute, distanceRoute),
-  )
-  const distanceText = describeDistanceComparison(
-    extraDistancePercent(emissionRoute, distanceRoute),
-  )
-
-  const lead = (
-    <p className={styles.lead}>
-      {emissionText} {distanceText}
-    </p>
-  )
+  const summary = <SummaryCard emissionRoute={emissionRoute} distanceRoute={distanceRoute} />
   const metrics = <MetricsTable emissionRoute={emissionRoute} distanceRoute={distanceRoute} />
-  const map = <ComparisonMap emissionRoute={emissionRoute} distanceRoute={distanceRoute} />
+  const integrity = <IntegrityCard emissionRoute={emissionRoute} distanceRoute={distanceRoute} />
+  const maps = <ComparisonMap emissionRoute={emissionRoute} distanceRoute={distanceRoute} />
   const segments = <SegmentsTable emissionRoute={emissionRoute} distanceRoute={distanceRoute} />
 
   if (!isDesktop) {
     return (
       <Tabs
         label="Seções da comparação"
-        className={styles.tabs}
         items={[
           {
             id: 'metrics',
             label: 'Métricas',
             content: (
               <div className={styles.stack}>
-                {lead}
+                {summary}
                 {metrics}
+                {integrity}
               </div>
             ),
           },
-          { id: 'map', label: 'Mapa', content: <div className={styles.fill}>{map}</div> },
-          {
-            id: 'segments',
-            label: 'Trechos',
-            content: <div className={styles.fill}>{segments}</div>,
-          },
+          { id: 'map', label: 'Mapa', content: maps },
+          { id: 'segments', label: 'Trechos', content: segments },
         ]}
       />
     )
@@ -114,12 +96,11 @@ export default function ComparisonView({ emissionId, distanceId }: ComparisonVie
 
   return (
     <div className={styles.results}>
-      {lead}
+      {summary}
+      {maps}
       {metrics}
-      <div className={styles.workspace}>
-        {map}
-        {segments}
-      </div>
+      {integrity}
+      {segments}
     </div>
   )
 }

@@ -50,8 +50,7 @@ export default function SegmentsTable({ emissionRoute, distanceRoute }: Segments
 
   return (
     <Card
-      title="Trechos"
-      fill
+      title="Trechos de cada rota"
       actions={
         <SegmentedControl
           legend="Rota exibida na tabela de trechos"
@@ -68,16 +67,18 @@ export default function SegmentsTable({ emissionRoute, distanceRoute }: Segments
         />
       ) : (
         <>
-          <p className={styles.totals}>
-            Total da rota:{' '}
-            {route.totalDistanceMeters === null
-              ? MISSING
-              : `${formatKilometers(route.totalDistanceMeters)} km`}{' '}
-            ·{' '}
-            {route.totalEmissionKg === null
-              ? MISSING
-              : `${formatNumber(route.totalEmissionKg)} kg CO₂`}
-          </p>
+          {!isWide && (
+            <p className={styles.totals}>
+              Total da rota:{' '}
+              {route.totalDistanceMeters === null
+                ? MISSING
+                : `${formatKilometers(route.totalDistanceMeters)} km`}{' '}
+              ·{' '}
+              {route.totalEmissionKg === null
+                ? MISSING
+                : `${formatNumber(route.totalEmissionKg)} kg CO₂`}
+            </p>
+          )}
           <div className={styles.table}>
             {isWide ? (
               <Table dense caption="Trechos da rota selecionada">
@@ -105,6 +106,25 @@ export default function SegmentsTable({ emissionRoute, distanceRoute }: Segments
                     </tr>
                   ))}
                 </tbody>
+                <tfoot>
+                  <tr>
+                    <Th scope="row" colSpan={2}>
+                      Total
+                    </Th>
+                    <Td numeric>
+                      {route.totalDistanceMeters === null
+                        ? MISSING
+                        : formatKilometers(route.totalDistanceMeters)}
+                    </Td>
+                    <Td numeric>{MISSING}</Td>
+                    <Td numeric>{MISSING}</Td>
+                    <Td numeric>
+                      {route.totalEmissionKg === null
+                        ? MISSING
+                        : formatNumber(route.totalEmissionKg)}
+                    </Td>
+                  </tr>
+                </tfoot>
               </Table>
             ) : (
               <SegmentList segments={visible} firstIndex={firstIndex} nameOf={nameOf} />
