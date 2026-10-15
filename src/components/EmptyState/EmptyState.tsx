@@ -4,13 +4,15 @@ import styles from '@/components/EmptyState/EmptyState.module.css'
 type EmptyStateProps = {
   title: string
   icon?: ReactNode
+  mascot?: ReactNode
   description?: string
   action?: ReactNode
 }
 
-export default function EmptyState({ title, icon, description, action }: EmptyStateProps) {
+export default function EmptyState({ title, icon, mascot, description, action }: EmptyStateProps) {
   return (
     <div className={styles.emptyState}>
+      {mascot && <div className={styles.mascot}>{mascot}</div>}
       {icon && (
         <span className={styles.icon} aria-hidden="true">
           {icon}

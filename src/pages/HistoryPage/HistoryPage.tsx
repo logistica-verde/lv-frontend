@@ -5,6 +5,7 @@ import Button from '@/components/Button/Button'
 import Card from '@/components/Card/Card'
 import EmptyState from '@/components/EmptyState/EmptyState'
 import ErrorMessage from '@/components/ErrorMessage/ErrorMessage'
+import Mascot from '@/components/Mascot/Mascot'
 import Modal from '@/components/Modal/Modal'
 import Pagination from '@/components/Pagination/Pagination'
 import Skeleton from '@/components/Skeleton/Skeleton'
@@ -175,6 +176,7 @@ export default function HistoryPage() {
     if (isEmpty) {
       return (
         <EmptyState
+          mascot={<Mascot size={96} />}
           title="Nenhuma operação ainda"
           description="Calcule sua primeira rota."
           action={<Link to="/">Calcular rotas</Link>}

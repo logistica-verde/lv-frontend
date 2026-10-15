@@ -1,0 +1,46 @@
+.mascot {
+  --mascot-line: #1d2b27;
+  --mascot-limb: #e6f2ed;
+  --mascot-shell: #ffffff;
+  --mascot-cell: #f2f9f6;
+  --mascot-core: var(--color-primary);
+
+  flex-shrink: 0;
+  stroke: var(--mascot-line);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  fill: none;
+}
+
+.dark {
+  --mascot-line: #e6ece9;
+  --mascot-limb: #17302a;
+  --mascot-shell: #101c19;
+  --mascot-cell: #101c19;
+  --mascot-core: #6fd9b8;
+}
+
+.limb {
+  fill: var(--mascot-limb);
+}
+
+.tail {
+  fill: var(--mascot-limb);
+}
+
+.shell {
+  fill: var(--mascot-shell);
+}
+
+.cell {
+  fill: var(--mascot-cell);
+}
+
+.core {
+  fill: var(--mascot-core);
+}
+
+.links {
+  fill: none;
+}

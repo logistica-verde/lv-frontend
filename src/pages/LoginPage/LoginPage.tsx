@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form'
 import { Navigate, useLocation, useNavigate } from 'react-router'
 import { z } from 'zod'
 import BrandMark from '@/components/BrandMark/BrandMark'
+import Mascot from '@/components/Mascot/Mascot'
 import Button from '@/components/Button/Button'
 import IconButton from '@/components/IconButton/IconButton'
 import TextField from '@/components/TextField/TextField'
@@ -71,6 +72,7 @@ export default function LoginPage() {
           <BrandMark size={40} />
           <span>Lastro</span>
         </div>
+        <Mascot tone="dark" size={84} className={styles.mascot} />
         <div className={styles.pitchBody}>
           <p className={styles.eyebrow}>Roteirização sustentável · auditoria em blockchain</p>
           <h2 className={styles.headline}>

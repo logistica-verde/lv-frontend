@@ -28,3 +28,7 @@
   background: var(--color-primary-bg);
   color: var(--color-primary);
 }
+
+.mascot {
+  margin-bottom: var(--space-2);
+}
