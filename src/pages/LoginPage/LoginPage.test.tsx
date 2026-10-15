@@ -202,19 +202,6 @@ describe('LoginPage', () => {
     expect(locationOf(router).pathname).toBe('/')
   })
 
-  it('mentions the simulated data in mock mode only', () => {
-    vi.stubEnv('MODE', 'mock')
-    renderLogin()
-
-    expect(screen.getByRole('note')).toHaveTextContent('dados simulados')
-  })
-
-  it('has no such note with the real API', () => {
-    renderLogin()
-
-    expect(screen.queryByRole('note')).not.toBeInTheDocument()
-  })
-
   it('shows and hides the password on demand', async () => {
     renderLogin()
     const user = userEvent.setup()

@@ -10,7 +10,6 @@ import Mascot from '@/components/Mascot/Mascot'
 import Button from '@/components/Button/Button'
 import IconButton from '@/components/IconButton/IconButton'
 import TextField from '@/components/TextField/TextField'
-import { isMockMode } from '@/config/env'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useSession } from '@/hooks/useSession'
 import { homeFor } from '@/lib/permissions'
@@ -176,11 +175,6 @@ export default function LoginPage() {
             Ainda não tem acesso? O administrador da sua transportadora cria o usuário com o perfil
             de Operador, Auditor ou Administrador.
           </p>
-          {isMockMode() && (
-            <p role="note" className={styles.notice}>
-              Ambiente com dados simulados. As contas de teste estão no arquivo de dados do mock.
-            </p>
-          )}
         </div>
         <footer className={styles.footer}>
           <span className={styles.secure}>
