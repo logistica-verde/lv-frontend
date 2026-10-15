@@ -147,6 +147,47 @@ describe('AdminPage vehicles', () => {
     expect(within(table).getByRole('rowheader', { name: 'OLD0A00' })).toBeVisible()
   })
 
+  it('shows the picture, type, gross mass and fuel of each vehicle', async () => {
+    useAdminApi()
+
+    renderWithProviders(<AdminPage />)
+
+    const table = await screen.findByRole('table', { name: 'Veículos cadastrados' })
+    expect(
+      within(table)
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual(['Imagem', 'Placa', 'Tipo', 'Massa bruta (kg)', 'Combustível', 'Situação', 'Ação'])
+    const row = within(table).getAllByRole('row')[1] as HTMLElement
+    expect(within(row).getByRole('rowheader', { name: 'ABC1D23' })).toBeVisible()
+    expect(
+      within(row)
+        .getAllByRole('cell')
+        .slice(0, 4)
+        .map((cell) => cell.textContent),
+    ).toEqual(['', 'Caminhão', '7.500', 'Diesel'])
+  })
+
+  it('counts the vehicles and how many are active', async () => {
+    useAdminApi()
+
+    renderWithProviders(<AdminPage />)
+
+    expect(await screen.findByText('2 veículos · 1 ativo')).toBeVisible()
+  })
+
+  it('says what the page is for', async () => {
+    useAdminApi()
+
+    renderWithProviders(<AdminPage />)
+
+    expect(
+      await screen.findByText(
+        'Veículos usados nos cálculos, perfis de acesso e parâmetros do algoritmo genético.',
+      ),
+    ).toBeVisible()
+  })
+
   it('shows an empty state when there is no vehicle', async () => {
     useAdminApi({ vehicles: [] })
 

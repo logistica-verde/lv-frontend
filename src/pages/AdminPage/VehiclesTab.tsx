@@ -21,15 +21,26 @@ import listStyles from '@/pages/AdminPage/AdminList.module.css'
 import styles from '@/pages/AdminPage/AdminPage.module.css'
 import RegisterVehicleDialog from '@/pages/AdminPage/RegisterVehicleDialog'
 import { describeError, failureMessage } from '@/services/errors'
+import { VEHICLE_IMAGE_LABELS } from '@/services/schemas/vehicle'
 import type { Vehicle } from '@/services/schemas/vehicle'
 
-const ROW_PX = 41
+const ROW_PX = 56
 const HEADER_PX = 36
 const LIST_ROW_PX = 68
 const FALLBACK_ROWS = 7
 
 type StatusOfProps = {
   vehicle: Vehicle
+}
+
+function capitalize(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}
+
+function describeFleet(all: Vehicle[]): string {
+  const active = all.filter((vehicle) => vehicle.ativo).length
+  const total = all.length === 1 ? '1 veículo' : `${all.length} veículos`
+  return `${total} · ${active} ${active === 1 ? 'ativo' : 'ativos'}`
 }
 
 function StatusOf({ vehicle }: StatusOfProps) {
@@ -89,10 +100,13 @@ export default function VehiclesTab() {
       title="Veículos"
       fill
       actions={
-        <Button size="sm" onClick={() => setRegistering(true)}>
-          <Plus size={16} aria-hidden="true" />
-          Cadastrar veículo
-        </Button>
+        <>
+          {all.length > 0 && <span className={styles.fleet}>{describeFleet(all)}</span>}
+          <Button size="sm" onClick={() => setRegistering(true)}>
+            <Plus size={16} aria-hidden="true" />
+            Cadastrar veículo
+          </Button>
+        </>
       }
     >
       <div ref={ref} className={styles.tableArea}>
@@ -120,8 +134,10 @@ export default function VehiclesTab() {
           <Table dense caption="Veículos cadastrados">
             <thead>
               <tr>
+                <Th>Imagem</Th>
                 <Th>Placa</Th>
-                <Th numeric>Massa (kg)</Th>
+                <Th>Tipo</Th>
+                <Th numeric>Massa bruta (kg)</Th>
                 <Th>Combustível</Th>
                 <Th>Situação</Th>
                 <Th numeric>Ação</Th>
@@ -130,14 +146,17 @@ export default function VehiclesTab() {
             <tbody>
               {visible.map((vehicle) => (
                 <tr key={vehicle.id}>
-                  <Th scope="row">
-                    <span className={styles.plate}>
+                  <Td>
+                    <span className={styles.tile}>
                       <VehicleImage image={vehicle.imagem} className={styles.thumb} />
-                      {vehicle.placa}
                     </span>
+                  </Td>
+                  <Th scope="row" className={styles.mono}>
+                    {vehicle.placa}
                   </Th>
+                  <Td>{VEHICLE_IMAGE_LABELS[vehicle.imagem]}</Td>
                   <Td numeric>{formatNumber(vehicle.massaKg)}</Td>
-                  <Td>{vehicle.tipoCombustivel}</Td>
+                  <Td>{capitalize(vehicle.tipoCombustivel)}</Td>
                   <Td>
                     <StatusOf vehicle={vehicle} />
                   </Td>
