@@ -2,7 +2,7 @@ import 'leaflet/dist/leaflet.css'
 import type { LatLngTuple } from 'leaflet'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import { MapContainer, TileLayer, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, useMap, ZoomControl } from 'react-leaflet'
 import MapClickHandler from '@/components/Map/MapClickHandler'
 import styles from '@/components/Map/MapView.module.css'
 import { env } from '@/config/env'
@@ -72,6 +72,7 @@ type MapViewProps = {
   overlay?: ReactNode
   legend?: ReactNode
   flush?: boolean
+  zoomPosition?: 'topleft' | 'bottomleft'
   fitInsetRight?: number
   children?: ReactNode
 }
@@ -83,6 +84,7 @@ export default function MapView({
   overlay,
   legend,
   flush = false,
+  zoomPosition,
   fitInsetRight = 0,
   children,
 }: MapViewProps) {
@@ -96,9 +98,11 @@ export default function MapView({
         center={SAO_PAULO_CENTER}
         zoom={DEFAULT_ZOOM}
         scrollWheelZoom={false}
+        zoomControl={zoomPosition === undefined}
         className={styles.map}
       >
         <TileLayer attribution={ATTRIBUTION} url={env.tileUrl} />
+        {zoomPosition && <ZoomControl position={zoomPosition} />}
         <FitBounds positions={fitTo} insetRight={fitInsetRight} />
         {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
         {children}

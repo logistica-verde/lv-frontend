@@ -50,17 +50,19 @@ function locationOf(router: ReturnType<typeof renderLogin>): Location {
 
 afterEach(() => {
   vi.unstubAllEnvs()
+  window.localStorage.clear()
+  window.sessionStorage.clear()
 })
 
 describe('LoginPage', () => {
   it('shows the sign-in form with labelled fields', () => {
     renderLogin()
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Entrar' })).toBeVisible()
+    expect(screen.getByRole('heading', { level: 1, name: 'Entrar no Lastro' })).toBeVisible()
     expect(screen.getByLabelText('E-mail')).toHaveAttribute('type', 'email')
     expect(screen.getByLabelText('Senha')).toHaveAttribute('type', 'password')
     expect(screen.getByRole('button', { name: 'Entrar' })).toBeEnabled()
-    expect(document.title).toBe('Entrar · Logística Verde')
+    expect(document.title).toBe('Entrar · Lastro')
   })
 
   it('asks for both fields and sends nothing when the form is empty', async () => {
@@ -200,16 +202,64 @@ describe('LoginPage', () => {
     expect(locationOf(router).pathname).toBe('/')
   })
 
-  it('mentions the simulated data in mock mode only', () => {
-    vi.stubEnv('MODE', 'mock')
+  it('shows and hides the password on demand', async () => {
     renderLogin()
+    const user = userEvent.setup()
 
-    expect(screen.getByRole('note')).toHaveTextContent('dados simulados')
+    expect(screen.getByLabelText('Senha')).toHaveAttribute('type', 'password')
+    await user.click(screen.getByRole('button', { name: 'Mostrar senha' }))
+    expect(screen.getByLabelText('Senha')).toHaveAttribute('type', 'text')
+    await user.click(screen.getByRole('button', { name: 'Ocultar senha' }))
+
+    expect(screen.getByLabelText('Senha')).toHaveAttribute('type', 'password')
   })
 
-  it('has no such note with the real API', () => {
+  it('explains who resets a forgotten password', async () => {
     renderLogin()
 
-    expect(screen.queryByRole('note')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Esqueci minha senha' }))
+
+    expect(screen.getByRole('note')).toHaveTextContent('administrador da sua transportadora')
+  })
+
+  it('keeps the user signed in on this device by default', async () => {
+    server.use(
+      http.post(apiUrl('/api/auth/login'), () => HttpResponse.json(sessionResponse('OPERATOR'))),
+    )
+    renderLogin()
+    expect(
+      screen.getByRole('checkbox', { name: 'Manter conectado neste dispositivo' }),
+    ).toBeChecked()
+
+    await fillAndSubmit('rafael@example.test', 'segredo')
+
+    await screen.findByText('Início')
+    expect(window.localStorage.getItem('lv.session')).toContain('jwt-token')
+  })
+
+  it('keeps the session only for this tab when the box is unchecked', async () => {
+    server.use(
+      http.post(apiUrl('/api/auth/login'), () => HttpResponse.json(sessionResponse('OPERATOR'))),
+    )
+    renderLogin()
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('checkbox', { name: 'Manter conectado neste dispositivo' }))
+
+    await fillAndSubmit('rafael@example.test', 'segredo')
+
+    await screen.findByText('Início')
+    expect(window.localStorage.getItem('lv.session')).toBeNull()
+    expect(window.sessionStorage.getItem('lv.session')).toContain('jwt-token')
+  })
+
+  it('presents the product next to the form', () => {
+    renderLogin()
+
+    expect(screen.getByText(/Compare a rota mais curta com a de menor emissão/)).toBeVisible()
+    expect(screen.getByLabelText('E-mail')).toHaveAttribute(
+      'placeholder',
+      'nome@transportadora.com.br',
+    )
+    expect(screen.getByText(/TCC · Ciência da Computação · UNIP/)).toBeVisible()
   })
 })

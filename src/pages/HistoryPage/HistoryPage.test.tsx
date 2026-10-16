@@ -8,6 +8,7 @@ import { apiUrl } from '@/test/api'
 import { operationFixture, pageOf, useOperationsApi, useVehiclesApi } from '@/test/fakeApi'
 import { vehicleFixture } from '@/test/fixtures'
 import { renderRoutes } from '@/test/renderRoutes'
+import { signInAs } from '@/test/session'
 import { server } from '@/test/server'
 
 const routes = [{ path: '/historico', element: <HistoryPage /> }]
@@ -40,35 +41,57 @@ describe('HistoryPage table', () => {
     const cells = within(rows[0] as HTMLElement)
       .getAllByRole('cell')
       .map((cell) => cell.textContent?.trim())
-    expect(cells.slice(0, 6)).toEqual([
-      '7',
+    expect(cells.slice(0, 7)).toEqual([
+      '#7',
       expect.stringMatching(/^05\/10\/2026.*09:00$/),
-      'ABC1D23',
+      expect.stringMatching(/^ABC1D23/),
       'Menor emissão',
-      '5,5',
+      '12',
       '2,02',
+      '5,5',
     ])
     expect(within(rows[0] as HTMLElement).getByText('Íntegra')).toBeVisible()
     expect(within(rows[1] as HTMLElement).getByText('Menor distância')).toBeVisible()
   })
 
-  it('links every operation to its verification', async () => {
+  it('shows the dash when the point count is unknown', async () => {
+    useOperationsApi(() => pageOf([operation(7, { pointCount: null })]))
+
+    renderHistory()
+
+    const table = await screen.findByRole('table', { name: 'Operações calculadas' })
+    const cells = within(within(table).getAllByRole('row')[1] as HTMLElement).getAllByRole('cell')
+    expect(cells[4]).toHaveTextContent('—')
+  })
+
+  it('opens the verification of an operation for those who can audit', async () => {
+    signInAs('AUDITOR')
     useOperationsApi(() => pageOf([operation(7)]))
 
     renderHistory()
 
-    expect(await screen.findByRole('link', { name: 'Verificar operação 7' })).toHaveAttribute(
+    expect(await screen.findByRole('link', { name: 'Abrir operação 7' })).toHaveAttribute(
       'href',
       '/verificacao/7',
     )
   })
 
-  it('shows the total of operations', async () => {
+  it('does not offer the verification to an operator, who cannot open it', async () => {
+    signInAs('OPERATOR')
+    useOperationsApi(() => pageOf([operation(7)]))
+
+    renderHistory()
+
+    await screen.findByRole('table', { name: 'Operações calculadas' })
+    expect(screen.queryByRole('link', { name: /Abrir operação/ })).not.toBeInTheDocument()
+  })
+
+  it('shows which operations are on screen out of the total', async () => {
     useOperationsApi(() => pageOf([operation(7)], 24))
 
     renderHistory()
 
-    expect(await screen.findByText('24 operações')).toBeVisible()
+    expect(await screen.findByText('Mostrando 1–1 de 24 operações')).toBeVisible()
   })
 
   it('uses the singular for one operation', async () => {
@@ -76,7 +99,19 @@ describe('HistoryPage table', () => {
 
     renderHistory()
 
-    expect(await screen.findByText('1 operação')).toBeVisible()
+    expect(await screen.findByText('Mostrando 1–1 de 1 operação')).toBeVisible()
+  })
+
+  it('says what the page is for', async () => {
+    useOperationsApi(() => pageOf([operation(7)]))
+
+    renderHistory()
+
+    expect(
+      await screen.findByText(
+        'Cada cálculo gera duas operações, uma por critério, registradas na blockchain.',
+      ),
+    ).toBeVisible()
   })
 
   it('shows an operation that is still being calculated or failed, without totals', async () => {
@@ -183,7 +218,7 @@ describe('HistoryPage sorting', () => {
     await screen.findByRole('table', { name: 'Operações calculadas' })
     expect(requests[0]?.get('sort')).toBe('createdAt')
     expect(requests[0]?.get('direction')).toBe('desc')
-    expect(screen.getByRole('columnheader', { name: 'Data' })).toHaveAttribute(
+    expect(screen.getByRole('columnheader', { name: 'Data e hora' })).toHaveAttribute(
       'aria-sort',
       'descending',
     )
@@ -304,13 +339,32 @@ describe('HistoryPage pagination', () => {
     )
     const router = renderHistory()
     await screen.findByRole('table', { name: 'Operações calculadas' })
-    expect(screen.getByText('Página 1 de 2')).toBeVisible()
+    expect(screen.getByText('Página 1 de 2 · 10 por página')).toBeVisible()
 
     await userEvent.click(screen.getByRole('button', { name: 'Próxima' }))
 
     await waitFor(() => expect(requests.at(-1)?.get('page')).toBe('2'))
     expect(router.state.location.search).toBe('?pagina=2')
-    expect(await screen.findByText('Página 2 de 2')).toBeVisible()
+    expect(await screen.findByText('Página 2 de 2 · 10 por página')).toBeVisible()
+  })
+
+  it('jumps straight to a numbered page', async () => {
+    const requests = useOperationsApi((params) => ({
+      items: [operation(Number(params.get('page')))],
+      total: 30,
+      page: Number(params.get('page')),
+      size: 10,
+    }))
+    renderHistory()
+    await screen.findByRole('table', { name: 'Operações calculadas' })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ir para a página 3' }))
+
+    await waitFor(() => expect(requests.at(-1)?.get('page')).toBe('3'))
+    expect(await screen.findByRole('button', { name: 'Ir para a página 3' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
   })
 
   it('goes back to the last page when the address points past the end', async () => {
@@ -333,6 +387,52 @@ describe('HistoryPage pagination', () => {
     expect(
       screen.queryByRole('navigation', { name: 'Paginação do histórico' }),
     ).not.toBeInTheDocument()
+  })
+})
+
+describe('HistoryPage export', () => {
+  it('downloads every operation that matches the filters as a CSV', async () => {
+    const requests = useOperationsApi((params) =>
+      params.get('page') === '2'
+        ? { items: [operation(3)], total: 101, page: 2, size: 100 }
+        : {
+            items: Array.from({ length: 100 }, (_, index) => operation(index + 10)),
+            total: 101,
+            page: 1,
+            size: Number(params.get('size')),
+          },
+    )
+    const contents: string[] = []
+    const createObjectURL = vi.fn((blob: Blob) => {
+      void blob.text().then((text) => contents.push(text))
+      return 'blob:csv'
+    })
+    vi.stubGlobal('URL', Object.assign(URL, { createObjectURL, revokeObjectURL: () => undefined }))
+    renderHistory('?criterio=EMISSION')
+    await screen.findByRole('table', { name: 'Operações calculadas' })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Exportar CSV' }))
+
+    await waitFor(() => expect(contents).toHaveLength(1))
+    expect(contents[0]?.trim().split(/\r?\n/)).toHaveLength(102)
+    expect(requests.filter((params) => params.get('size') === '100')).toHaveLength(2)
+    expect(requests.at(-1)?.get('criterion')).toBe('EMISSION')
+    expect(await screen.findByText('101 operações exportadas.')).toBeVisible()
+  })
+
+  it('warns when the export fails', async () => {
+    useOperationsApi(() => pageOf([operation(7)]))
+    renderHistory()
+    await screen.findByRole('table', { name: 'Operações calculadas' })
+    server.use(
+      http.get(apiUrl('/api/routes'), () =>
+        HttpResponse.json({ status: 500, detail: 'boom' }, { status: 500 }),
+      ),
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'Exportar CSV' }))
+
+    expect(await screen.findByText(/erro interno/)).toBeVisible()
   })
 })
 

@@ -1,4 +1,4 @@
-import { Play } from 'lucide-react'
+import { Download, Play } from 'lucide-react'
 import Button from '@/components/Button/Button'
 import Card from '@/components/Card/Card'
 import EmptyState from '@/components/EmptyState/EmptyState'
@@ -11,10 +11,14 @@ import { useLatestExperiment, useStartExperiment } from '@/hooks/useExperiments'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useToast } from '@/hooks/useToast'
+import { downloadCsv } from '@/lib/exportCsv'
 import ConvergenceChart from '@/pages/ExperimentsPage/ConvergenceChart'
 import EmissionsChart from '@/pages/ExperimentsPage/EmissionsChart'
+import { experimentCsv } from '@/pages/ExperimentsPage/exportExperiment'
+import ExperimentKpis from '@/pages/ExperimentsPage/ExperimentKpis'
 import ExperimentResultsTable from '@/pages/ExperimentsPage/ExperimentResultsTable'
 import styles from '@/pages/ExperimentsPage/ExperimentsPage.module.css'
+import InstanceSummaryTable from '@/pages/ExperimentsPage/InstanceSummaryTable'
 import { describeError, failureMessage } from '@/services/errors'
 import { DEFAULT_EXPERIMENT_INPUT } from '@/services/schemas/experiment'
 
@@ -41,18 +45,36 @@ export default function ExperimentsPage() {
     }
   }
 
+  const exportResults = () => {
+    if (experiment) {
+      downloadCsv('lastro-experimentos.csv', experimentCsv(experiment.runs))
+    }
+  }
+
   const header = (
     <div className={styles.heading}>
-      <h1>Experimentos</h1>
-      <p className={styles.setup}>
-        {experiment
-          ? describeSetup(experiment.instances, experiment.seeds)
-          : describeSetup(DEFAULT_EXPERIMENT_INPUT.instances, DEFAULT_EXPERIMENT_INPUT.seeds)}
-      </p>
-      <Button onClick={run} loading={start.isPending || running}>
-        <Play size={16} aria-hidden="true" />
-        Executar experimentos
-      </Button>
+      <div className={styles.titles}>
+        <h1>Experimentos</h1>
+        <p className={styles.setup}>
+          {experiment
+            ? describeSetup(experiment.instances, experiment.seeds)
+            : describeSetup(DEFAULT_EXPERIMENT_INPUT.instances, DEFAULT_EXPERIMENT_INPUT.seeds)}
+        </p>
+      </div>
+      <div className={styles.actions}>
+        <Button
+          variant="secondary"
+          disabled={!experiment || experiment.runs.length === 0}
+          onClick={exportResults}
+        >
+          <Download size={16} aria-hidden="true" />
+          Exportar resultados
+        </Button>
+        <Button onClick={run} loading={start.isPending || running}>
+          <Play size={16} aria-hidden="true" />
+          Executar experimentos
+        </Button>
+      </div>
     </div>
   )
 
@@ -117,6 +139,8 @@ export default function ExperimentsPage() {
     )
   }
 
+  const kpis = <ExperimentKpis experiment={experiment} />
+  const summary = <InstanceSummaryTable runs={experiment.runs} />
   const table = <ExperimentResultsTable runs={experiment.runs} />
   const convergence = <ConvergenceChart runs={experiment.runs} />
   const emissions = <EmissionsChart runs={experiment.runs} />
@@ -126,32 +150,39 @@ export default function ExperimentsPage() {
       {header}
       {notices}
       {isDesktop ? (
-        <div className={styles.workspace}>
-          {table}
+        <div className={styles.results}>
+          {kpis}
           <div className={styles.charts}>
-            {convergence}
-            {emissions}
+            <div className={styles.chartSlot}>{convergence}</div>
+            <div className={styles.chartSlot}>{emissions}</div>
           </div>
+          {summary}
+          <div className={styles.tableSlot}>{table}</div>
         </div>
       ) : (
         <Tabs
           label="Seções dos experimentos"
-          className={styles.tabs}
           items={[
             {
               id: 'table',
               label: 'Resultados',
-              content: <div className={styles.fill}>{table}</div>,
+              content: (
+                <div className={styles.stack}>
+                  {kpis}
+                  {summary}
+                  <div className={styles.tableSlot}>{table}</div>
+                </div>
+              ),
             },
             {
               id: 'convergence',
               label: 'Convergência',
-              content: <div className={styles.fill}>{convergence}</div>,
+              content: <div className={styles.chartSlot}>{convergence}</div>,
             },
             {
               id: 'emissions',
               label: 'Emissões',
-              content: <div className={styles.fill}>{emissions}</div>,
+              content: <div className={styles.chartSlot}>{emissions}</div>,
             },
           ]}
         />

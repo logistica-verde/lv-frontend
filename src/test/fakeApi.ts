@@ -114,6 +114,7 @@ export const operationFixture: OperationSummary = {
   createdAt: '2026-10-05T12:00:00.000Z',
   vehicleId: 1,
   vehiclePlate: 'ABC1D23',
+  pointCount: 12,
   criterion: 'EMISSION',
   status: 'COMPLETED',
   totalEmissionKg: 5.5,

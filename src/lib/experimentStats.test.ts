@@ -5,7 +5,10 @@ import {
   convergenceUnit,
   describeConvergence,
   emissionSavingPercent,
+  meanEmissionSaving,
   runKey,
+  slowestExecutionMs,
+  summarizeByInstance,
 } from '@/lib/experimentStats'
 import { experimentRun } from '@/test/fakeApi'
 
@@ -86,5 +89,29 @@ describe('describeConvergence', () => {
 
   it('says so when there is no data', () => {
     expect(describeConvergence([], 'km')).toBe('Sem dados de convergência.')
+  })
+})
+
+describe('experiment summaries', () => {
+  const runs = [experimentRun(10, 1), experimentRun(10, 2), experimentRun(20, 1)]
+
+  it('averages the criteria of each instance', () => {
+    const [first] = summarizeByInstance(runs)
+
+    expect(summarizeByInstance(runs)).toHaveLength(2)
+    expect(first?.runs).toBe(2)
+    expect(first?.distanceRoute.emissionKg).toBe(100)
+    expect(first?.emissionRoute.executionMs).toBe(1200)
+    expect(first?.savingPercent).toBeCloseTo(10, 6)
+  })
+
+  it('averages the saving of every run', () => {
+    expect(meanEmissionSaving(runs)).toBeCloseTo(10, 6)
+    expect(meanEmissionSaving([])).toBeNull()
+  })
+
+  it('finds the slowest execution of any criterion', () => {
+    expect(slowestExecutionMs(runs)).toBe(1200)
+    expect(slowestExecutionMs([])).toBeNull()
   })
 })

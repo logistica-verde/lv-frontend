@@ -1,12 +1,13 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import VerificationPage from '@/pages/VerificationPage/VerificationPage'
 import { apiUrl } from '@/test/api'
 import { completedRouteFixture, integrityFixture } from '@/test/fixtures'
 import { renderRoutes } from '@/test/renderRoutes'
 import { server } from '@/test/server'
+import { signInAs } from '@/test/session'
 
 vi.mock('@/config/polling', () => ({
   ROUTE_POLL_INTERVAL_MS: 20,
@@ -30,6 +31,11 @@ function useOperationApi() {
   )
 }
 
+afterEach(() => {
+  window.localStorage.clear()
+  vi.unstubAllGlobals()
+})
+
 describe('VerificationPage', () => {
   it('invites the user to pick an operation when none is selected', () => {
     renderRoutes(routes, '/verificacao')
@@ -38,7 +44,7 @@ describe('VerificationPage', () => {
       screen.getByRole('heading', { level: 1, name: 'Verificação de integridade' }),
     ).toBeVisible()
     expect(screen.getByRole('heading', { name: 'Nenhuma operação selecionada' })).toBeVisible()
-    expect(document.title).toBe('Verificação de integridade · Logística Verde')
+    expect(document.title).toBe('Verificação de integridade · Lastro')
   })
 
   it('verifies the operation in the address and fills the search with its ID', async () => {
@@ -103,5 +109,68 @@ describe('VerificationPage', () => {
     renderRoutes(routes, '/verificacao/999')
 
     await waitFor(() => expect(screen.getAllByText('Recurso não encontrado.')).toHaveLength(2))
+  })
+})
+
+describe('VerificationPage recent verifications', () => {
+  it('says there is nothing yet for a user who has not verified anything', () => {
+    signInAs('AUDITOR')
+
+    renderRoutes(routes, '/verificacao')
+
+    expect(screen.getByText('As operações que você verificar aparecem aqui.')).toBeVisible()
+  })
+
+  it('remembers the operations the user verified, newest first, with a link to each', async () => {
+    signInAs('AUDITOR')
+    useOperationApi()
+    const router = renderRoutes(routes, '/verificacao/7')
+    const user = userEvent.setup()
+    await screen.findByRole('list', { name: 'Verificações recentes' })
+
+    await user.clear(screen.getByLabelText('ID da operação'))
+    await user.type(screen.getByLabelText('ID da operação'), '8')
+    await user.click(screen.getByRole('button', { name: 'Verificar integridade' }))
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/verificacao/8'))
+    const list = await screen.findByRole('list', { name: 'Verificações recentes' })
+    await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(2))
+    const links = within(list).getAllByRole('link')
+    expect(links.map((link) => link.textContent)).toEqual(['Operação #8', 'Operação #7'])
+    expect(links[1]).toHaveAttribute('href', '/verificacao/7')
+  })
+
+  it('clears the list', async () => {
+    signInAs('AUDITOR')
+    useOperationApi()
+    renderRoutes(routes, '/verificacao/7')
+    await screen.findByRole('list', { name: 'Verificações recentes' })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Limpar' }))
+
+    expect(await screen.findByText('As operações que você verificar aparecem aqui.')).toBeVisible()
+  })
+})
+
+describe('VerificationPage proof', () => {
+  it('downloads the integrity report as a JSON proof', async () => {
+    useOperationApi()
+    const contents: string[] = []
+    vi.stubGlobal(
+      'URL',
+      Object.assign(URL, {
+        createObjectURL: (blob: Blob) => {
+          void blob.text().then((text) => contents.push(text))
+          return 'blob:json'
+        },
+        revokeObjectURL: () => undefined,
+      }),
+    )
+    renderRoutes(routes, '/verificacao/7')
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Baixar comprovante (JSON)' }))
+
+    await waitFor(() => expect(contents).toHaveLength(1))
+    expect(JSON.parse(contents[0] ?? '{}')).toMatchObject({ operationId: 7, status: 'VALID' })
   })
 })

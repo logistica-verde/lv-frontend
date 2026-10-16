@@ -6,7 +6,7 @@ describe('useDocumentTitle', () => {
   it('prefixes the page title to the app name', () => {
     renderHook(() => useDocumentTitle('Veículos'))
 
-    expect(document.title).toBe('Veículos · Logística Verde')
+    expect(document.title).toBe('Veículos · Lastro')
   })
 
   it('follows title changes', () => {
@@ -16,7 +16,7 @@ describe('useDocumentTitle', () => {
 
     rerender({ title: 'Integridade' })
 
-    expect(document.title).toBe('Integridade · Logística Verde')
+    expect(document.title).toBe('Integridade · Lastro')
   })
 
   it('goes back to the app name when the page unmounts', () => {
@@ -24,6 +24,6 @@ describe('useDocumentTitle', () => {
 
     unmount()
 
-    expect(document.title).toBe('Logística Verde')
+    expect(document.title).toBe('Lastro')
   })
 })

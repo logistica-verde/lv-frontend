@@ -10,7 +10,12 @@ export default function AdminPage() {
 
   return (
     <div className={styles.page}>
-      <h1>Administração</h1>
+      <div>
+        <h1>Administração</h1>
+        <p className={styles.subtitle}>
+          Veículos usados nos cálculos, perfis de acesso e parâmetros do algoritmo genético.
+        </p>
+      </div>
       <Tabs
         label="Seções da administração"
         className={styles.tabs}

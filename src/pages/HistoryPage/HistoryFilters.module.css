@@ -4,6 +4,37 @@
   gap: var(--space-3);
 }
 
+.period {
+  grid-column: 1 / -1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  margin-bottom: var(--space-1);
+  padding: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-strong);
+}
+
+.dates {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.dates > :not(.dash) {
+  flex: 1;
+  min-width: 0;
+}
+
+.dash {
+  padding-top: 0.5rem;
+  color: var(--color-text-muted);
+}
+
 .clear {
   display: flex;
   align-items: flex-end;
@@ -12,7 +43,11 @@
 
 @media (min-width: 64rem) {
   .filters {
-    grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
+    grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr)) auto;
+  }
+
+  .period {
+    grid-column: auto;
   }
 
   .clear {

@@ -4,6 +4,7 @@ import {
   formatKilometers,
   formatNumber,
   formatShortDateTime,
+  formatDuration,
   formatSignedPercent,
 } from '@/lib/format'
 
@@ -65,5 +66,16 @@ describe('formatNumber', () => {
 
   it('formats zero', () => {
     expect(formatNumber(0)).toBe('0')
+  })
+})
+
+describe('formatDuration', () => {
+  it('shows only minutes under an hour', () => {
+    expect(formatDuration(0.5)).toBe('30 min')
+  })
+
+  it('shows hours with two-digit minutes', () => {
+    expect(formatDuration(1.0833333)).toBe('1 h 05 min')
+    expect(formatDuration(2)).toBe('2 h 00 min')
   })
 })

@@ -1,5 +1,5 @@
 .row {
-  height: 2.25rem;
+  height: 3rem;
 }
 
 .hidden {
@@ -9,4 +9,36 @@
   margin: -1px;
   overflow: hidden;
   clip-path: inset(50%);
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.muted {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.vehicle {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.criterion {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sample {
+  display: inline-block;
+  width: 1rem;
+  height: 0;
+  border-top: 3px solid var(--color-route-emission);
+}
+
+.distance {
+  border-top: 2px dashed var(--color-route-distance);
 }

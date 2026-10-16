@@ -43,7 +43,7 @@ afterEach(() => {
 
 describe('AccountBar', () => {
   it('shows who is signed in and their profile', () => {
-    renderWithProviders(<AccountBar session={sessionFor('AUDITOR')} variant="bar" />)
+    renderWithProviders(<AccountBar session={sessionFor('AUDITOR')} variant="sidebar" />)
 
     expect(screen.getByText('Rafael Tonelli')).toBeVisible()
     expect(screen.getByText('Auditor')).toBeVisible()
@@ -51,7 +51,7 @@ describe('AccountBar', () => {
 
   it('signs out and discards the session', async () => {
     signInAs('ADMIN')
-    renderWithProviders(<AccountBar session={sessionFor('ADMIN')} variant="bar" />)
+    renderWithProviders(<AccountBar session={sessionFor('ADMIN')} variant="sidebar" />)
 
     await userEvent.click(screen.getByRole('button', { name: 'Sair' }))
 

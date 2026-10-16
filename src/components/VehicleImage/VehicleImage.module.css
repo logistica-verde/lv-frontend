@@ -43,3 +43,31 @@
   stroke-linejoin: round;
   stroke-width: 4;
 }
+
+.outline .body,
+.outline .glass,
+.outline .bed {
+  fill: none;
+  stroke: currentColor;
+  stroke-linejoin: round;
+  stroke-width: 2.5;
+}
+
+.outline .chassis {
+  fill: currentColor;
+}
+
+.outline .tire {
+  fill: var(--color-surface-muted);
+  stroke: currentColor;
+  stroke-width: 2.5;
+}
+
+.outline .hub {
+  fill: none;
+}
+
+.outline .rim,
+.outline .frame {
+  stroke: currentColor;
+}

@@ -18,17 +18,49 @@ function renderList(
   points: DeliveryPoint[],
   handlers: Partial<Parameters<typeof PointsList>[0]> = {},
 ) {
-  const props = { onAdd: vi.fn(), onMove: vi.fn(), onRemove: vi.fn(), ...handlers }
+  const props = {
+    onAdd: vi.fn(),
+    onSearchAddress: vi.fn(),
+    onMove: vi.fn(),
+    onRemove: vi.fn(),
+    ...handlers,
+  }
   render(<PointsList points={points} {...props} />)
   return props
 }
 
 describe('PointsList', () => {
-  it('counts the points in its title and explains the limits', () => {
+  it('counts the points against the limit and explains the rules', () => {
     renderList(makePoints(3))
 
-    expect(screen.getByRole('heading', { name: 'Pontos de entrega (3)' })).toBeVisible()
-    expect(screen.getByText('3 pontos selecionados.')).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Pontos de entrega' })).toBeVisible()
+    expect(screen.getByText('3 de 30')).toBeVisible()
+    expect(screen.getByRole('status')).toHaveTextContent('3 pontos selecionados.')
+  })
+
+  it('searches an address typed in the list without opening the dialog first', async () => {
+    const { onSearchAddress } = renderList([])
+    const user = userEvent.setup()
+
+    await user.type(screen.getByLabelText('Adicionar endereço'), '  R. Vergueiro, 1200 ')
+    await user.click(screen.getByRole('button', { name: 'Adicionar' }))
+
+    expect(onSearchAddress).toHaveBeenCalledWith('R. Vergueiro, 1200')
+    expect(screen.getByLabelText('Adicionar endereço')).toHaveValue('')
+  })
+
+  it('asks for at least three characters before searching', async () => {
+    const { onSearchAddress } = renderList([])
+    const user = userEvent.setup()
+
+    await user.type(screen.getByLabelText('Adicionar endereço'), 'ab')
+    await user.click(screen.getByRole('button', { name: 'Adicionar' }))
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Digite ao menos 3 caracteres do endereço.')
+    expect(onSearchAddress).not.toHaveBeenCalled()
+
+    await user.type(screen.getByLabelText('Adicionar endereço'), 'c')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
   it('numbers the points in the order they will be sent', () => {
@@ -123,13 +155,20 @@ describe('PointsList', () => {
   it('goes back to a valid page when points are removed', () => {
     const points = makePoints(8)
     const { rerender } = render(
-      <PointsList points={points} onAdd={vi.fn()} onMove={vi.fn()} onRemove={vi.fn()} />,
+      <PointsList
+        points={points}
+        onAdd={vi.fn()}
+        onSearchAddress={vi.fn()}
+        onMove={vi.fn()}
+        onRemove={vi.fn()}
+      />,
     )
 
     rerender(
       <PointsList
         points={points.slice(0, 3)}
         onAdd={vi.fn()}
+        onSearchAddress={vi.fn()}
         onMove={vi.fn()}
         onRemove={vi.fn()}
       />,

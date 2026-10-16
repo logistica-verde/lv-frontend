@@ -15,6 +15,7 @@ export const operationSummarySchema = z.object({
   createdAt: z.string(),
   vehicleId: z.number(),
   vehiclePlate: z.string(),
+  pointCount: z.number().nullable().optional(),
   criterion: optimizationCriterionSchema,
   status: operationStatusSchema,
   totalEmissionKg: z.number().nullable(),

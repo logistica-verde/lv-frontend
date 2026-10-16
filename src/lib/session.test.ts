@@ -4,6 +4,7 @@ import { sessionFor } from '@/test/session'
 
 afterEach(() => {
   window.sessionStorage.clear()
+  window.localStorage.clear()
 })
 
 describe('session store', () => {
@@ -64,5 +65,26 @@ describe('session store', () => {
     const reloaded = await import('@/lib/session')
 
     expect(reloaded.getSession()).toBeNull()
+  })
+
+  it('keeps the session across browser restarts only when asked to remember it', async () => {
+    setSession(sessionFor('OPERATOR'), true)
+
+    expect(window.localStorage.getItem('lv.session')).toContain('test-token-OPERATOR')
+    expect(window.sessionStorage.getItem('lv.session')).toBeNull()
+    vi.resetModules()
+    const reloaded = await import('@/lib/session')
+    expect(reloaded.getSession()?.usuario.perfil).toBe('OPERATOR')
+
+    reloaded.clearSession()
+    expect(window.localStorage.getItem('lv.session')).toBeNull()
+  })
+
+  it('moves a session between storages instead of leaving two copies', () => {
+    setSession(sessionFor('ADMIN'), true)
+    setSession(sessionFor('ADMIN'), false)
+
+    expect(window.localStorage.getItem('lv.session')).toBeNull()
+    expect(window.sessionStorage.getItem('lv.session')).not.toBeNull()
   })
 })

@@ -27,3 +27,8 @@
   background: var(--color-route-distance);
   color: var(--color-surface);
 }
+
+.neutral::after {
+  content: '+';
+  font-weight: var(--font-weight-strong);
+}

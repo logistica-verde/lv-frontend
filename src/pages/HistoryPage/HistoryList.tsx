@@ -13,9 +13,10 @@ import type { OperationSummary } from '@/services/schemas/operation'
 
 type HistoryListProps = {
   items: OperationSummary[]
+  canOpen: boolean
 }
 
-export default function HistoryList({ items }: HistoryListProps) {
+export default function HistoryList({ items, canOpen }: HistoryListProps) {
   return (
     <ol aria-label="Operações calculadas" className={styles.list}>
       {items.map((item) => {
@@ -37,9 +38,11 @@ export default function HistoryList({ items }: HistoryListProps) {
             </p>
             <div className={styles.footer}>
               <IntegrityBadge status={item.integrityStatus} />
-              <Link to={`/verificacao/${item.id}`} aria-label={`Verificar operação ${item.id}`}>
-                Verificar
-              </Link>
+              {canOpen && (
+                <Link to={`/verificacao/${item.id}`} aria-label={`Abrir operação ${item.id}`}>
+                  Abrir
+                </Link>
+              )}
             </div>
           </li>
         )

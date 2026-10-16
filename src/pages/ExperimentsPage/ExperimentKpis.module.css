@@ -1,0 +1,55 @@
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.kpi {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.kpi dt {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.kpi dd {
+  margin: 0;
+}
+
+.value {
+  font-size: 1.75rem;
+  font-weight: var(--font-weight-strong);
+  line-height: 1.25;
+}
+
+.goal,
+.met,
+.missed {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+}
+
+.goal {
+  color: var(--color-text-muted);
+}
+
+.met {
+  color: var(--color-success);
+}
+
+.missed {
+  color: var(--color-warning);
+}
+
+@media (min-width: 64rem) {
+  .kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

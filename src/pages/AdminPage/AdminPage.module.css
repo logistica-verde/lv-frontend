@@ -78,3 +78,28 @@
   flex-shrink: 0;
   width: 2.5rem;
 }
+
+.subtitle {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+}
+
+.fleet {
+  align-self: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 2.5rem;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.mono {
+  font-family: var(--font-mono);
+}

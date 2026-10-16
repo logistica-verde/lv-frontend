@@ -439,6 +439,7 @@ export function createHandlers(db: MockDb, options: MockOptions) {
           createdAt: route.createdAt,
           vehicleId: route.vehicleId,
           vehiclePlate: plates.get(route.vehicleId) ?? '—',
+          pointCount: route.points.length,
           criterion: route.criterion,
           status: route.status,
           totalEmissionKg: route.totalEmissionKg,

@@ -61,3 +61,37 @@ export function describeDistanceComparison(extra: number | null): string | null 
   }
   return `Além disso, a rota de menor emissão percorre ${formatNumber(rounded)}% menos distância.`
 }
+
+export type RouteTrip = RouteTotals & {
+  segments: { distanceMeters: number; averageSpeedKmh: number }[]
+}
+
+export function travelTimeHours(route: RouteTrip): number | null {
+  const moving = route.segments.filter((segment) => segment.averageSpeedKmh > 0)
+  if (moving.length === 0) {
+    return null
+  }
+  return moving.reduce(
+    (total, segment) => total + segment.distanceMeters / 1000 / segment.averageSpeedKmh,
+    0,
+  )
+}
+
+export function averageSpeedKmh(route: RouteTrip): number | null {
+  const hours = travelTimeHours(route)
+  if (hours === null || hours === 0 || route.totalDistanceMeters === null) {
+    return null
+  }
+  return route.totalDistanceMeters / 1000 / hours
+}
+
+export function emissionPerKm(route: RouteTotals): number | null {
+  if (
+    route.totalEmissionKg === null ||
+    route.totalDistanceMeters === null ||
+    route.totalDistanceMeters === 0
+  ) {
+    return null
+  }
+  return route.totalEmissionKg / (route.totalDistanceMeters / 1000)
+}

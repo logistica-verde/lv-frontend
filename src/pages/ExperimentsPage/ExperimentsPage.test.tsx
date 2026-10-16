@@ -57,7 +57,7 @@ describe('ExperimentsPage states', () => {
       await screen.findByRole('heading', { name: 'Nenhum experimento executado' }),
     ).toBeVisible()
     expect(screen.getByRole('button', { name: 'Executar experimentos' })).toBeEnabled()
-    expect(document.title).toBe('Experimentos · Logística Verde')
+    expect(document.title).toBe('Experimentos · Lastro')
   })
 
   it('describes the setup that will run when there is no experiment yet', async () => {
@@ -86,7 +86,11 @@ describe('ExperimentsPage states', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }))
 
-    expect(await screen.findByRole('table')).toBeVisible()
+    expect(
+      await screen.findByRole('table', {
+        name: 'Resultados de cada execução por instância e semente',
+      }),
+    ).toBeVisible()
   })
 
   it('shows the progress while the experiment runs and keeps the results so far', async () => {
@@ -97,7 +101,13 @@ describe('ExperimentsPage states', () => {
     expect(await screen.findByText('Executando 2 de 4 execuções…')).toBeVisible()
     expect(screen.getByRole('progressbar')).toHaveAttribute('value', '2')
     expect(screen.getByRole('progressbar')).toHaveAttribute('max', '4')
-    expect(within(await screen.findByRole('table')).getAllByRole('row')).toHaveLength(4)
+    expect(
+      within(
+        await screen.findByRole('table', {
+          name: 'Resultados de cada execução por instância e semente',
+        }),
+      ).getAllByRole('row'),
+    ).toHaveLength(4)
     expect(screen.getByRole('button', { name: /Executar experimentos/ })).toBeDisabled()
   })
 
@@ -112,7 +122,11 @@ describe('ExperimentsPage states', () => {
 
     expect(await screen.findByText('Executando 1 de 4 execuções…')).toBeVisible()
     await waitFor(() => expect(screen.queryByRole('progressbar')).not.toBeInTheDocument())
-    expect(within(screen.getByRole('table')).getAllByRole('row')).toHaveLength(6)
+    expect(
+      within(
+        screen.getByRole('table', { name: 'Resultados de cada execução por instância e semente' }),
+      ).getAllByRole('row'),
+    ).toHaveLength(6)
   })
 
   it('reports an experiment that failed', async () => {
@@ -141,7 +155,9 @@ describe('ExperimentsPage states', () => {
 
     renderWithProviders(<ExperimentsPage />)
 
-    await screen.findByRole('table')
+    await screen.findByRole('table', {
+      name: 'Resultados de cada execução por instância e semente',
+    })
     expect(screen.queryByRole('note')).not.toBeInTheDocument()
   })
 })
@@ -207,16 +223,18 @@ describe('ExperimentsPage results table', () => {
 
     renderWithProviders(<ExperimentsPage />)
 
-    await screen.findByRole('table')
-    expect(screen.getByRole('columnheader', { name: 'Menor distância' })).toHaveAttribute(
+    const table = await screen.findByRole('table', {
+      name: 'Resultados de cada execução por instância e semente',
+    })
+    expect(within(table).getByRole('columnheader', { name: 'Menor distância' })).toHaveAttribute(
       'colspan',
       '3',
     )
-    expect(screen.getByRole('columnheader', { name: 'Menor emissão' })).toHaveAttribute(
+    expect(within(table).getByRole('columnheader', { name: 'Menor emissão' })).toHaveAttribute(
       'colspan',
       '3',
     )
-    expect(screen.getByRole('columnheader', { name: 'Δ emissão' })).toBeVisible()
+    expect(within(table).getByRole('columnheader', { name: 'Δ emissão' })).toBeVisible()
   })
 
   it('paginates the runs instead of scrolling', async () => {
@@ -225,7 +243,9 @@ describe('ExperimentsPage results table', () => {
 
     renderWithProviders(<ExperimentsPage />)
 
-    const table = await screen.findByRole('table')
+    const table = await screen.findByRole('table', {
+      name: 'Resultados de cada execução por instância e semente',
+    })
     expect(within(table).getAllByRole('row')).toHaveLength(9)
     expect(screen.getByText('Página 1 de 2')).toBeVisible()
 
@@ -334,7 +354,9 @@ describe('ExperimentsPage on narrow screens', () => {
     const list = screen.getByRole('list', { name: 'Resultados de cada execução' })
     expect(within(list).getAllByRole('listitem')).toHaveLength(4)
     expect(within(list).getByText('10 pontos · semente 1')).toBeVisible()
-    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('table', { name: 'Resultados de cada execução por instância e semente' }),
+    ).not.toBeInTheDocument()
   })
 
   it('opens the charts from their tabs', async () => {
@@ -348,5 +370,81 @@ describe('ExperimentsPage on narrow screens', () => {
 
     await user.click(screen.getByRole('tab', { name: 'Emissões' }))
     expect(screen.getByRole('img', { name: /Gráfico de barras/ })).toBeVisible()
+  })
+})
+
+describe('ExperimentsPage summary', () => {
+  it('checks the goals of the work against the results', async () => {
+    useExperimentApi(() => experimentFixture)
+
+    renderWithProviders(<ExperimentsPage />)
+
+    const saving = (await screen.findByText('Redução média de emissão'))
+      .parentElement as HTMLElement
+    expect(within(saving).getByText('10%')).toBeVisible()
+    expect(within(saving).getByText(/Meta: ≥ 5% · meta atingida/)).toBeVisible()
+    const time = screen.getByText('Maior tempo de execução').parentElement as HTMLElement
+    expect(within(time).getByText('1,2 s')).toBeVisible()
+    expect(within(time).getByText(/Meta: < 60 s · meta atingida/)).toBeVisible()
+  })
+
+  it('says when a goal is missed', async () => {
+    const runs = experimentFixture.runs.map((run) => ({
+      ...run,
+      emission: { ...run.emission, emissionKg: 99, executionMs: 61000 },
+    }))
+    useExperimentApi(() => ({ ...experimentFixture, runs }))
+
+    renderWithProviders(<ExperimentsPage />)
+
+    expect(await screen.findByText(/Meta: ≥ 5% · meta não atingida/)).toBeVisible()
+    expect(screen.getByText(/Meta: < 60 s · meta não atingida/)).toBeVisible()
+  })
+
+  it('averages every instance with the emission difference', async () => {
+    useExperimentApi(() => experimentFixture)
+
+    renderWithProviders(<ExperimentsPage />)
+
+    const table = await screen.findByRole('table', {
+      name: 'Média das execuções de cada instância, por critério',
+    })
+    const rows = within(table).getAllByRole('row')
+    expect(
+      within(rows[2] as HTMLElement)
+        .getAllByRole('cell')
+        .map((cell) => cell.textContent),
+    ).toEqual(['10', '20', '100', '20,8', '90', '1,2', '−10%'])
+    expect(rows).toHaveLength(4)
+  })
+
+  it('downloads the results as a CSV once there are runs', async () => {
+    useExperimentApi(() => experimentFixture)
+    const contents: string[] = []
+    vi.stubGlobal(
+      'URL',
+      Object.assign(URL, {
+        createObjectURL: (blob: Blob) => {
+          void blob.text().then((text) => contents.push(text))
+          return 'blob:csv'
+        },
+        revokeObjectURL: () => undefined,
+      }),
+    )
+    renderWithProviders(<ExperimentsPage />)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Exportar resultados' }))
+
+    await waitFor(() => expect(contents).toHaveLength(1))
+    expect(contents[0]).toContain('Redução de emissão (%)')
+  })
+
+  it('has nothing to export before the first experiment', async () => {
+    useExperimentApi(() => null)
+
+    renderWithProviders(<ExperimentsPage />)
+
+    await screen.findByRole('heading', { name: 'Nenhum experimento executado' })
+    expect(screen.getByRole('button', { name: 'Exportar resultados' })).toBeDisabled()
   })
 })

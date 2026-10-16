@@ -3,6 +3,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from '@/App'
 import { createQueryClient } from '@/lib/queryClient'
+import { applyTheme } from '@/lib/theme'
 import '@/styles/global.css'
 
 const rootElement = document.getElementById('root')
@@ -10,6 +11,8 @@ const rootElement = document.getElementById('root')
 if (!rootElement) {
   throw new Error('Root element #root was not found')
 }
+
+applyTheme()
 
 const queryClient = createQueryClient()
 

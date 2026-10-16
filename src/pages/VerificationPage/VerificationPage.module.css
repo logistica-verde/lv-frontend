@@ -1,14 +1,22 @@
 .page {
   display: flex;
-  flex: 1;
   flex-direction: column;
   gap: var(--space-3);
-  min-height: 0;
+}
+
+.subtitle {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 .heading {
   display: flex;
-  flex-shrink: 0;
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
@@ -32,12 +40,7 @@
 
 .workspace {
   display: grid;
-  flex: 1;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--space-3);
-  min-height: 0;
-}
-
-.tabs {
-  flex: 1;
+  align-items: start;
 }

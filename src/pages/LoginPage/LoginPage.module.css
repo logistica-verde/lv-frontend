@@ -1,56 +1,170 @@
 .page {
   display: grid;
-  place-items: center;
+  grid-template-columns: minmax(0, 36%) minmax(0, 1fr);
   height: 100dvh;
-  padding: var(--space-4);
   overflow: hidden;
   background: var(--color-bg);
 }
 
-.card {
-  width: 100%;
-  max-width: 24rem;
-  padding: var(--space-6);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
+.pitch {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 0;
+  padding: var(--space-6) 3.5rem;
+  position: relative;
+  background: #101c19;
+  color: #e6ece9;
+}
+
+.mascot {
+  position: absolute;
+  top: var(--space-4);
+  right: 3.5rem;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-5);
-}
-
-.brandMark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: var(--radius-md);
-  background: var(--color-primary);
-  color: var(--color-primary-contrast);
-}
-
-.brandName {
+  gap: var(--space-3);
+  font-size: 1.5rem;
   font-weight: var(--font-weight-strong);
 }
 
-.title {
+.pitchBody {
+  min-height: 0;
+}
+
+.eyebrow {
+  margin: 0 0 var(--space-4);
+  color: #8fa59d;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.headline {
+  margin: 0 0 var(--space-4);
+  font-size: clamp(1.5rem, 2.6vw, 2.5rem);
+  line-height: 1.15;
+}
+
+.lead {
+  max-width: 34rem;
+  margin: 0 0 var(--space-5);
+  color: #b5c5be;
+  font-size: var(--font-size-md);
+  line-height: 1.6;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  color: #b5c5be;
+  font-size: var(--font-size-sm);
+  list-style: none;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.lineEmission,
+.lineDistance {
+  display: inline-block;
+  width: 1.75rem;
+  height: 0;
+  border-top: 3px solid #5fd3b0;
+}
+
+.lineDistance {
+  border-top: 2px dashed #9a86e4;
+}
+
+.depot {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 2px;
+  background: #5fd3b0;
+}
+
+.stack {
   margin: 0;
+  color: #6f857d;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.formSide {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 0;
+  padding: var(--space-5) var(--space-6);
+}
+
+.formBlock {
+  width: 100%;
+  max-width: 28rem;
+  margin: auto;
+}
+
+.title {
+  margin: 0 0 var(--space-2);
+  font-size: 1.75rem;
 }
 
 .subtitle {
-  margin: var(--space-1) 0 var(--space-4);
+  margin: 0 0 var(--space-5);
   color: var(--color-text-muted);
+  font-size: var(--font-size-md);
 }
 
 .form {
   display: flex;
   flex-direction: column;
+  gap: var(--space-4);
+}
+
+.linkButton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-primary);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.forgot {
+  margin: calc(var(--space-2) * -1) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.remember {
+  display: flex;
+  align-items: center;
   gap: var(--space-3);
+}
+
+.remember input {
+  width: 1.125rem;
+  height: 1.125rem;
+  accent-color: var(--color-primary);
 }
 
 .failure {
@@ -64,17 +178,45 @@
 
 .submit {
   width: 100%;
-  margin-top: var(--space-1);
+  min-height: 2.75rem;
 }
 
-.notice {
-  margin: var(--space-4) 0 0;
+.rule {
+  margin: var(--space-5) 0 var(--space-4);
+  border: 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.access {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
 }
 
-@media (max-width: 40rem) {
-  .card {
+.secure {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+@media (max-width: 63.99rem) {
+  .page {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pitch {
+    display: none;
+  }
+
+  .formSide {
     padding: var(--space-4);
   }
 }

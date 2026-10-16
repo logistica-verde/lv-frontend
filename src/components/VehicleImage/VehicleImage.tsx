@@ -79,16 +79,17 @@ const SHAPES: Record<VehicleImageKey, ReactNode> = {
 
 type VehicleImageProps = {
   image: VehicleImageKey
+  solid?: boolean
   className?: string
 }
 
-export default function VehicleImage({ image, className }: VehicleImageProps) {
+export default function VehicleImage({ image, solid = false, className }: VehicleImageProps) {
   return (
     <svg
       viewBox="0 0 96 56"
       aria-hidden="true"
       focusable="false"
-      className={classNames(styles.image, className)}
+      className={classNames(styles.image, !solid && styles.outline, className)}
     >
       {SHAPES[image]}
     </svg>

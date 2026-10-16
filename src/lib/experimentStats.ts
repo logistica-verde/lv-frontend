@@ -63,3 +63,53 @@ export function describeConvergence(series: ConvergencePoint[], unit: string): s
   }
   return `A melhor aptidão vai de ${formatNumber(first.fitness)} ${unit} na geração ${first.generation} a ${formatNumber(last.fitness)} ${unit} na geração ${last.generation}.`
 }
+
+export type InstanceSummary = {
+  instanceSize: number
+  runs: number
+  distanceRoute: { distanceMeters: number; emissionKg: number }
+  emissionRoute: { distanceMeters: number; emissionKg: number; executionMs: number }
+  savingPercent: number | null
+}
+
+export function summarizeByInstance(runs: ExperimentRun[]): InstanceSummary[] {
+  const sizes = Array.from(new Set(runs.map((run) => run.instanceSize))).sort(
+    (first, second) => first - second,
+  )
+  return sizes.map((instanceSize) => {
+    const group = runs.filter((run) => run.instanceSize === instanceSize)
+    const distanceEmission = mean(group.map((run) => run.distance.emissionKg))
+    const emissionEmission = mean(group.map((run) => run.emission.emissionKg))
+    return {
+      instanceSize,
+      runs: group.length,
+      distanceRoute: {
+        distanceMeters: mean(group.map((run) => run.distance.distanceMeters)),
+        emissionKg: distanceEmission,
+      },
+      emissionRoute: {
+        distanceMeters: mean(group.map((run) => run.emission.distanceMeters)),
+        emissionKg: emissionEmission,
+        executionMs: mean(group.map((run) => run.emission.executionMs)),
+      },
+      savingPercent:
+        distanceEmission === 0
+          ? null
+          : ((distanceEmission - emissionEmission) / distanceEmission) * 100,
+    }
+  })
+}
+
+export function meanEmissionSaving(runs: ExperimentRun[]): number | null {
+  const savings = runs
+    .map(emissionSavingPercent)
+    .filter((saving): saving is number => saving !== null)
+  return savings.length === 0 ? null : mean(savings)
+}
+
+export function slowestExecutionMs(runs: ExperimentRun[]): number | null {
+  if (runs.length === 0) {
+    return null
+  }
+  return Math.max(...runs.flatMap((run) => [run.emission.executionMs, run.distance.executionMs]))
+}

@@ -48,3 +48,28 @@
 .error {
   color: var(--color-danger);
 }
+
+.labelRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.control {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.padded {
+  padding-right: 2.75rem;
+}
+
+.adornment {
+  position: absolute;
+  top: 50%;
+  right: var(--space-1);
+  display: flex;
+  transform: translateY(-50%);
+}
