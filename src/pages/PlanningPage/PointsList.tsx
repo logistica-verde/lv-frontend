@@ -25,6 +25,7 @@ type PointsListProps = {
   onSearchAddress: (query: string) => void
   onMove: (pointId: number, offset: number) => void
   onRemove: (pointId: number) => void
+  hasOrigin?: boolean
 }
 
 export default function PointsList({
@@ -33,6 +34,7 @@ export default function PointsList({
   onSearchAddress,
   onMove,
   onRemove,
+  hasOrigin = false,
 }: PointsListProps) {
   const { ref, rows } = useFitRows(ROW_HEIGHT_PX, FALLBACK_ROWS)
   const [requestedPage, setRequestedPage] = useState(1)
@@ -70,7 +72,7 @@ export default function PointsList({
       }
     >
       <VisuallyHidden>
-        <span role="status">{describeSelection(points.length)}</span>
+        <span role="status">{describeSelection(points.length, hasOrigin)}</span>
       </VisuallyHidden>
       <form onSubmit={submitAddress} noValidate className={styles.addForm}>
         <div className={styles.addField}>
@@ -131,23 +133,32 @@ export default function PointsList({
                 <li key={point.id} className={styles.item}>
                   <span className={styles.index}>{position + 1}</span>
                   <span className={styles.name} title={point.endereco ?? point.nome}>
-                    <span className={styles.pointName}>{point.nome}</span>
+                    <span className={styles.pointName}>
+                      {point.nome}
+                      {position === 0 && !hasOrigin && (
+                        <span className={styles.departure}>Saída</span>
+                      )}
+                    </span>
                     {point.endereco && <span className={styles.address}>{point.endereco}</span>}
                   </span>
-                  <IconButton
-                    label={`Mover ${point.nome} para cima`}
-                    disabled={position === 0}
-                    onClick={() => move(point.id, -1)}
-                  >
-                    <ArrowUp size={16} aria-hidden="true" />
-                  </IconButton>
-                  <IconButton
-                    label={`Mover ${point.nome} para baixo`}
-                    disabled={position === points.length - 1}
-                    onClick={() => move(point.id, 1)}
-                  >
-                    <ArrowDown size={16} aria-hidden="true" />
-                  </IconButton>
+                  {!hasOrigin && (
+                    <>
+                      <IconButton
+                        label={`Mover ${point.nome} para cima`}
+                        disabled={position === 0}
+                        onClick={() => move(point.id, -1)}
+                      >
+                        <ArrowUp size={16} aria-hidden="true" />
+                      </IconButton>
+                      <IconButton
+                        label={`Mover ${point.nome} para baixo`}
+                        disabled={position === points.length - 1}
+                        onClick={() => move(point.id, 1)}
+                      >
+                        <ArrowDown size={16} aria-hidden="true" />
+                      </IconButton>
+                    </>
+                  )}
                   <IconButton label={`Remover ${point.nome}`} onClick={() => onRemove(point.id)}>
                     <X size={16} aria-hidden="true" />
                   </IconButton>

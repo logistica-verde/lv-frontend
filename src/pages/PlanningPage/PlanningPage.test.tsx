@@ -96,7 +96,7 @@ describe('PlanningPage', () => {
 
     expect(await screen.findByText('2 pontos adicionados à rota.')).toBeVisible()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(listedNames()).toEqual(['MASP', 'Praça da Sé'])
+    expect(listedNames()).toEqual(['MASPSaída', 'Praça da Sé'])
     expect(screen.getByRole('heading', { name: 'Pontos de entrega' })).toBeVisible()
     expect(screen.getByText('2 de 30')).toBeVisible()
     expect(screen.getByRole('button', { name: '1. MASP' })).toBeInTheDocument()
@@ -118,7 +118,7 @@ describe('PlanningPage', () => {
 
     expect(await screen.findByText('Ponto Vila Mariana adicionado à rota.')).toBeVisible()
     expect(api.posted).toEqual([{ nome: 'Vila Mariana', latitude: -23.58, longitude: -46.63 }])
-    expect(listedNames()).toEqual(['Vila Mariana'])
+    expect(listedNames()).toEqual(['Vila MarianaSaída'])
   })
 
   it('reorders the points and sends them in the new order', async () => {
@@ -131,7 +131,7 @@ describe('PlanningPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Mover Estação da Luz para cima' }))
     await user.click(screen.getByRole('button', { name: 'Mover Estação da Luz para cima' }))
-    expect(listedNames()).toEqual(['Estação da Luz', 'Praça da Sé', 'MASP'])
+    expect(listedNames()).toEqual(['Estação da LuzSaída', 'Praça da Sé', 'MASP'])
 
     await user.click(screen.getByRole('button', { name: 'Calcular rotas' }))
 
@@ -151,7 +151,7 @@ describe('PlanningPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Remover Praça da Sé' }))
 
-    expect(listedNames()).toEqual(['MASP'])
+    expect(listedNames()).toEqual(['MASPSaída'])
     expect(screen.getByRole('button', { name: 'Praça da Sé' })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Adicionar ponto' }))
     expect(await screen.findByRole('checkbox', { name: /Praça da Sé/ })).toBeVisible()
@@ -190,7 +190,7 @@ describe('PlanningPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Remover MASP' }))
 
-    expect(listedNames()).toEqual(['Praça da Sé'])
+    expect(listedNames()).toEqual(['Praça da SéSaída'])
     expect(screen.getByRole('status', { name: 'Andamento do cálculo' })).toBeVisible()
   })
 
@@ -246,5 +246,118 @@ describe('PlanningPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }))
 
     expect(await screen.findByRole('button', { name: 'Praça da Sé' })).toBeInTheDocument()
+  })
+})
+
+type Position = { coords: { latitude: number; longitude: number; accuracy: number } }
+
+function stubLocation(
+  behaviour: (
+    success: (position: Position) => void,
+    failure: (error: { code: number }) => void,
+  ) => void,
+) {
+  Object.defineProperty(navigator, 'geolocation', {
+    configurable: true,
+    value: { getCurrentPosition: behaviour },
+  })
+}
+
+function foundAt(latitude: number, longitude: number) {
+  stubLocation((success) => success({ coords: { latitude, longitude, accuracy: 20 } }))
+}
+
+describe('PlanningPage starting from the current location', () => {
+  it('sends the location as the origin of both routes', async () => {
+    useVehiclesApi([vehicleFixture])
+    useDeliveryPointsApi([sé, masp])
+    const routes = useRoutesApi()
+    foundAt(-23.5505, -46.6333)
+    const user = userEvent.setup()
+    renderPage()
+    await addExisting(user, ['MASP'])
+
+    await user.click(screen.getByRole('button', { name: 'Usar minha localização' }))
+    await screen.findByRole('button', { name: 'Remover' })
+    await user.click(await screen.findByRole('button', { name: 'Calcular rotas' }))
+
+    await waitFor(() => expect(routes.requests).toHaveLength(2))
+    expect(routes.requests.map((request) => request.origin)).toEqual([
+      { latitude: -23.5505, longitude: -46.6333 },
+      { latitude: -23.5505, longitude: -46.6333 },
+    ])
+    expect(routes.requests.map((request) => request.deliveryPointIds)).toEqual([[2], [2]])
+  })
+
+  it('needs a second point only when there is no location', async () => {
+    useVehiclesApi([vehicleFixture])
+    useDeliveryPointsApi([sé, masp])
+    foundAt(-23.5505, -46.6333)
+    const user = userEvent.setup()
+    renderPage()
+    await addExisting(user, ['MASP'])
+    expect(screen.getByRole('button', { name: 'Calcular rotas' })).toBeDisabled()
+
+    await user.click(screen.getByRole('button', { name: 'Usar minha localização' }))
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Calcular rotas' })).toBeEnabled(),
+    )
+    await user.click(screen.getByRole('button', { name: 'Remover' }))
+    expect(screen.getByRole('button', { name: 'Calcular rotas' })).toBeDisabled()
+  })
+
+  it('marks the first point as the departure and lets the order change only without the location', async () => {
+    useVehiclesApi([vehicleFixture])
+    useDeliveryPointsApi([sé, masp])
+    foundAt(-23.5505, -46.6333)
+    const user = userEvent.setup()
+    renderPage()
+    await addExisting(user, ['Praça da Sé', 'MASP'])
+    const list = screen.getByRole('list', { name: 'Pontos da rota' })
+    expect(within(list).getByText('Saída')).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Mover MASP para cima' })).toBeVisible()
+
+    await user.click(screen.getByRole('button', { name: 'Usar minha localização' }))
+
+    await waitFor(() => expect(within(list).queryByText('Saída')).not.toBeInTheDocument())
+    expect(screen.queryByRole('button', { name: 'Mover MASP para cima' })).not.toBeInTheDocument()
+  })
+
+  it('says why the location is not available and keeps the first point as the departure', async () => {
+    useVehiclesApi([vehicleFixture])
+    useDeliveryPointsApi([sé])
+    stubLocation((_success, failure) => failure({ code: 1 }))
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Usar minha localização' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'permissão de localização foi negada',
+    )
+    expect(screen.getByText(/sai do primeiro ponto da lista/)).toBeVisible()
+  })
+
+  it('explains when the location is outside the area of the map', async () => {
+    useVehiclesApi([vehicleFixture])
+    useDeliveryPointsApi([masp])
+    foundAt(-22.9068, -43.1729)
+    server.use(
+      http.post(apiUrl('/api/routes/calculate'), () =>
+        HttpResponse.json(
+          { status: 400, detail: 'The origin is outside the area covered by the road map' },
+          { status: 400 },
+        ),
+      ),
+    )
+    const user = userEvent.setup()
+    renderPage()
+    await addExisting(user, ['MASP'])
+    await user.click(screen.getByRole('button', { name: 'Usar minha localização' }))
+
+    await user.click(await screen.findByRole('button', { name: 'Calcular rotas' }))
+
+    expect(await screen.findByText(/fora da área coberta pelo mapa/)).toBeVisible()
   })
 })

@@ -4,11 +4,22 @@ export const optimizationCriterionSchema = z.enum(['EMISSION', 'DISTANCE'])
 
 export const operationStatusSchema = z.enum(['PENDING', 'COMPLETED', 'FAILED'])
 
-export const routeInputSchema = z.object({
-  vehicleId: z.number().int().positive(),
-  deliveryPointIds: z.array(z.number().int().positive()).min(2).max(30),
-  criterion: optimizationCriterionSchema,
+export const routeOriginSchema = z.object({
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
 })
+
+export const routeInputSchema = z
+  .object({
+    vehicleId: z.number().int().positive(),
+    deliveryPointIds: z.array(z.number().int().positive()).min(1).max(30),
+    criterion: optimizationCriterionSchema,
+    origin: routeOriginSchema.optional(),
+  })
+  .refine((input) => input.origin !== undefined || input.deliveryPointIds.length >= 2, {
+    message: 'Informe ao menos 2 pontos ou a saída',
+    path: ['deliveryPointIds'],
+  })
 
 export const routeAcceptedSchema = z.object({
   id: z.number(),
@@ -48,6 +59,7 @@ export const routeSchema = z.object({
 
 export type OptimizationCriterion = z.infer<typeof optimizationCriterionSchema>
 export type OperationStatus = z.infer<typeof operationStatusSchema>
+export type RouteOrigin = z.infer<typeof routeOriginSchema>
 export type RouteInput = z.infer<typeof routeInputSchema>
 export type RouteAccepted = z.infer<typeof routeAcceptedSchema>
 export type RoutePoint = z.infer<typeof routePointSchema>

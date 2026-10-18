@@ -49,6 +49,9 @@ export function describeError(error: Error): string {
     if (error.status >= 500) {
       return 'A API encontrou um erro interno. Tente novamente em instantes.'
     }
+    if (error.status === 400 && error.message.includes('outside the area')) {
+      return 'A sua localização está fora da área coberta pelo mapa (região metropolitana de São Paulo). Escolha a saída pelo primeiro ponto da lista.'
+    }
     return error.message
   }
   return 'Ocorreu um erro inesperado.'
