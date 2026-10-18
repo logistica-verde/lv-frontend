@@ -14,7 +14,8 @@ export default function RoutePolyline({ positions, tone }: RoutePolylineProps) {
   return (
     <Polyline
       positions={positions}
-      pathOptions={{ className: classNames(styles.line, styles[tone]), weight: LINE_WEIGHTS[tone] }}
+      className={classNames(styles.line, styles[tone])}
+      pathOptions={{ weight: LINE_WEIGHTS[tone] }}
     />
   )
 }
