@@ -30,6 +30,7 @@ export const routeSegmentSchema = z.object({
   averageSpeedKmh: z.number(),
   slopePercent: z.number(),
   emissionKg: z.number(),
+  geometry: z.array(z.tuple([z.number(), z.number()])).optional(),
 })
 
 export const routeSchema = z.object({

@@ -3,6 +3,7 @@ import MapMarker from '@/components/Map/MapMarker'
 import MapView from '@/components/Map/MapView'
 import RoutePolyline from '@/components/Map/RoutePolyline'
 import { toLatLng } from '@/lib/geo'
+import { followsStreets, routePath } from '@/lib/routePath'
 import styles from '@/pages/ComparisonPage/ComparisonMap.module.css'
 import type { Route, RoutePoint } from '@/services/schemas/route'
 
@@ -30,7 +31,7 @@ function RouteMap({ route, tone, title, legend, label }: RouteMapProps) {
     <Card title={title}>
       <div className={styles.map}>
         <MapView label={label} fitTo={stops.map(toLatLng)}>
-          <RoutePolyline tone={tone} positions={stops.map(toLatLng)} />
+          <RoutePolyline tone={tone} positions={routePath(route)} />
           {stops.map((stop) => (
             <MapMarker
               key={stop.pointId}
@@ -76,7 +77,10 @@ export default function ComparisonMap({ emissionRoute, distanceRoute }: Comparis
         label="Mapa da rota de menor distância"
       />
       <p className={styles.note}>
-        Os números mostram a ordem de visita em cada rota. Linhas retas, sem o traçado das ruas.
+        Os números mostram a ordem de visita em cada rota.
+        {followsStreets(emissionRoute) && followsStreets(distanceRoute)
+          ? ' As linhas seguem o traçado das ruas.'
+          : ' Linhas retas, sem o traçado das ruas.'}
       </p>
     </div>
   )
