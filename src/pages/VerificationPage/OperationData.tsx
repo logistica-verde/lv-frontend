@@ -44,7 +44,7 @@ export default function OperationData({ routeId }: OperationDataProps) {
 
   if (route.isPending) {
     return (
-      <Card title="Dados da operação" fill>
+      <Card title="Dados da operação">
         <div role="status">
           <VisuallyHidden>Carregando dados da operação</VisuallyHidden>
           <Skeleton height="12rem" />
@@ -55,7 +55,7 @@ export default function OperationData({ routeId }: OperationDataProps) {
 
   if (route.isError) {
     return (
-      <Card title="Dados da operação" fill>
+      <Card title="Dados da operação">
         <ErrorMessage message={describeError(route.error)} onRetry={() => route.refetch()} />
       </Card>
     )
@@ -68,7 +68,7 @@ export default function OperationData({ routeId }: OperationDataProps) {
   const firstIndex = (page - 1) * pageSize
 
   return (
-    <Card title="Dados da operação" fill>
+    <Card title="Dados da operação">
       <p className={styles.help}>
         Campos usados no cálculo do hash (JSON canônico, SHA-256). Qualquer alteração em um deles
         muda o hash.

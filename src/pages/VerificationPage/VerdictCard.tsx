@@ -49,7 +49,7 @@ export default function VerdictCard({ routeId }: VerdictCardProps) {
 
   if (integrity.isPending) {
     return (
-      <Card fill>
+      <Card>
         <div role="status" className={styles.loading}>
           <VisuallyHidden>Verificando integridade</VisuallyHidden>
           <Skeleton height="4rem" />
@@ -61,7 +61,7 @@ export default function VerdictCard({ routeId }: VerdictCardProps) {
 
   if (integrity.isError) {
     return (
-      <Card fill>
+      <Card>
         <ErrorMessage message={describeError(integrity.error)} onRetry={verify} />
       </Card>
     )
@@ -74,7 +74,7 @@ export default function VerdictCard({ routeId }: VerdictCardProps) {
   const identical = report.ledgerHash === report.databaseHash
 
   return (
-    <Card fill>
+    <Card>
       <section aria-label="Resultado da verificação" className={styles.result}>
         <div className={classNames(styles.verdict, styles[tone])}>
           <Icon size={28} aria-hidden="true" />
