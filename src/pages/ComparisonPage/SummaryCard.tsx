@@ -39,7 +39,7 @@ export default function SummaryCard({ emissionRoute, distanceRoute }: SummaryCar
           <div className={styles.kpi}>
             <dt>{lessEmission ? 'Redução de CO₂' : 'Aumento de CO₂'}</dt>
             <dd className={styles.value}>
-              {formatSignedPercent(saving === null ? null : -saving)}
+              {saving === null ? '—' : `${formatNumber(Math.abs(saving))}%`}
             </dd>
             <dd className={styles.detail}>
               {emissionGap === null ? '—' : `${formatNumber(Math.abs(emissionGap))} kg CO₂`}
