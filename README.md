@@ -49,3 +49,13 @@ src/
 | lv-docs | Diagramas, arquitetura e resultados |
 
 Comece pelo `lv-infra`, que sobe o banco e o no blockchain.
+
+## Docker
+
+O `Dockerfile` gera o build de producao e o serve com nginx. O `nginx.conf` repassa `/api/` para o servico `api` e devolve `index.html` para as rotas do React Router. Como a API fica no mesmo endereco, o build usa `VITE_API_URL` vazio (chamadas relativas a `/api`).
+
+O compose completo, com a API, o banco e o resto, fica no `lv-api` (pasta `deploy`). Para construir so o front:
+
+```bash
+docker build -t lastro-web .
+```
