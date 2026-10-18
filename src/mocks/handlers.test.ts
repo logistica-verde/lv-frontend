@@ -116,6 +116,82 @@ describe('mock route calculation', () => {
     expect(completed.points.map((point) => point.pointId).sort()).toEqual([1, 2, 3, 4])
   })
 
+  it('starts the route at the origin and keeps the stops in a fixed order', async () => {
+    useMockApi()
+
+    const accepted = await calculateRoute({
+      vehicleId: 1,
+      deliveryPointIds: [3, 1],
+      criterion: 'EMISSION',
+      origin: { latitude: -23.5505, longitude: -46.6333 },
+    })
+
+    const route = await getRoute(accepted.id)
+    expect(route.points.map((point) => point.name)[0]).toBe('Minha localização')
+    expect(route.points.slice(1).map((point) => point.pointId)).toEqual([1, 3])
+  })
+
+  it('accepts a single stop when there is an origin and refuses it otherwise', async () => {
+    useMockApi()
+
+    const accepted = await calculateRoute({
+      vehicleId: 1,
+      deliveryPointIds: [1],
+      criterion: 'DISTANCE',
+      origin: { latitude: -23.55, longitude: -46.63 },
+    })
+    expect(accepted.status).toBe('PENDING')
+
+    const response = await fetch(apiUrl('/api/routes/calculate'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vehicleId: 1, deliveryPointIds: [1], criterion: 'DISTANCE' }),
+    })
+    expect(response.status).toBe(400)
+  })
+
+  it('reuses the origin point of the same location and keeps it out of the list', async () => {
+    useMockApi()
+    const origin = { latitude: -23.5505, longitude: -46.6333 }
+
+    const emission = await calculateRoute({
+      vehicleId: 1,
+      deliveryPointIds: [1],
+      criterion: 'EMISSION',
+      origin,
+    })
+    const distance = await calculateRoute({
+      vehicleId: 1,
+      deliveryPointIds: [1],
+      criterion: 'DISTANCE',
+      origin,
+    })
+
+    const first = (await getRoute(emission.id)).points[0]
+    const second = (await getRoute(distance.id)).points[0]
+    expect(first?.pointId).toBe(second?.pointId)
+    const listed = await (await fetch(apiUrl('/api/delivery-points'))).json()
+    expect(JSON.stringify(listed)).not.toContain('Minha localização')
+  })
+
+  it('refuses an origin outside the area of the map', async () => {
+    useMockApi()
+
+    const response = await fetch(apiUrl('/api/routes/calculate'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        vehicleId: 1,
+        deliveryPointIds: [1],
+        criterion: 'DISTANCE',
+        origin: { latitude: -22.9068, longitude: -43.1729 },
+      }),
+    })
+
+    expect(response.status).toBe(400)
+    expect((await response.json()).detail).toContain('outside the area')
+  })
+
   it('answers 202 with a Location header like the real API', async () => {
     useMockApi()
 

@@ -13,6 +13,14 @@ describe('describeError', () => {
     expect(describeError(new NetworkError())).toContain('conectar à API')
   })
 
+  it('explains that the location is outside the area of the map', () => {
+    const message = describeError(
+      new ApiError(400, 'The origin is outside the area covered by the road map'),
+    )
+
+    expect(message).toContain('fora da área coberta pelo mapa')
+  })
+
   it('explains a contract mismatch', () => {
     expect(describeError(new ResponseFormatError('/api/x'))).toContain('formato inesperado')
   })

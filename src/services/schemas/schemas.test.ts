@@ -131,6 +131,21 @@ describe('routeInputSchema', () => {
     expect(routeInputSchema.safeParse(thirtyOne).success).toBe(false)
   })
 
+  it('accepts a single point when the route starts at an origin', () => {
+    const origin = { latitude: -23.55, longitude: -46.63 }
+
+    expect(routeInputSchema.safeParse({ ...valid, deliveryPointIds: [1], origin }).success).toBe(
+      true,
+    )
+    expect(routeInputSchema.safeParse({ ...valid, deliveryPointIds: [1] }).success).toBe(false)
+  })
+
+  it('rejects an origin with coordinates out of range', () => {
+    const origin = { latitude: 91, longitude: -46.63 }
+
+    expect(routeInputSchema.safeParse({ ...valid, origin }).success).toBe(false)
+  })
+
   it('rejects an unknown criterion', () => {
     expect(routeInputSchema.safeParse({ ...valid, criterion: 'CHEAPEST' }).success).toBe(false)
   })

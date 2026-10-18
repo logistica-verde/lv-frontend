@@ -120,3 +120,13 @@
     display: none;
   }
 }
+
+.departure {
+  margin-left: var(--space-2);
+  padding: 0.0625rem var(--space-2);
+  border-radius: 999px;
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-strong);
+}

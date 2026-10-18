@@ -43,9 +43,53 @@ const deliveryPointRequestSchema = z.object({
 
 const routeRequestSchema = z.object({
   vehicleId: z.number(),
-  deliveryPointIds: z.array(z.number()).min(2).max(30),
+  deliveryPointIds: z.array(z.number()).min(1).max(30),
   criterion: z.enum(['EMISSION', 'DISTANCE']),
+  origin: z
+    .object({ latitude: z.number().min(-90).max(90), longitude: z.number().min(-180).max(180) })
+    .optional(),
 })
+
+const COVERAGE = {
+  minLatitude: -24.1,
+  maxLatitude: -23.25,
+  minLongitude: -46.95,
+  maxLongitude: -46.25,
+}
+const ORIGIN_NAME = 'Minha localização'
+const ORIGIN_GRID = 10_000
+
+function isCovered(latitude: number, longitude: number): boolean {
+  return (
+    latitude >= COVERAGE.minLatitude &&
+    latitude <= COVERAGE.maxLatitude &&
+    longitude >= COVERAGE.minLongitude &&
+    longitude <= COVERAGE.maxLongitude
+  )
+}
+
+function originPoint(db: MockDb, latitude: number, longitude: number): DeliveryPoint {
+  const rounded = {
+    latitude: Math.round(latitude * ORIGIN_GRID) / ORIGIN_GRID,
+    longitude: Math.round(longitude * ORIGIN_GRID) / ORIGIN_GRID,
+  }
+  const key = `${rounded.latitude.toFixed(4)},${rounded.longitude.toFixed(4)}`
+  const existing = db.deliveryPoints.find(
+    (point) => point.nome === ORIGIN_NAME && point.endereco === key,
+  )
+  if (existing) {
+    return existing
+  }
+  const point: DeliveryPoint = {
+    id: db.nextDeliveryPointId++,
+    nome: ORIGIN_NAME,
+    endereco: key,
+    ...rounded,
+    ativo: false,
+  }
+  db.deliveryPoints.push(point)
+  return point
+}
 
 const experimentRequestSchema = z.object({
   instances: z.array(z.number().int().positive()).min(1).max(10),
@@ -365,9 +409,15 @@ export function createHandlers(db: MockDb, options: MockOptions) {
       if (!parsed.success) {
         return problem(400, 'Invalid request content.')
       }
-      const { vehicleId, deliveryPointIds, criterion } = parsed.data
+      const { vehicleId, deliveryPointIds, criterion, origin } = parsed.data
       if (new Set(deliveryPointIds).size !== deliveryPointIds.length) {
         return problem(400, 'deliveryPointIds must not contain duplicates')
+      }
+      if (!origin && deliveryPointIds.length < 2) {
+        return problem(400, 'Invalid request content.')
+      }
+      if (origin && !isCovered(origin.latitude, origin.longitude)) {
+        return problem(400, 'The origin is outside the area covered by the road map')
       }
       const vehicle = db.vehicles.find((candidate) => candidate.id === vehicleId)
       if (!vehicle) {
@@ -377,7 +427,8 @@ export function createHandlers(db: MockDb, options: MockOptions) {
         return problem(400, `Vehicle ${vehicleId} is inactive`)
       }
       const points: DeliveryPoint[] = []
-      for (const pointId of deliveryPointIds) {
+      const orderedIds = origin ? [...deliveryPointIds].sort((a, b) => a - b) : deliveryPointIds
+      for (const pointId of orderedIds) {
         const point = db.deliveryPoints.find((candidate) => candidate.id === pointId)
         if (!point) {
           return problem(404, `Delivery point ${pointId} not found`)
@@ -388,6 +439,9 @@ export function createHandlers(db: MockDb, options: MockOptions) {
         points.push(point)
       }
 
+      if (origin) {
+        points.unshift(originPoint(db, origin.latitude, origin.longitude))
+      }
       const route = createPendingRoute(db, vehicle, criterion, points)
       setTimeout(
         () => completeRoute(db, route.id, points, criterion, options),

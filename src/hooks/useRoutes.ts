@@ -2,11 +2,12 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { ROUTE_POLL_INTERVAL_MS } from '@/config/polling'
 import { queryKeys } from '@/services/queryKeys'
 import { calculateRoute, getRoute } from '@/services/routeService'
-import type { RouteAccepted } from '@/services/schemas/route'
+import type { RouteAccepted, RouteOrigin } from '@/services/schemas/route'
 
 type CalculationRequest = {
   vehicleId: number
   deliveryPointIds: number[]
+  origin?: RouteOrigin
 }
 
 export type CalculationIds = {
@@ -19,10 +20,11 @@ export function useCalculateRoutes() {
     mutationFn: async ({
       vehicleId,
       deliveryPointIds,
+      origin,
     }: CalculationRequest): Promise<CalculationIds> => {
       const [emission, distance] = await Promise.all([
-        calculateRoute({ vehicleId, deliveryPointIds, criterion: 'EMISSION' }),
-        calculateRoute({ vehicleId, deliveryPointIds, criterion: 'DISTANCE' }),
+        calculateRoute({ vehicleId, deliveryPointIds, criterion: 'EMISSION', origin }),
+        calculateRoute({ vehicleId, deliveryPointIds, criterion: 'DISTANCE', origin }),
       ])
       return { emission, distance }
     },

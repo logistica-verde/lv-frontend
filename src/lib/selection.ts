@@ -28,17 +28,24 @@ export function addToSelection(selected: number[], ids: number[]): number[] {
   return [...selected, ...additions].slice(0, MAX_SELECTED_POINTS)
 }
 
-export function isSelectionReady(count: number): boolean {
-  return count >= MIN_SELECTED_POINTS && count <= MAX_SELECTED_POINTS
+export const MIN_SELECTED_POINTS_WITH_ORIGIN = 1
+
+export function minimumPoints(hasOrigin: boolean): number {
+  return hasOrigin ? MIN_SELECTED_POINTS_WITH_ORIGIN : MIN_SELECTED_POINTS
 }
 
-export function describeSelection(count: number): string {
+export function isSelectionReady(count: number, hasOrigin = false): boolean {
+  return count >= minimumPoints(hasOrigin) && count <= MAX_SELECTED_POINTS
+}
+
+export function describeSelection(count: number, hasOrigin = false): string {
+  const minimum = minimumPoints(hasOrigin)
   if (count === 0) {
-    return `Selecione de ${MIN_SELECTED_POINTS} a ${MAX_SELECTED_POINTS} pontos para calcular a rota.`
+    return `Selecione de ${minimum} a ${MAX_SELECTED_POINTS} ${minimum === 1 ? 'ponto' : 'pontos'} para calcular a rota.`
   }
   const selected = count === 1 ? '1 ponto selecionado' : `${count} pontos selecionados`
-  if (count < MIN_SELECTED_POINTS) {
-    return `${selected}. Selecione pelo menos ${MIN_SELECTED_POINTS}.`
+  if (count < minimum) {
+    return `${selected}. Selecione pelo menos ${minimum}.`
   }
   if (count === MAX_SELECTED_POINTS) {
     return `${selected}. Limite máximo atingido.`

@@ -9,6 +9,7 @@ import SplitLayout from '@/components/SplitLayout/SplitLayout'
 import { useDeliveryPoints } from '@/hooks/useDeliveryPoints'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useIsDesktop } from '@/hooks/useMediaQuery'
+import { useCurrentLocation } from '@/hooks/useCurrentLocation'
 import { useCalculateRoutes } from '@/hooks/useRoutes'
 import type { CalculationIds } from '@/hooks/useRoutes'
 import { useToast } from '@/hooks/useToast'
@@ -20,6 +21,7 @@ import AddPointDialog from '@/pages/PlanningPage/AddPoint/AddPointDialog'
 import type { AddPointTab } from '@/pages/PlanningPage/AddPoint/AddPointDialog'
 import CalculationStatus from '@/pages/PlanningPage/CalculationStatus'
 import styles from '@/pages/PlanningPage/PlanningPage.module.css'
+import OriginCard from '@/pages/PlanningPage/OriginCard'
 import PointsList from '@/pages/PlanningPage/PointsList'
 import VehicleCard from '@/pages/PlanningPage/VehicleCard'
 import { describeError } from '@/services/errors'
@@ -57,13 +59,16 @@ export default function PlanningPage() {
   const [draft, setDraft] = useState<LatLngTuple | null>(null)
   const [dialog, setDialog] = useState<DialogState | null>(null)
   const [calculation, setCalculation] = useState<Calculation | null>(null)
+  const { location, locate, clear } = useCurrentLocation()
+  const origin = location.status === 'ready' ? location.fix : null
 
   const registered = points.data ?? NO_POINTS
   const selectedPoints = requestedIds
     .map((id) => registered.find((point) => point.id === id))
     .filter((point): point is DeliveryPoint => point !== undefined)
   const selectedIds = selectedPoints.map((point) => point.id)
-  const canCalculate = vehicle !== undefined && isSelectionReady(selectedIds.length)
+  const canCalculate =
+    vehicle !== undefined && isSelectionReady(selectedIds.length, origin !== null)
 
   const handleAdded = (added: DeliveryPoint[]) => {
     setRequestedIds(
@@ -82,7 +87,11 @@ export default function PlanningPage() {
       return
     }
     calculateRoutes.mutate(
-      { vehicleId: vehicle.id, deliveryPointIds: selectedIds },
+      {
+        vehicleId: vehicle.id,
+        deliveryPointIds: selectedIds,
+        origin: origin ? { latitude: origin.latitude, longitude: origin.longitude } : undefined,
+      },
       {
         onSuccess: (ids) => setCalculation({ ids, startedAt: Date.now() }),
         onError: (error) => notify(describeError(error), 'danger'),
@@ -93,6 +102,8 @@ export default function PlanningPage() {
   const vehicleCard = (
     <VehicleCard query={vehicles} active={active} selected={vehicle} onChange={choose} />
   )
+
+  const originCard = <OriginCard location={location} onLocate={locate} onClear={clear} />
 
   const pointsError = points.isError && (
     <ErrorMessage message={describeError(points.error)} onRetry={() => points.refetch()} />
@@ -105,6 +116,7 @@ export default function PlanningPage() {
       onSearchAddress={(query) => setDialog({ tab: 'address', position: null, query })}
       onMove={(pointId, offset) => setRequestedIds(moveSelection(selectedIds, pointId, offset))}
       onRemove={(pointId) => setRequestedIds(selectedIds.filter((id) => id !== pointId))}
+      hasOrigin={origin !== null}
     />
   )
 
@@ -136,6 +148,7 @@ export default function PlanningPage() {
     <div className={styles.panel}>
       <h1 className={styles.title}>Nova rota</h1>
       {vehicleCard}
+      {originCard}
       {pointsError}
       {pointsList}
       {actions}
@@ -184,6 +197,14 @@ export default function PlanningPage() {
         )
       })}
       {draft && <MapMarker position={draft} title="Novo ponto" label="+" tone="distance" />}
+      {origin && (
+        <MapMarker
+          position={[origin.latitude, origin.longitude]}
+          title="Minha localização"
+          label="S"
+          tone="distance"
+        />
+      )}
     </MapView>
   )
 
@@ -198,6 +219,7 @@ export default function PlanningPage() {
           </div>
           <div className={styles.floating}>
             <div className={styles.floatingCard}>{vehicleCard}</div>
+            {originCard}
             {pointsError}
             <div className={styles.floatingGrow}>{pointsList}</div>
             <div className={`${styles.floatingCard} ${styles.floatingActions}`}>{actions}</div>

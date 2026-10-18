@@ -70,7 +70,7 @@ describe('PointsList', () => {
       'listitem',
     )
     expect(items.map((item) => item.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
-      '1Ponto 1Rua 1',
+      '1Ponto 1SaídaRua 1',
       '2Ponto 2Rua 2',
       '3Ponto 3Rua 3',
     ])

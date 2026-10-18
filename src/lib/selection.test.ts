@@ -4,6 +4,7 @@ import {
   addToSelection,
   isSelectionReady,
   MAX_SELECTED_POINTS,
+  minimumPoints,
   moveSelection,
   toggleSelection,
 } from '@/lib/selection'
@@ -45,6 +46,27 @@ describe('isSelectionReady', () => {
     [31, false],
   ])('for %i points is %s', (count, expected) => {
     expect(isSelectionReady(count)).toBe(expected)
+  })
+})
+
+describe('selection with an origin', () => {
+  it.each([
+    [0, false],
+    [1, true],
+    [30, true],
+    [31, false],
+  ])('for %i points is %s', (count, expected) => {
+    expect(isSelectionReady(count, true)).toBe(expected)
+  })
+
+  it('needs one point instead of two', () => {
+    expect(minimumPoints(false)).toBe(2)
+    expect(minimumPoints(true)).toBe(1)
+  })
+
+  it('explains the smaller minimum', () => {
+    expect(describeSelection(0, true)).toBe('Selecione de 1 a 30 ponto para calcular a rota.')
+    expect(describeSelection(1, true)).toBe('1 ponto selecionado.')
   })
 })
 
