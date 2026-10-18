@@ -157,6 +157,24 @@ describe('ComparisonPage result', () => {
     expect(await screen.findByText(/Linhas retas, sem o traçado das ruas/)).toBeVisible()
   })
 
+  it('says the lines follow the streets when both routes carry their geometry', async () => {
+    const curved: [number, number][] = [
+      [-23.57, -46.63],
+      [-23.565, -46.632],
+      [-23.56, -46.629],
+      [-23.55, -46.63],
+    ]
+    const withStreets = (route: Route): Route => ({
+      ...route,
+      segments: route.segments.map((segment) => ({ ...segment, geometry: curved })),
+    })
+    useRoutesApi({ 7: withStreets(emissionRoute), 8: withStreets(distanceRoute) })
+    renderRoutes(routes, '/rotas/7/8')
+
+    expect(await screen.findByText(/As linhas seguem o traçado das ruas/)).toBeVisible()
+    expect(screen.queryByText(/Linhas retas/)).not.toBeInTheDocument()
+  })
+
   it('lists the segments of the emission route first, with units and a total', async () => {
     useRoutesApi({ 7: emissionRoute, 8: distanceRoute })
     renderRoutes(routes, '/rotas/7/8')
