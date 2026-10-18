@@ -286,11 +286,19 @@ describe('ComparisonPage result', () => {
     renderRoutes(routes, '/rotas/7/8')
 
     const reduction = (await screen.findByText('Redução de CO₂')).parentElement as HTMLElement
-    expect(within(reduction).getByText('−31,25%')).toBeVisible()
+    expect(within(reduction).getByText('31,25%')).toBeVisible()
     expect(within(reduction).getByText('2,5 kg CO₂')).toBeVisible()
     const extra = screen.getByText('Distância adicional').parentElement as HTMLElement
     expect(within(extra).getByText('+12,36%')).toBeVisible()
     expect(within(extra).getByText('0,22 km')).toBeVisible()
+  })
+
+  it('shows the size of the change without a sign, because the label already says its direction', async () => {
+    useRoutesApi({ 7: { ...emissionRoute, totalEmissionKg: 10 }, 8: distanceRoute })
+    renderRoutes(routes, '/rotas/7/8')
+
+    const increase = (await screen.findByText('Aumento de CO₂')).parentElement as HTMLElement
+    expect(within(increase).getByText('25%')).toBeVisible()
   })
 
   it('derives the travel time and the average speed from the segments', async () => {
