@@ -508,7 +508,7 @@ describe('AdminPage algorithm parameters', () => {
     await openTab('Parâmetros do AG')
 
     expect(await screen.findByLabelText('Tamanho da população')).toHaveValue(300)
-    expect(screen.getByLabelText('Gerações')).toHaveValue(1000)
+    expect(screen.getByLabelText('Gerações')).toHaveValue(500)
     expect(screen.getByLabelText('Taxa de cruzamento')).toHaveValue(0.9)
     expect(screen.getByLabelText('Taxa de mutação')).toHaveValue(0.4)
     expect(screen.getByRole('button', { name: 'Salvar parâmetros' })).toBeDisabled()
@@ -557,7 +557,7 @@ describe('AdminPage algorithm parameters', () => {
     await user.click(screen.getByRole('button', { name: 'Restaurar padrões' }))
 
     expect(screen.getByLabelText('Tamanho da população')).toHaveValue(300)
-    expect(screen.getByLabelText('Gerações')).toHaveValue(1000)
+    expect(screen.getByLabelText('Gerações')).toHaveValue(500)
     expect(screen.getByLabelText('Taxa de cruzamento')).toHaveValue(0.9)
     expect(screen.getByLabelText('Taxa de mutação')).toHaveValue(0.4)
     expect(api.savedSettings).toHaveLength(0)
