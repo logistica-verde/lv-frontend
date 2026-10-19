@@ -51,3 +51,13 @@ export function describeTimeLeft(minutes: number): string {
   const days = Math.floor(hours / 24)
   return days === 1 ? '1 dia' : `${days} dias`
 }
+
+export const REMINDER_THRESHOLDS_MINUTES = [60, 30, 15, 5, 1] as const
+
+export function crossedThreshold(minutesLeft: number, already: ReadonlySet<number>): number | null {
+  const crossed = REMINDER_THRESHOLDS_MINUTES.filter(
+    (threshold) => minutesLeft <= threshold && !already.has(threshold),
+  )
+  const smallest = Math.min(...crossed)
+  return Number.isFinite(smallest) ? smallest : null
+}
