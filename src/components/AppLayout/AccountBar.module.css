@@ -80,6 +80,30 @@
   font-size: var(--font-size-sm);
 }
 
+.sidebarCollapsed {
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--space-3) 0 0;
+}
+
+.sidebar.sidebarCollapsed .person {
+  flex: 0 0 auto;
+}
+
+.sidebarCollapsed .actions {
+  flex-direction: column;
+  margin-left: 0;
+}
+
+.identityHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
 .sidebar .person {
   flex: 1 1 100%;
 }

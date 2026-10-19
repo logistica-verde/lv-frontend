@@ -1,4 +1,4 @@
-import { Menu, X } from 'lucide-react'
+import { ChevronsLeft, ChevronsRight, Menu, X } from 'lucide-react'
 import { useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { Link, NavLink, Outlet, useMatches } from 'react-router'
@@ -6,8 +6,10 @@ import { z } from 'zod'
 import AccountBar from '@/components/AppLayout/AccountBar'
 import styles from '@/components/AppLayout/AppLayout.module.css'
 import BrandMark from '@/components/BrandMark/BrandMark'
+import IconButton from '@/components/IconButton/IconButton'
 import { isMockMode } from '@/config/env'
 import { useIsDesktop } from '@/hooks/useMediaQuery'
+import { useSidebarCollapsed } from '@/hooks/useSidebarCollapsed'
 import { useSession } from '@/hooks/useSession'
 import { classNames } from '@/lib/classNames'
 import { navItems } from '@/navigation'
@@ -18,6 +20,7 @@ const fullBleedSchema = z.object({ fullBleed: z.literal(true) })
 export default function AppLayout() {
   const isWide = useIsDesktop()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed()
   const menuButton = useRef<HTMLButtonElement>(null)
   const session = useSession()
   const fullBleed = useMatches().some((match) => fullBleedSchema.safeParse(match.handle).success)
@@ -43,10 +46,13 @@ export default function AppLayout() {
             to={item.to}
             end={item.end}
             onClick={closeMenu}
+            title={isWide && collapsed ? item.label : undefined}
             className={({ isActive }) => classNames(styles.navLink, isActive && styles.active)}
           >
             <item.icon size={18} aria-hidden="true" />
-            {item.label}
+            <span className={isWide && collapsed ? styles.hiddenLabel : undefined}>
+              {item.label}
+            </span>
           </NavLink>
         </li>
       ))}
@@ -81,19 +87,35 @@ export default function AppLayout() {
 
   if (isWide) {
     return (
-      <div className={styles.shell}>
+      <div className={classNames(styles.shell, collapsed && styles.shellCollapsed)}>
         {skipLink}
-        <aside className={styles.sidebar}>
-          <Link to="/" className={styles.brand}>
-            <BrandMark />
-            Lastro
-          </Link>
+        <aside className={classNames(styles.sidebar, collapsed && styles.sidebarCollapsed)}>
+          <div className={styles.brandRow}>
+            <Link to="/" className={styles.brand} aria-label="Lastro" title="Lastro">
+              <BrandMark />
+              <span className={collapsed ? styles.hiddenLabel : undefined}>Lastro</span>
+            </Link>
+            <IconButton
+              label={collapsed ? 'Expandir menu' : 'Recolher menu'}
+              aria-expanded={!collapsed}
+              onClick={toggleCollapsed}
+              className={styles.collapseButton}
+            >
+              {collapsed ? (
+                <ChevronsRight size={18} aria-hidden="true" />
+              ) : (
+                <ChevronsLeft size={18} aria-hidden="true" />
+              )}
+            </IconButton>
+          </div>
           <nav aria-label="Principal" className={styles.sideNav}>
             {links}
           </nav>
           <div className={styles.sidebarEnd}>
-            {mockNotice}
-            {session && <AccountBar session={session} variant="sidebar" />}
+            {!collapsed && mockNotice}
+            {session && (
+              <AccountBar session={session} variant="sidebar" collapsed={collapsed} />
+            )}
           </div>
         </aside>
         {content}

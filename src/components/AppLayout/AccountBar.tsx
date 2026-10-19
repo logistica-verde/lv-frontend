@@ -13,6 +13,7 @@ import type { Role } from '@/services/schemas/user'
 type AccountBarProps = {
   session: Session
   variant: 'sidebar' | 'menu'
+  collapsed?: boolean
 }
 
 const AVATAR_STYLES: Record<Role, string | undefined> = {
@@ -28,7 +29,7 @@ function initialsOf(name: string): string {
   return `${first}${last}`.toUpperCase()
 }
 
-export default function AccountBar({ session, variant }: AccountBarProps) {
+export default function AccountBar({ session, variant, collapsed = false }: AccountBarProps) {
   const queryClient = useQueryClient()
   const { nome, perfil } = session.usuario
 
@@ -42,7 +43,7 @@ export default function AccountBar({ session, variant }: AccountBarProps) {
       <span className={classNames(styles.avatar, AVATAR_STYLES[perfil])} aria-hidden="true">
         {initialsOf(nome)}
       </span>
-      <div className={styles.identity}>
+      <div className={classNames(styles.identity, collapsed && styles.identityHidden)}>
         <span className={styles.name}>{nome}</span>
         <span className={styles.role}>{ROLE_LABELS[perfil]}</span>
       </div>
@@ -63,7 +64,7 @@ export default function AccountBar({ session, variant }: AccountBarProps) {
   }
 
   return (
-    <div className={styles.sidebar}>
+    <div className={classNames(styles.sidebar, collapsed && styles.sidebarCollapsed)}>
       {identity}
       <div className={styles.actions}>
         <ThemeToggle />
