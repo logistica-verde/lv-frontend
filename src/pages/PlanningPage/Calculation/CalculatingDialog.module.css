@@ -1,0 +1,55 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.spinner {
+  display: flex;
+  justify-content: center;
+  color: var(--color-primary);
+  font-size: 3rem;
+}
+
+.spinner > span {
+  border-width: 4px;
+}
+
+.status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.elapsed {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  text-align: center;
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.error {
+  margin: 0;
+  color: var(--color-danger);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}

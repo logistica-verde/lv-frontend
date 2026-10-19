@@ -4,6 +4,7 @@ import type { KeyboardEvent, ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import IconButton from '@/components/IconButton/IconButton'
 import styles from '@/components/Modal/Modal.module.css'
+import { classNames } from '@/lib/classNames'
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -11,11 +12,12 @@ const FOCUSABLE =
 type ModalProps = {
   open: boolean
   title: string
+  wide?: boolean
   onClose: () => void
   children: ReactNode
 }
 
-export default function Modal({ open, title, onClose, children }: ModalProps) {
+export default function Modal({ open, title, wide = false, onClose, children }: ModalProps) {
   const titleId = useId()
   const dialogRef = useRef<HTMLDivElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
@@ -104,7 +106,7 @@ export default function Modal({ open, title, onClose, children }: ModalProps) {
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={styles.dialog}
+        className={classNames(styles.dialog, wide && styles.wide)}
         onKeyDown={handleKeyDown}
       >
         <header className={styles.header}>

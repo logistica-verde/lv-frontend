@@ -41,6 +41,11 @@ async function addExisting(user: ReturnType<typeof userEvent.setup>, names: stri
   await user.click(screen.getByRole('button', { name: `Adicionar selecionados (${names.length})` }))
 }
 
+async function calculate(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(await screen.findByRole('button', { name: 'Calcular rotas' }))
+  await user.click(await screen.findByRole('button', { name: 'Confirmar e calcular' }))
+}
+
 function listedNames() {
   return within(screen.getByRole('list', { name: 'Pontos da rota' }))
     .getAllByRole('listitem')
@@ -133,7 +138,7 @@ describe('PlanningPage', () => {
     await user.click(screen.getByRole('button', { name: 'Mover Estação da Luz para cima' }))
     expect(listedNames()).toEqual(['Estação da LuzSaída', 'Praça da Sé', 'MASP'])
 
-    await user.click(screen.getByRole('button', { name: 'Calcular rotas' }))
+    await calculate(user)
 
     await waitFor(() => expect(routes.requests).toHaveLength(2))
     expect(routes.requests.map((request) => request.deliveryPointIds)).toEqual([
@@ -165,7 +170,7 @@ describe('PlanningPage', () => {
     renderPage()
     await addExisting(user, ['Praça da Sé', 'MASP'])
 
-    await user.click(screen.getByRole('button', { name: 'Calcular rotas' }))
+    await calculate(user)
 
     await waitFor(() => expect(routes.requests).toHaveLength(2))
     expect(routes.requests).toEqual(
@@ -178,23 +183,80 @@ describe('PlanningPage', () => {
     expect(status).toHaveTextContent('Tempo decorrido')
   })
 
-  it('lets the user keep working while the routes are being calculated', async () => {
+  it('asks for confirmation with the vehicle mass and the cargo before calculating', async () => {
     useVehiclesApi([vehicleFixture])
-    useDeliveryPointsApi([sé, masp, luz])
-    useRoutesApi({ pendingPolls: 100 })
+    useDeliveryPointsApi([sé, masp])
+    const routes = useRoutesApi()
+    const user = userEvent.setup()
+    renderPage()
+    await addExisting(user, ['Praça da Sé', 'MASP'])
+
+    await user.click(screen.getByRole('button', { name: 'Calcular rotas' }))
+
+    const dialog = await screen.findByRole('dialog', { name: 'Confirmar cálculo da rota' })
+    expect(within(dialog).getAllByText('7.500 kg')).toHaveLength(2)
+    expect(within(dialog).getByText(/Primeiro ponto da lista/)).toBeVisible()
+    expect(routes.requests).toHaveLength(0)
+
+    await user.type(within(dialog).getByLabelText('Peso da carga (kg)'), '1200,5')
+
+    expect(within(dialog).getByText('8.700,5 kg')).toBeVisible()
+    await user.click(within(dialog).getByRole('button', { name: 'Confirmar e calcular' }))
+
+    await waitFor(() => expect(routes.requests).toHaveLength(2))
+    expect(routes.requests.map((request) => request.cargoKg)).toEqual([1200.5, 1200.5])
+  })
+
+  it('does not calculate when the confirmation is cancelled', async () => {
+    useVehiclesApi([vehicleFixture])
+    useDeliveryPointsApi([sé, masp])
+    const routes = useRoutesApi()
     const user = userEvent.setup()
     renderPage()
     await addExisting(user, ['Praça da Sé', 'MASP'])
     await user.click(screen.getByRole('button', { name: 'Calcular rotas' }))
-    await screen.findByRole('status', { name: 'Andamento do cálculo' })
 
-    await user.click(screen.getByRole('button', { name: 'Remover MASP' }))
+    await user.click(await screen.findByRole('button', { name: 'Cancelar' }))
 
-    expect(listedNames()).toEqual(['Praça da SéSaída'])
-    expect(screen.getByRole('status', { name: 'Andamento do cálculo' })).toBeVisible()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(routes.requests).toHaveLength(0)
   })
 
-  it('finishes with a link to the comparison', async () => {
+  it('rejects a negative or absurd cargo weight', async () => {
+    useVehiclesApi([vehicleFixture])
+    useDeliveryPointsApi([sé, masp])
+    const user = userEvent.setup()
+    renderPage()
+    await addExisting(user, ['Praça da Sé', 'MASP'])
+    await user.click(screen.getByRole('button', { name: 'Calcular rotas' }))
+    const field = await screen.findByLabelText('Peso da carga (kg)')
+
+    await user.type(field, '-3')
+    expect(screen.getByText('Informe um peso igual ou maior que zero.')).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Confirmar e calcular' })).toBeDisabled()
+
+    await user.clear(field)
+    await user.type(field, '100001')
+    expect(screen.getByText('O peso máximo é 100.000 kg.')).toBeVisible()
+  })
+
+  it('blocks the screen with a progress bar and a spinner while calculating', async () => {
+    useVehiclesApi([vehicleFixture])
+    useDeliveryPointsApi([sé, masp])
+    useRoutesApi({ pendingPolls: 100 })
+    const user = userEvent.setup()
+    renderPage()
+    await addExisting(user, ['Praça da Sé', 'MASP'])
+
+    await calculate(user)
+
+    const dialog = await screen.findByRole('dialog', { name: 'Calculando as rotas' })
+    expect(within(dialog).getByRole('progressbar', { name: 'Progresso do cálculo' })).toBeVisible()
+    expect(within(dialog).getByText('Menor emissão')).toBeVisible()
+    expect(within(dialog).getByText('Menor distância')).toBeVisible()
+  })
+
+  it('shows both routes and their comparison when the calculation finishes', async () => {
     useVehiclesApi([vehicleFixture])
     useDeliveryPointsApi([sé, masp])
     useRoutesApi()
@@ -202,12 +264,34 @@ describe('PlanningPage', () => {
     renderPage()
     await addExisting(user, ['Praça da Sé', 'MASP'])
 
-    await user.click(screen.getByRole('button', { name: 'Calcular rotas' }))
+    await calculate(user)
 
-    expect(await screen.findByRole('link', { name: 'Ver comparação das rotas' })).toHaveAttribute(
-      'href',
-      '/rotas/501/502',
-    )
+    const dialog = await screen.findByRole('dialog', { name: 'Rotas calculadas' })
+    expect(within(dialog).getByRole('region', { name: 'Mapa da rota de menor emissão' })).toBeVisible()
+    expect(within(dialog).getByRole('region', { name: 'Mapa da rota de menor distância' })).toBeVisible()
+    expect(
+      within(dialog).getByRole('link', { name: 'Abrir a comparação completa' }),
+    ).toHaveAttribute('href', '/rotas/501/502')
+
+    await user.click(within(dialog).getAllByRole('button', { name: 'Fechar' }).at(-1) as HTMLElement)
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('tells when one of the routes fails and lets the user go back', async () => {
+    useVehiclesApi([vehicleFixture])
+    useDeliveryPointsApi([sé, masp])
+    useRoutesApi({ failing: 'DISTANCE' })
+    const user = userEvent.setup()
+    renderPage()
+    await addExisting(user, ['Praça da Sé', 'MASP'])
+
+    await calculate(user)
+
+    const dialog = await screen.findByRole('dialog', { name: 'Não foi possível calcular' })
+    expect(await within(dialog).findByRole('alert')).toBeVisible()
+    await user.click(within(dialog).getByRole('button', { name: 'Voltar' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('shows the API message when the calculation is refused', async () => {
@@ -222,7 +306,7 @@ describe('PlanningPage', () => {
     renderPage()
     await addExisting(user, ['Praça da Sé', 'MASP'])
 
-    await user.click(screen.getByRole('button', { name: 'Calcular rotas' }))
+    await calculate(user)
 
     expect(await screen.findByText('Veículo inexistente.')).toBeVisible()
     expect(screen.queryByRole('status', { name: 'Andamento do cálculo' })).not.toBeInTheDocument()
@@ -279,7 +363,7 @@ describe('PlanningPage starting from the current location', () => {
 
     await user.click(screen.getByRole('button', { name: 'Usar minha localização' }))
     await screen.findByRole('button', { name: 'Remover' })
-    await user.click(await screen.findByRole('button', { name: 'Calcular rotas' }))
+    await calculate(user)
 
     await waitFor(() => expect(routes.requests).toHaveLength(2))
     expect(routes.requests.map((request) => request.origin)).toEqual([
@@ -356,7 +440,7 @@ describe('PlanningPage starting from the current location', () => {
     await addExisting(user, ['MASP'])
     await user.click(screen.getByRole('button', { name: 'Usar minha localização' }))
 
-    await user.click(await screen.findByRole('button', { name: 'Calcular rotas' }))
+    await calculate(user)
 
     expect(await screen.findByText(/fora da área coberta pelo mapa/)).toBeVisible()
   })

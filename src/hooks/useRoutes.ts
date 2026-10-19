@@ -8,6 +8,7 @@ type CalculationRequest = {
   vehicleId: number
   deliveryPointIds: number[]
   origin?: RouteOrigin
+  cargoKg?: number
 }
 
 export type CalculationIds = {
@@ -21,10 +22,11 @@ export function useCalculateRoutes() {
       vehicleId,
       deliveryPointIds,
       origin,
+      cargoKg,
     }: CalculationRequest): Promise<CalculationIds> => {
       const [emission, distance] = await Promise.all([
-        calculateRoute({ vehicleId, deliveryPointIds, criterion: 'EMISSION', origin }),
-        calculateRoute({ vehicleId, deliveryPointIds, criterion: 'DISTANCE', origin }),
+        calculateRoute({ vehicleId, deliveryPointIds, criterion: 'EMISSION', origin, cargoKg }),
+        calculateRoute({ vehicleId, deliveryPointIds, criterion: 'DISTANCE', origin, cargoKg }),
       ])
       return { emission, distance }
     },

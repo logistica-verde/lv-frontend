@@ -21,6 +21,7 @@ const calculationSchema = z.object({
   deliveryPointIds: z.array(z.number()),
   criterion: z.enum(['EMISSION', 'DISTANCE']),
   origin: z.object({ latitude: z.number(), longitude: z.number() }).optional(),
+  cargoKg: z.number().optional(),
 })
 
 export type PostedPoint = z.infer<typeof postedPointSchema>

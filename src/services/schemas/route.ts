@@ -15,6 +15,7 @@ export const routeInputSchema = z
     deliveryPointIds: z.array(z.number().int().positive()).min(1).max(30),
     criterion: optimizationCriterionSchema,
     origin: routeOriginSchema.optional(),
+    cargoKg: z.number().min(0).max(100000).optional(),
   })
   .refine((input) => input.origin !== undefined || input.deliveryPointIds.length >= 2, {
     message: 'Informe ao menos 2 pontos ou a saída',
@@ -52,6 +53,7 @@ export const routeSchema = z.object({
   createdAt: z.string(),
   totalEmissionKg: z.number().nullable(),
   totalDistanceMeters: z.number().nullable(),
+  cargoKg: z.number().nullish(),
   errorMessage: z.string().nullable(),
   points: z.array(routePointSchema),
   segments: z.array(routeSegmentSchema),

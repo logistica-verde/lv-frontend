@@ -1,6 +1,6 @@
 import type { LatLngTuple } from 'leaflet'
 import { Route } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import Button from '@/components/Button/Button'
 import ErrorMessage from '@/components/ErrorMessage/ErrorMessage'
 import MapMarker from '@/components/Map/MapMarker'
@@ -19,13 +19,16 @@ import { toLatLng } from '@/lib/geo'
 import { addToSelection, isSelectionReady, moveSelection, toggleSelection } from '@/lib/selection'
 import AddPointDialog from '@/pages/PlanningPage/AddPoint/AddPointDialog'
 import type { AddPointTab } from '@/pages/PlanningPage/AddPoint/AddPointDialog'
-import CalculationStatus from '@/pages/PlanningPage/CalculationStatus'
+import CalculatingDialog from '@/pages/PlanningPage/Calculation/CalculatingDialog'
+import ConfirmCalculationDialog from '@/pages/PlanningPage/Calculation/ConfirmCalculationDialog'
+import ResultsDialog from '@/pages/PlanningPage/Calculation/ResultsDialog'
 import styles from '@/pages/PlanningPage/PlanningPage.module.css'
 import OriginCard from '@/pages/PlanningPage/OriginCard'
 import PointsList from '@/pages/PlanningPage/PointsList'
 import VehicleCard from '@/pages/PlanningPage/VehicleCard'
 import { describeError } from '@/services/errors'
 import type { DeliveryPoint } from '@/services/schemas/deliveryPoint'
+import type { Route as CalculatedRoute } from '@/services/schemas/route'
 
 const NO_POINTS: DeliveryPoint[] = []
 const FLOATING_INSET_PX = 380
@@ -39,6 +42,11 @@ type DialogState = {
 type Calculation = {
   ids: CalculationIds
   startedAt: number
+}
+
+type Results = {
+  emission: CalculatedRoute
+  distance: CalculatedRoute
 }
 
 function describeAdded(points: DeliveryPoint[]): string {
@@ -58,7 +66,9 @@ export default function PlanningPage() {
   const [requestedIds, setRequestedIds] = useState<number[]>([])
   const [draft, setDraft] = useState<LatLngTuple | null>(null)
   const [dialog, setDialog] = useState<DialogState | null>(null)
+  const [confirming, setConfirming] = useState(false)
   const [calculation, setCalculation] = useState<Calculation | null>(null)
+  const [results, setResults] = useState<Results | null>(null)
   const { location, locate, clear } = useCurrentLocation()
   const origin = location.status === 'ready' ? location.fix : null
 
@@ -82,7 +92,7 @@ export default function PlanningPage() {
     notify(describeAdded(added), 'success')
   }
 
-  const calculate = () => {
+  const calculate = (cargoKg: number) => {
     if (!vehicle) {
       return
     }
@@ -91,13 +101,25 @@ export default function PlanningPage() {
         vehicleId: vehicle.id,
         deliveryPointIds: selectedIds,
         origin: origin ? { latitude: origin.latitude, longitude: origin.longitude } : undefined,
+        cargoKg: cargoKg > 0 ? cargoKg : undefined,
       },
       {
-        onSuccess: (ids) => setCalculation({ ids, startedAt: Date.now() }),
-        onError: (error) => notify(describeError(error), 'danger'),
+        onSuccess: (ids) => {
+          setConfirming(false)
+          setCalculation({ ids, startedAt: Date.now() })
+        },
+        onError: (error) => {
+          setConfirming(false)
+          notify(describeError(error), 'danger')
+        },
       },
     )
   }
+
+  const showResults = useCallback((emission: CalculatedRoute, distance: CalculatedRoute) => {
+    setCalculation(null)
+    setResults({ emission, distance })
+  }, [])
 
   const vehicleCard = (
     <VehicleCard query={vehicles} active={active} selected={vehicle} onChange={choose} />
@@ -124,8 +146,7 @@ export default function PlanningPage() {
     <div className={styles.actions}>
       <Button
         disabled={!canCalculate}
-        loading={calculateRoutes.isPending}
-        onClick={calculate}
+        onClick={() => setConfirming(true)}
         className={styles.calculate}
       >
         <Route size={16} aria-hidden="true" />
@@ -134,13 +155,6 @@ export default function PlanningPage() {
       <p className={styles.calculateHint}>
         Calcula a rota de menor emissão e a de menor distância para os mesmos pontos.
       </p>
-      {calculation && (
-        <CalculationStatus
-          key={`${calculation.ids.emission.id}-${calculation.ids.distance.id}`}
-          calculation={calculation.ids}
-          startedAt={calculation.startedAt}
-        />
-      )}
     </div>
   )
 
@@ -224,6 +238,31 @@ export default function PlanningPage() {
         </div>
       ) : (
         <SplitLayout panelLabel="Pontos" mapLabel="Mapa" panel={panel} map={map} />
+      )}
+      <ConfirmCalculationDialog
+        open={confirming}
+        vehicle={vehicle}
+        pointCount={selectedPoints.length}
+        hasOrigin={origin !== null}
+        submitting={calculateRoutes.isPending}
+        onCancel={() => setConfirming(false)}
+        onConfirm={calculate}
+      />
+      {calculation && (
+        <CalculatingDialog
+          key={`${calculation.ids.emission.id}-${calculation.ids.distance.id}`}
+          calculation={calculation.ids}
+          startedAt={calculation.startedAt}
+          onFinished={showResults}
+          onClose={() => setCalculation(null)}
+        />
+      )}
+      {results && (
+        <ResultsDialog
+          emissionRoute={results.emission}
+          distanceRoute={results.distance}
+          onClose={() => setResults(null)}
+        />
       )}
       <AddPointDialog
         open={dialog !== null}

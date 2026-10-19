@@ -21,6 +21,10 @@
   box-shadow: var(--shadow-float);
 }
 
+.wide {
+  max-width: 72rem;
+}
+
 .dialog:focus {
   outline: none;
 }

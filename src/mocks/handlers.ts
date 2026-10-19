@@ -48,6 +48,7 @@ const routeRequestSchema = z.object({
   origin: z
     .object({ latitude: z.number().min(-90).max(90), longitude: z.number().min(-180).max(180) })
     .optional(),
+  cargoKg: z.number().min(0).max(100000).optional(),
 })
 
 const COVERAGE = {
@@ -177,6 +178,7 @@ function createPendingRoute(
   vehicle: Vehicle,
   criterion: OptimizationCriterion,
   points: DeliveryPoint[],
+  cargoKg?: number,
 ): Route {
   const route: Route = {
     id: db.nextRouteId++,
@@ -186,6 +188,7 @@ function createPendingRoute(
     createdAt: new Date().toISOString(),
     totalEmissionKg: null,
     totalDistanceMeters: null,
+    cargoKg: cargoKg && cargoKg > 0 ? cargoKg : null,
     errorMessage: null,
     points: points.map((point, index) => ({
       pointId: point.id,
@@ -409,7 +412,7 @@ export function createHandlers(db: MockDb, options: MockOptions) {
       if (!parsed.success) {
         return problem(400, 'Invalid request content.')
       }
-      const { vehicleId, deliveryPointIds, criterion, origin } = parsed.data
+      const { vehicleId, deliveryPointIds, criterion, origin, cargoKg } = parsed.data
       if (new Set(deliveryPointIds).size !== deliveryPointIds.length) {
         return problem(400, 'deliveryPointIds must not contain duplicates')
       }
@@ -442,7 +445,7 @@ export function createHandlers(db: MockDb, options: MockOptions) {
       if (origin) {
         points.unshift(originPoint(db, origin.latitude, origin.longitude))
       }
-      const route = createPendingRoute(db, vehicle, criterion, points)
+      const route = createPendingRoute(db, vehicle, criterion, points, cargoKg)
       setTimeout(
         () => completeRoute(db, route.id, points, criterion, options),
         options.completionDelayMs,
