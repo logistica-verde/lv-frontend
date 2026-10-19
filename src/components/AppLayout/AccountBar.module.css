@@ -65,7 +65,23 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  max-width: 12rem;
+  overflow: hidden;
   line-height: 1.25;
+  white-space: nowrap;
+  transition:
+    max-width 200ms ease,
+    opacity 150ms ease;
+}
+
+.person:has(.identityHidden) {
+  gap: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .identity {
+    transition: none;
+  }
 }
 
 .name {
@@ -96,12 +112,8 @@
 }
 
 .identityHidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
+  max-width: 0;
+  opacity: 0;
 }
 
 .sidebar .person {
