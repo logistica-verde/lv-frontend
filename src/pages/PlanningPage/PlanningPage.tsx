@@ -213,12 +213,9 @@ export default function PlanningPage() {
       {isDesktop ? (
         <div className={styles.stage}>
           {map}
-          <div className={styles.titleCard}>
-            <h1 className={styles.stageTitle}>Nova rota</h1>
-            <p className={styles.stageSubtitle}>Centro de São Paulo · mapa do OpenStreetMap</p>
-          </div>
+          <h1 className={styles.hiddenTitle}>Nova rota</h1>
+          <div className={styles.vehicleCorner}>{vehicleCard}</div>
           <div className={styles.floating}>
-            <div className={styles.floatingCard}>{vehicleCard}</div>
             {originCard}
             {pointsError}
             <div className={styles.floatingGrow}>{pointsList}</div>

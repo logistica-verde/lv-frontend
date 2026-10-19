@@ -2,6 +2,17 @@
   display: grid;
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
   height: 100dvh;
+  transition: grid-template-columns 200ms ease;
+}
+
+.shellCollapsed {
+  grid-template-columns: var(--sidebar-width-collapsed) minmax(0, 1fr);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell {
+    transition: none;
+  }
 }
 
 .layout {
@@ -36,11 +47,49 @@
   background: var(--color-sidebar);
 }
 
+.brandRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: 0 var(--space-2) var(--space-5);
+}
+
+.sidebarCollapsed {
+  padding-right: var(--space-2);
+  padding-left: var(--space-2);
+}
+
+.sidebarCollapsed .brandRow {
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-4);
+}
+
+.sidebarCollapsed .navLink {
+  justify-content: center;
+  padding: 0;
+}
+
+.collapseButton {
+  flex-shrink: 0;
+}
+
+.hiddenLabel {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .brand {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  margin: 0 var(--space-2) var(--space-5);
   color: var(--color-text);
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-strong);

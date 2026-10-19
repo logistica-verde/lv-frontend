@@ -44,7 +44,39 @@ describe('AppLayout on wide screens', () => {
 
     expect(screen.getByRole('navigation', { name: 'Principal' })).toBeVisible()
     expect(screen.getByRole('link', { name: 'Nova rota' })).toBeVisible()
-    expect(screen.queryByRole('button', { name: /menu/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /abrir menu|fechar menu/i })).not.toBeInTheDocument()
+  })
+
+  it('collapses the sidebar to icons and expands it again, remembering the choice', async () => {
+    stubViewport(true)
+    window.localStorage.clear()
+    const user = userEvent.setup()
+
+    renderLayout()
+    const collapse = screen.getByRole('button', { name: 'Recolher menu' })
+    expect(collapse).toHaveAttribute('aria-expanded', 'true')
+
+    await user.click(collapse)
+
+    const expand = screen.getByRole('button', { name: 'Expandir menu' })
+    expect(expand).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByRole('link', { name: 'Nova rota' })).toHaveAttribute('title', 'Nova rota')
+    expect(window.localStorage.getItem('lastro.sidebar-collapsed')).toBe('true')
+
+    await user.click(expand)
+
+    expect(screen.getByRole('button', { name: 'Recolher menu' })).toBeInTheDocument()
+    expect(window.localStorage.getItem('lastro.sidebar-collapsed')).toBe('false')
+  })
+
+  it('starts collapsed when the choice was stored', () => {
+    stubViewport(true)
+    window.localStorage.setItem('lastro.sidebar-collapsed', 'true')
+
+    renderLayout()
+
+    expect(screen.getByRole('button', { name: 'Expandir menu' })).toBeInTheDocument()
+    window.localStorage.clear()
   })
 })
 

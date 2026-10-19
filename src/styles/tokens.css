@@ -42,6 +42,7 @@
   --color-focus: #2f6fdb;
   --color-sidebar: #f8f8f6;
   --sidebar-width: 14.5rem;
+  --sidebar-width-collapsed: 4.5rem;
 
   --color-route-emission: #178a6e;
   --color-route-distance: #7a5cd1;
