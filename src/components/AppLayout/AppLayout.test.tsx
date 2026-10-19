@@ -1,8 +1,9 @@
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import AppLayout from '@/components/AppLayout/AppLayout'
+import { renderWithProviders } from '@/test/renderWithProviders'
 
 function stubViewport(isWide: boolean) {
   vi.stubGlobal('matchMedia', (query: string) => ({
@@ -27,7 +28,7 @@ function renderLayout() {
     ],
     { initialEntries: ['/'] },
   )
-  render(<RouterProvider router={router} />)
+  renderWithProviders(<RouterProvider router={router} />)
   return router
 }
 
@@ -93,7 +94,7 @@ describe('AppLayout full-bleed pages', () => {
       ],
       { initialEntries: ['/'] },
     )
-    render(<RouterProvider router={router} />)
+    renderWithProviders(<RouterProvider router={router} />)
   }
 
   it('removes the page padding when the route asks for the full area', () => {
