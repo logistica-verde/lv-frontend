@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  crossedThreshold,
   defaultScheduleValue,
   describeTimeLeft,
   isInThePast,
@@ -45,5 +46,14 @@ describe('schedule helpers', () => {
     expect(describeTimeLeft(135)).toBe('2 h 15 min')
     expect(describeTimeLeft(24 * 60)).toBe('1 dia')
     expect(describeTimeLeft(3 * 24 * 60 + 90)).toBe('3 dias')
+  })
+
+  it('reminds at the smallest threshold already crossed and not yet announced', () => {
+    expect(crossedThreshold(90, new Set())).toBeNull()
+    expect(crossedThreshold(58, new Set())).toBe(60)
+    expect(crossedThreshold(12, new Set())).toBe(15)
+    expect(crossedThreshold(12, new Set([60, 30, 15]))).toBeNull()
+    expect(crossedThreshold(4, new Set([60, 30, 15]))).toBe(5)
+    expect(crossedThreshold(0, new Set([60, 30, 15, 5]))).toBe(1)
   })
 })

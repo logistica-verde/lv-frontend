@@ -6,6 +6,8 @@ import { z } from 'zod'
 import AccountBar from '@/components/AppLayout/AccountBar'
 import styles from '@/components/AppLayout/AppLayout.module.css'
 import BrandMark from '@/components/BrandMark/BrandMark'
+import NextExecutionChip from '@/components/Schedule/NextExecutionChip'
+import ScheduleWatcher from '@/components/Schedule/ScheduleWatcher'
 import IconButton from '@/components/IconButton/IconButton'
 import { isMockMode } from '@/config/env'
 import { useIsDesktop } from '@/hooks/useMediaQuery'
@@ -89,6 +91,7 @@ export default function AppLayout() {
     return (
       <div className={classNames(styles.shell, collapsed && styles.shellCollapsed)}>
         {skipLink}
+        <ScheduleWatcher />
         <aside className={classNames(styles.sidebar, collapsed && styles.sidebarCollapsed)}>
           <div className={styles.brandRow}>
             <Link to="/" className={styles.brand} aria-label="Lastro" title="Lastro">
@@ -112,6 +115,7 @@ export default function AppLayout() {
             {links}
           </nav>
           <div className={styles.sidebarEnd}>
+            <NextExecutionChip compact={collapsed} />
             {!collapsed && mockNotice}
             {session && (
               <AccountBar session={session} variant="sidebar" collapsed={collapsed} />
@@ -126,6 +130,7 @@ export default function AppLayout() {
   return (
     <div className={styles.layout}>
       {skipLink}
+      <ScheduleWatcher />
       <header className={styles.header} onKeyDown={handleKeyDown}>
         <div className={styles.headerInner}>
           <Link to="/" className={styles.brand}>
@@ -147,6 +152,7 @@ export default function AppLayout() {
           {menuOpen && (
             <nav id={MENU_ID} aria-label="Principal" className={styles.mobileNav}>
               {links}
+              <NextExecutionChip />
               {session && <AccountBar session={session} variant="menu" />}
             </nav>
           )}
