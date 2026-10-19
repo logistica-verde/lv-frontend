@@ -25,7 +25,7 @@ export type GaSettings = z.infer<typeof gaSettingsSchema>
 
 export const DEFAULT_GA_SETTINGS: GaSettings = {
   populationSize: 300,
-  generations: 1000,
+  generations: 500,
   crossoverRate: 0.9,
   mutationRate: 0.4,
 }
