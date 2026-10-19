@@ -99,9 +99,11 @@ export default function AddressTab({ initialQuery = '', onAdded }: AddressTabPro
             }}
           />
         </div>
-        <Button type="submit" variant="secondary" loading={search.isPending}>
-          Buscar endereço
-        </Button>
+        <div className={styles.searchAction}>
+          <Button type="submit" variant="secondary" loading={search.isPending}>
+            Buscar endereço
+          </Button>
+        </div>
       </form>
       {tooShort && (
         <p role="alert" className={styles.errors}>
