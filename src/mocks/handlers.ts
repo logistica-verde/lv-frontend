@@ -3,6 +3,7 @@ import { z } from 'zod'
 import type { MockDb } from '@/mocks/db'
 import { seedAddresses } from '@/mocks/addresses'
 import { MOCK_PASSWORD } from '@/mocks/seed'
+import { executionHandlers } from '@/mocks/executions'
 import { generateRun } from '@/mocks/experiments'
 import { fakeHash } from '@/mocks/fakeHash'
 import { optimizeFake } from '@/mocks/fakeOptimizer'
@@ -143,6 +144,7 @@ const ACCESS_RULES: AccessRule[] = [
   { pattern: /^\/api\/routes\/\d+\/integrity$/, roles: ['AUDITOR', 'ADMIN'] },
   { method: 'POST', pattern: /^\/api\/routes\/calculate$/, roles: ['OPERATOR', 'ADMIN'] },
   { method: 'POST', pattern: /^\/api\/delivery-points/, roles: ['OPERATOR', 'ADMIN'] },
+  { method: 'POST', pattern: /^\/api\/executions/, roles: ['OPERATOR', 'ADMIN'] },
 ]
 
 const TOKEN_PREFIX = 'Bearer mock-token-'
@@ -272,6 +274,7 @@ function integrityReportOf(db: MockDb, routeId: number): IntegrityReport {
 
 export function createHandlers(db: MockDb, options: MockOptions) {
   return [
+    ...executionHandlers(db, options.latencyMs, problem),
     http.post('*/api/auth/login', async ({ request }) => {
       await delay(options.latencyMs)
       const parsed = loginInputSchema.safeParse(await request.json().catch(() => null))

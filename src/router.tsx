@@ -4,6 +4,7 @@ import AppLayout from '@/components/AppLayout/AppLayout'
 import { RequireAuth, RequireRole } from '@/components/RouteGuard/RouteGuard'
 import { ACCESS } from '@/lib/permissions'
 import ComparisonPage from '@/pages/ComparisonPage/ComparisonPage'
+import ExecutionPage from '@/pages/ExecutionPage/ExecutionPage'
 import HistoryPage from '@/pages/HistoryPage/HistoryPage'
 import LoginPage from '@/pages/LoginPage/LoginPage'
 import NotFoundPage from '@/pages/NotFoundPage/NotFoundPage'
@@ -13,6 +14,16 @@ import VerificationPage from '@/pages/VerificationPage/VerificationPage'
 
 export const routes: RouteObject[] = [
   { path: '/login', element: <LoginPage /> },
+  {
+    path: '/execucao/:id',
+    element: (
+      <RequireAuth>
+        <RequireRole roles={ACCESS.planning} redirectToHome>
+          <ExecutionPage />
+        </RequireRole>
+      </RequireAuth>
+    ),
+  },
   {
     path: '/',
     element: (

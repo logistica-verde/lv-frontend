@@ -1,12 +1,13 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, Route, Routes } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import PlanningPage from '@/pages/PlanningPage/PlanningPage'
 import type { DeliveryPoint } from '@/services/schemas/deliveryPoint'
 import { apiUrl } from '@/test/api'
 import { useDeliveryPointsApi, useRoutesApi, useVehiclesApi } from '@/test/fakeApi'
+import { executionFixture } from '@/test/executionFixtures'
 import { deliveryPointFixture, vehicleFixture } from '@/test/fixtures'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { server } from '@/test/server'
@@ -31,6 +32,43 @@ function renderPage() {
       <PlanningPage />
     </MemoryRouter>,
   )
+}
+
+function renderPageWithNavigation() {
+  return renderWithProviders(
+    <MemoryRouter>
+      <Routes>
+        <Route path="/" element={<PlanningPage />} />
+        <Route path="/execucao/:id" element={<p>Tela de navegação {location.pathname}</p>} />
+      </Routes>
+    </MemoryRouter>,
+  )
+}
+
+function useExecutionsApi() {
+  const posted: object[] = []
+  server.use(
+    http.post(apiUrl('/api/executions'), async ({ request }) => {
+      const body = (await request.json()) as { operationId: number; scheduledAt?: string }
+      posted.push(body)
+      return HttpResponse.json(
+        {
+          ...executionFixture,
+          operationId: body.operationId,
+          status: body.scheduledAt ? 'SCHEDULED' : 'IN_PROGRESS',
+          scheduledAt: body.scheduledAt ?? null,
+        },
+        { status: 201 },
+      )
+    }),
+  )
+  return posted
+}
+
+async function reachResults(user: ReturnType<typeof userEvent.setup>) {
+  await addExisting(user, ['Praça da Sé', 'MASP'])
+  await calculate(user)
+  return screen.findByRole('dialog', { name: 'Rotas calculadas' })
 }
 
 async function addExisting(user: ReturnType<typeof userEvent.setup>, names: string[]) {
@@ -276,6 +314,65 @@ describe('PlanningPage', () => {
     await user.click(within(dialog).getAllByRole('button', { name: 'Fechar' }).at(-1) as HTMLElement)
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('starts the chosen route right away and opens the navigation', async () => {
+    useVehiclesApi([vehicleFixture])
+    useDeliveryPointsApi([sé, masp])
+    useRoutesApi()
+    const posted = useExecutionsApi()
+    const user = userEvent.setup()
+    renderPageWithNavigation()
+    const dialog = await reachResults(user)
+
+    await user.click(within(dialog).getByRole('radio', { name: /Menor distância/ }))
+    await user.click(within(dialog).getByRole('button', { name: 'Iniciar rota agora' }))
+
+    expect(await screen.findByText(/Tela de navegação/)).toBeVisible()
+    expect(posted).toEqual([{ operationId: 502 }])
+  })
+
+  it('schedules the chosen route for a later time', async () => {
+    useVehiclesApi([vehicleFixture])
+    useDeliveryPointsApi([sé, masp])
+    useRoutesApi()
+    const posted = useExecutionsApi()
+    const user = userEvent.setup()
+    renderPageWithNavigation()
+    const dialog = await reachResults(user)
+
+    await user.click(within(dialog).getByRole('radio', { name: /Agendar/ }))
+    const when = new Date(Date.now() + 3 * 3_600_000)
+    const text = `${when.getFullYear()}-${String(when.getMonth() + 1).padStart(2, '0')}-${String(when.getDate()).padStart(2, '0')}T${String(when.getHours()).padStart(2, '0')}:00`
+    fireEvent.change(within(dialog).getByLabelText('Data e hora'), { target: { value: text } })
+    await user.click(within(dialog).getByRole('button', { name: 'Agendar rota' }))
+
+    expect(await screen.findByText(/Rota agendada para/)).toBeVisible()
+    expect(posted).toHaveLength(1)
+    expect(posted[0]).toMatchObject({ operationId: 501 })
+    expect(Date.parse((posted[0] as { scheduledAt: string }).scheduledAt)).toBeGreaterThan(Date.now())
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+  })
+
+  it('does not schedule a time in the past or an empty one', async () => {
+    useVehiclesApi([vehicleFixture])
+    useDeliveryPointsApi([sé, masp])
+    useRoutesApi()
+    const posted = useExecutionsApi()
+    const user = userEvent.setup()
+    renderPageWithNavigation()
+    const dialog = await reachResults(user)
+    await user.click(within(dialog).getByRole('radio', { name: /Agendar/ }))
+    const field = within(dialog).getByLabelText('Data e hora')
+
+    fireEvent.change(field, { target: { value: '2020-01-01T08:00' } })
+    await user.click(within(dialog).getByRole('button', { name: 'Agendar rota' }))
+    expect(await within(dialog).findByText('Escolha um horário no futuro.')).toBeVisible()
+
+    fireEvent.change(field, { target: { value: '' } })
+    await user.click(within(dialog).getByRole('button', { name: 'Agendar rota' }))
+    expect(await within(dialog).findByText('Informe a data e a hora.')).toBeVisible()
+    expect(posted).toEqual([])
   })
 
   it('tells when one of the routes fails and lets the user go back', async () => {

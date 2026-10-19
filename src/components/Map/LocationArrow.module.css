@@ -1,0 +1,21 @@
+.arrow {
+  background: transparent;
+  border: 0;
+}
+
+.arrow svg {
+  transition: transform 300ms linear;
+  filter: drop-shadow(0 2px 4px rgb(0 0 0 / 0.35));
+}
+
+.halo {
+  fill: var(--color-primary);
+  opacity: 0.18;
+}
+
+.body {
+  fill: var(--color-primary);
+  stroke: var(--color-surface);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
