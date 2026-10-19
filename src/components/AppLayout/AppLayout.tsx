@@ -50,7 +50,7 @@ export default function AppLayout() {
             className={({ isActive }) => classNames(styles.navLink, isActive && styles.active)}
           >
             <item.icon size={18} aria-hidden="true" />
-            <span className={isWide && collapsed ? styles.hiddenLabel : undefined}>
+            <span className={classNames(styles.label, isWide && collapsed && styles.labelHidden)}>
               {item.label}
             </span>
           </NavLink>
@@ -93,7 +93,7 @@ export default function AppLayout() {
           <div className={styles.brandRow}>
             <Link to="/" className={styles.brand} aria-label="Lastro" title="Lastro">
               <BrandMark />
-              <span className={collapsed ? styles.hiddenLabel : undefined}>Lastro</span>
+              <span className={classNames(styles.label, collapsed && styles.labelHidden)}>Lastro</span>
             </Link>
             <IconButton
               label={collapsed ? 'Expandir menu' : 'Recolher menu'}
