@@ -1,4 +1,5 @@
 import type { DeliveryPoint } from '@/services/schemas/deliveryPoint'
+import type { Execution } from '@/services/schemas/execution'
 import type { Experiment } from '@/services/schemas/experiment'
 import type { GaSettings } from '@/services/schemas/gaSettings'
 import { DEFAULT_GA_SETTINGS } from '@/services/schemas/gaSettings'
@@ -17,6 +18,7 @@ export type MockDb = {
   gaSettings: GaSettings
   deliveryPoints: DeliveryPoint[]
   routes: Map<number, Route>
+  executions: Map<number, Execution>
   anchors: Map<number, AnchorInfo>
   tampered: Set<number>
   experiments: Experiment[]
@@ -24,6 +26,7 @@ export type MockDb = {
   nextVehicleId: number
   nextDeliveryPointId: number
   nextRouteId: number
+  nextExecutionId: number
   nextBlock: number
 }
 
@@ -42,6 +45,7 @@ export function createDb(seed: Seed): MockDb {
     gaSettings: { ...DEFAULT_GA_SETTINGS },
     deliveryPoints: seed.deliveryPoints.map((point) => ({ ...point })),
     routes: new Map(),
+    executions: new Map(),
     anchors: new Map(),
     tampered: new Set(),
     experiments: [],
@@ -49,6 +53,7 @@ export function createDb(seed: Seed): MockDb {
     nextVehicleId: Math.max(0, ...seed.vehicles.map((vehicle) => vehicle.id)) + 1,
     nextDeliveryPointId: Math.max(0, ...seed.deliveryPoints.map((point) => point.id)) + 1,
     nextRouteId: 1,
+    nextExecutionId: 1,
     nextBlock: FIRST_BLOCK,
   }
 }

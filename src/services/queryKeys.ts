@@ -5,6 +5,8 @@ export const queryKeys = {
   gaSettings: ['settings', 'ga'] as const,
   deliveryPoints: ['delivery-points'] as const,
   route: (id: number) => ['routes', id] as const,
+  executions: (status: string) => ['executions', 'list', status] as const,
+  execution: (id: number) => ['executions', id] as const,
   latestExperiment: ['experiments', 'latest'] as const,
   operations: (query: object) => ['operations', query] as const,
   integrity: (id: number) => ['routes', id, 'integrity'] as const,
