@@ -1,10 +1,12 @@
-import { Link, useParams } from 'react-router'
+import { useState } from 'react'
 import type { ReactNode } from 'react'
+import { Link, useParams } from 'react-router'
 import Button from '@/components/Button/Button'
+import CancelRouteDialog from '@/components/Schedule/CancelRouteDialog'
 import ErrorMessage from '@/components/ErrorMessage/ErrorMessage'
 import Skeleton from '@/components/Skeleton/Skeleton'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
-import { useExecution, useStartExecution } from '@/hooks/useExecutions'
+import { useCancelExecution, useExecution, useStartExecution } from '@/hooks/useExecutions'
 import { useRoute } from '@/hooks/useRoutes'
 import { useToast } from '@/hooks/useToast'
 import { formatShortDateTime } from '@/lib/format'
@@ -60,28 +62,56 @@ function InProgress({ execution }: { execution: Execution }) {
 
 function Scheduled({ execution }: { execution: Execution }) {
   const start = useStartExecution()
+  const cancel = useCancelExecution()
   const { notify } = useToast()
+  const [cancelling, setCancelling] = useState(false)
 
   return (
-    <Notice
-      title="Esta rota está agendada"
-      action={
-        <Button
-          loading={start.isPending}
-          onClick={() =>
-            start.mutate(execution.id, {
+    <>
+      <Notice
+        title="Esta rota está agendada"
+        action={
+          <>
+            <Button
+              loading={start.isPending}
+              onClick={() =>
+                start.mutate(execution.id, {
+                  onError: (error) => notify(describeError(error), 'danger'),
+                })
+              }
+            >
+              Iniciar agora
+            </Button>
+            <Button variant="ghost" onClick={() => setCancelling(true)}>
+              Cancelar agendamento
+            </Button>
+          </>
+        }
+      >
+        {execution.scheduledAt
+          ? `Prevista para ${formatShortDateTime(execution.scheduledAt)}.`
+          : undefined}
+      </Notice>
+      <CancelRouteDialog
+        open={cancelling}
+        title="Cancelar o agendamento"
+        confirmLabel="Cancelar agendamento"
+        loading={cancel.isPending}
+        onBack={() => setCancelling(false)}
+        onConfirm={(reason) =>
+          cancel.mutate(
+            { id: execution.id, reason },
+            {
+              onSuccess: () => {
+                setCancelling(false)
+                notify('Agendamento cancelado.', 'info')
+              },
               onError: (error) => notify(describeError(error), 'danger'),
-            })
-          }
-        >
-          Iniciar agora
-        </Button>
-      }
-    >
-      {execution.scheduledAt
-        ? `Prevista para ${formatShortDateTime(execution.scheduledAt)}.`
-        : undefined}
-    </Notice>
+            },
+          )
+        }
+      />
+    </>
   )
 }
 
@@ -117,6 +147,10 @@ export default function ExecutionPage() {
     case 'FINISHED':
       return <Notice title="Esta rota já foi finalizada" />
     default:
-      return <Notice title="Esta rota foi cancelada" />
+      return (
+        <Notice title="Esta rota foi cancelada">
+          {execution.data.cancellationReason ? `Motivo: ${execution.data.cancellationReason}` : undefined}
+        </Notice>
+      )
   }
 }
