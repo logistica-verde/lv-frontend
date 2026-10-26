@@ -35,3 +35,9 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+.chip[data-running='true'] {
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+  text-decoration: none;
+}

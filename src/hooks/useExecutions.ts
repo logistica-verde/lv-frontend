@@ -22,10 +22,12 @@ export function useScheduledExecutions(enabled = true) {
   })
 }
 
-export function useExecutionsByStatus(status: ExecutionStatus) {
+export function useExecutionsByStatus(status: ExecutionStatus, enabled = true) {
   return useQuery({
     queryKey: queryKeys.executions(status),
     queryFn: ({ signal }) => listExecutions(status, signal),
+    refetchInterval: SCHEDULED_REFRESH_MS,
+    enabled,
   })
 }
 
