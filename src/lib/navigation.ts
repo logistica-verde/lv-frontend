@@ -121,3 +121,79 @@ export function describeDistance(meters: number): string {
   }
   return `${(meters / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} km`
 }
+
+export const STOP_SERVICE_SECONDS = 180
+export const ARRIVAL_RADIUS_M = 30
+
+export type Timeline = {
+  along: number[]
+  seconds: number[]
+}
+
+export function buildTimeline(track: Track, secondsPerVertex: number[]): Timeline {
+  const seconds: number[] = []
+  let total = 0
+  track.points.forEach((_point, index) => {
+    total += index === 0 ? 0 : (secondsPerVertex[index] ?? 0)
+    seconds.push(total)
+  })
+  return { along: track.cumulative, seconds }
+}
+
+export function secondsAt(timeline: Timeline, along: number): number {
+  const last = timeline.along.length - 1
+  if (last < 0) {
+    return 0
+  }
+  if (along <= 0) {
+    return 0
+  }
+  if (along >= (timeline.along[last] ?? 0)) {
+    return timeline.seconds[last] ?? 0
+  }
+  const upper = timeline.along.findIndex((value) => value >= along)
+  const lower = Math.max(0, upper - 1)
+  const spanAlong = (timeline.along[upper] ?? 0) - (timeline.along[lower] ?? 0)
+  const spanSeconds = (timeline.seconds[upper] ?? 0) - (timeline.seconds[lower] ?? 0)
+  const ratio = spanAlong === 0 ? 0 : (along - (timeline.along[lower] ?? 0)) / spanAlong
+  return (timeline.seconds[lower] ?? 0) + spanSeconds * ratio
+}
+
+export function remainingSeconds(
+  timeline: Timeline,
+  along: number,
+  remainingStops: number,
+): number {
+  const drive = Math.max(0, (timeline.seconds[timeline.seconds.length - 1] ?? 0) - secondsAt(timeline, along))
+  return drive + remainingStops * STOP_SERVICE_SECONDS
+}
+
+export function secondsToNextStop(timeline: Timeline, along: number, nextOffset: number): number {
+  return Math.max(0, secondsAt(timeline, nextOffset) - secondsAt(timeline, along))
+}
+
+export function hasArrived(position: LatLngTuple | null, destination: LatLngTuple | undefined): boolean {
+  return position !== null && destination !== undefined && distanceMeters(position, destination) <= ARRIVAL_RADIUS_M
+}
+
+export function lerpAngle(from: number, to: number, ratio: number): number {
+  const delta = ((((to - from) % 360) + 540) % 360) - 180
+  return (from + delta * ratio + 360) % 360
+}
+
+export function smoothingRatio(elapsedMs: number, timeConstantMs: number): number {
+  return 1 - Math.exp(-Math.max(0, elapsedMs) / timeConstantMs)
+}
+
+export function describeDuration(seconds: number): string {
+  const minutes = Math.max(0, Math.round(seconds / 60))
+  if (minutes < 1) {
+    return 'menos de 1 min'
+  }
+  if (minutes < 60) {
+    return `${minutes} min`
+  }
+  const hours = Math.floor(minutes / 60)
+  const rest = minutes % 60
+  return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`
+}

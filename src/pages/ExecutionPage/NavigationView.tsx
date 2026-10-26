@@ -1,57 +1,132 @@
-import { Crosshair, Flag, Navigation, X } from 'lucide-react'
-import { useCallback, useMemo, useState } from 'react'
+import { Compass, Crosshair, Flag, Navigation, Volume2, VolumeX, X } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import Button from '@/components/Button/Button'
-import ConfirmDialog from '@/components/ConfirmDialog/ConfirmDialog'
-import FollowPosition from '@/components/Map/FollowPosition'
-import LocationArrow from '@/components/Map/LocationArrow'
+import CancelRouteDialog from '@/components/Schedule/CancelRouteDialog'
 import MapMarker from '@/components/Map/MapMarker'
 import MapView from '@/components/Map/MapView'
+import NavigationVehicle from '@/components/Map/NavigationVehicle'
 import RoutePolyline from '@/components/Map/RoutePolyline'
 import { useCancelExecution, useFinishExecution } from '@/hooks/useExecutions'
 import { useToast } from '@/hooks/useToast'
+import { useNow } from '@/hooks/useNow'
 import { useTravel } from '@/hooks/useTravel'
+import { useWakeLock } from '@/hooks/useWakeLock'
+import { formatClock } from '@/lib/format'
+import { loadLeafletRotate } from '@/lib/leafletRotate'
 import { toLatLng } from '@/lib/geo'
-import { buildTrack, describeDistance, nextStopIndex, stopOffsets } from '@/lib/navigation'
-import { routePath } from '@/lib/routePath'
+import {
+  buildTimeline,
+  buildTrack,
+  describeDistance,
+  describeDuration,
+  hasArrived,
+  nextStopIndex,
+  remainingSeconds,
+  secondsToNextStop,
+  stopOffsets,
+} from '@/lib/navigation'
+import { routePath, secondsPerVertex } from '@/lib/routePath'
+import {
+  crossedSpokenThreshold,
+  isVoiceSupported,
+  phraseFor,
+  SPOKEN_THRESHOLDS_M,
+  speak,
+  stopSpeaking,
+} from '@/lib/voice'
 import styles from '@/pages/ExecutionPage/NavigationView.module.css'
 import { describeError } from '@/services/errors'
 import type { Execution } from '@/services/schemas/execution'
 import type { Route } from '@/services/schemas/route'
 
 const SPEEDS = [1, 4, 10] as const
+const ARRIVED_REMAINING_M = 20
+const CLOCK_TICK_MS = 10_000
 
 type NavigationViewProps = {
   execution: Execution
   route: Route
 }
 
-export default function NavigationView({ execution, route }: NavigationViewProps) {
+export default function NavigationView(props: NavigationViewProps) {
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    loadLeafletRotate()
+      .catch(() => undefined)
+      .then(() => {
+        if (active) {
+          setReady(true)
+        }
+      })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  return ready ? <NavigationMap {...props} /> : <div className={styles.stage} />
+}
+
+function NavigationMap({ execution, route }: NavigationViewProps) {
   const navigate = useNavigate()
   const { notify } = useToast()
   const finishExecution = useFinishExecution()
   const cancelExecution = useCancelExecution()
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(4)
   const [following, setFollowing] = useState(true)
+  const [rotateMap, setRotateMap] = useState(true)
+  const [voiceOn, setVoiceOn] = useState(false)
   const [confirmingCancel, setConfirmingCancel] = useState(false)
+  const spoken = useRef(new Map<number, Set<number>>())
 
   const stops = useMemo(
     () => [...route.points].sort((first, second) => first.visitOrder - second.visitOrder),
     [route.points],
   )
   const track = useMemo(() => buildTrack(routePath(route)), [route])
+  const timeline = useMemo(() => buildTimeline(track, secondsPerVertex(route)), [track, route])
   const visits = useMemo(() => stops.slice(1), [stops])
   const offsets = useMemo(() => stopOffsets(track, visits.map(toLatLng)), [track, visits])
   const travel = useTravel(track, speed)
+  useWakeLock(true)
+  const now = useNow(CLOCK_TICK_MS)
 
   const nextIndex = nextStopIndex(offsets, travel.along)
   const nextStop = visits[nextIndex]
   const nextOffset = offsets[nextIndex]
+  const lastStop = visits[visits.length - 1]
   const remainingMeters = Math.max(0, track.total - travel.along)
-  const arrived = nextStop === undefined && travel.position !== null
+  const remainingStops = Math.max(0, visits.length - nextIndex)
+  const arrived =
+    travel.position !== null &&
+    (hasArrived(travel.position, lastStop ? toLatLng(lastStop) : undefined) ||
+      remainingMeters <= ARRIVED_REMAINING_M)
   const tone = route.criterion === 'EMISSION' ? 'emission' : 'distance'
+  const remainingTime = remainingSeconds(timeline, travel.along, remainingStops)
+  const toNext = nextOffset === undefined ? 0 : secondsToNextStop(timeline, travel.along, nextOffset)
+  const arrivalClock = formatClock(new Date(now.getTime() + remainingTime * 1000))
 
   const handleUserMoved = useCallback(() => setFollowing(false), [])
+
+  useEffect(() => {
+    if (!voiceOn || !nextStop || nextOffset === undefined) {
+      return
+    }
+    const already = spoken.current.get(nextIndex) ?? new Set<number>()
+    const threshold = crossedSpokenThreshold(nextOffset - travel.along, already)
+    if (threshold === null) {
+      return
+    }
+    spoken.current.set(
+      nextIndex,
+      new Set([...already, ...SPOKEN_THRESHOLDS_M.filter((limit) => limit >= threshold)]),
+    )
+    speak(phraseFor(threshold, nextStop.name))
+  }, [voiceOn, nextStop, nextOffset, nextIndex, travel.along])
+
+  useEffect(() => stopSpeaking, [])
 
   const finish = () =>
     finishExecution.mutate(execution.id, {
@@ -62,8 +137,8 @@ export default function NavigationView({ execution, route }: NavigationViewProps
       onError: (error) => notify(describeError(error), 'danger'),
     })
 
-  const cancel = () =>
-    cancelExecution.mutate(execution.id, {
+  const cancel = (reason: string) =>
+    cancelExecution.mutate({ id: execution.id, reason }, {
       onSuccess: () => {
         notify('Rota cancelada.', 'info')
         navigate('/')
@@ -73,9 +148,7 @@ export default function NavigationView({ execution, route }: NavigationViewProps
 
   const banner = (() => {
     if (travel.position === null) {
-      return travel.mode === 'gps'
-        ? 'Aguardando o sinal de GPS…'
-        : 'Preparando o percurso simulado…'
+      return travel.mode === 'gps' ? 'Aguardando o sinal de GPS…' : 'Preparando o percurso simulado…'
     }
     if (arrived) {
       return 'Você chegou ao destino final'
@@ -89,6 +162,7 @@ export default function NavigationView({ execution, route }: NavigationViewProps
       <MapView
         label="Mapa de navegação"
         flush
+        rotatable
         fitTo={travel.position ? undefined : track.points}
         zoomPosition="bottomleft"
       >
@@ -103,10 +177,11 @@ export default function NavigationView({ execution, route }: NavigationViewProps
             selected={index === nextIndex + 1}
           />
         ))}
-        {travel.position && <LocationArrow position={travel.position} heading={travel.heading} />}
-        <FollowPosition
+        <NavigationVehicle
           position={travel.position}
+          heading={travel.heading}
           following={following}
+          rotateMap={rotateMap}
           onUserMoved={handleUserMoved}
         />
       </MapView>
@@ -129,12 +204,20 @@ export default function NavigationView({ execution, route }: NavigationViewProps
             <dd>{describeDistance(remainingMeters)}</dd>
           </div>
           <div>
-            <dt>Paradas</dt>
-            <dd>{Math.max(0, visits.length - nextIndex)}</dd>
+            <dt>Tempo restante</dt>
+            <dd>{describeDuration(remainingTime)}</dd>
           </div>
           <div>
-            <dt>Velocidade</dt>
-            <dd>{Math.round(travel.speedKmh)} km/h</dd>
+            <dt>Chegada prevista</dt>
+            <dd>{arrivalClock}</dd>
+          </div>
+          <div>
+            <dt>Próxima parada</dt>
+            <dd>{nextStop ? describeDuration(toNext) : '—'}</dd>
+          </div>
+          <div>
+            <dt>Paradas</dt>
+            <dd>{remainingStops}</dd>
           </div>
         </dl>
         <div className={styles.controls}>
@@ -161,6 +244,35 @@ export default function NavigationView({ execution, route }: NavigationViewProps
               ))}
             </div>
           )}
+          <Button
+            size="sm"
+            variant={rotateMap ? 'secondary' : 'ghost'}
+            aria-pressed={rotateMap}
+            onClick={() => setRotateMap((current) => !current)}
+          >
+            <Compass size={16} aria-hidden="true" />
+            Mapa girando
+          </Button>
+          {isVoiceSupported() && (
+            <Button
+              size="sm"
+              variant={voiceOn ? 'secondary' : 'ghost'}
+              aria-pressed={voiceOn}
+              onClick={() => {
+                if (voiceOn) {
+                  stopSpeaking()
+                }
+                setVoiceOn((current) => !current)
+              }}
+            >
+              {voiceOn ? (
+                <Volume2 size={16} aria-hidden="true" />
+              ) : (
+                <VolumeX size={16} aria-hidden="true" />
+              )}
+              Aviso por voz
+            </Button>
+          )}
           {!following && (
             <Button size="sm" variant="secondary" onClick={() => setFollowing(true)}>
               <Crosshair size={16} aria-hidden="true" />
@@ -178,26 +290,22 @@ export default function NavigationView({ execution, route }: NavigationViewProps
             <X size={16} aria-hidden="true" />
             Cancelar
           </Button>
-          <Button
-            variant={arrived || travel.finished ? 'primary' : 'secondary'}
-            loading={finishExecution.isPending}
-            onClick={finish}
-          >
-            <Flag size={16} aria-hidden="true" />
-            Finalizar rota
-          </Button>
+          {arrived && (
+            <Button loading={finishExecution.isPending} onClick={finish}>
+              <Flag size={16} aria-hidden="true" />
+              Finalizar rota
+            </Button>
+          )}
         </div>
       </div>
 
-      <ConfirmDialog
+      <CancelRouteDialog
         open={confirmingCancel}
         title="Cancelar a rota"
-        description="A rota em andamento será cancelada. Você poderá calcular uma nova depois."
         confirmLabel="Cancelar rota"
-        tone="danger"
         loading={cancelExecution.isPending}
         onConfirm={cancel}
-        onCancel={() => setConfirmingCancel(false)}
+        onBack={() => setConfirmingCancel(false)}
       />
     </div>
   )

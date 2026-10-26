@@ -18,6 +18,8 @@ export const executionSchema = z.object({
   totalEmissionKg: z.number().nullable(),
   totalDistanceMeters: z.number().nullable(),
   cargoKg: z.number().nullish(),
+  cancellationReason: z.string().nullish(),
+  cancelledBy: z.string().nullish(),
 })
 
 export const executionListSchema = z.array(executionSchema)

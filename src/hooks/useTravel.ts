@@ -67,7 +67,8 @@ export function useTravel(track: Track, speedMultiplier: number) {
     if (!hasGeolocation()) {
       return
     }
-    const watch = navigator.geolocation.watchPosition(
+    const geolocation = navigator.geolocation
+    const watch = geolocation.watchPosition(
       (fix) => {
         const next: LatLngTuple = [fix.coords.latitude, fix.coords.longitude]
         const previous = lastGps.current
@@ -93,7 +94,7 @@ export function useTravel(track: Track, speedMultiplier: number) {
         ),
       { enableHighAccuracy: true, maximumAge: 1000, timeout: 15_000 },
     )
-    return () => navigator.geolocation.clearWatch(watch)
+    return () => geolocation.clearWatch(watch)
   }, [mode, track])
 
   const changeMode = useCallback(

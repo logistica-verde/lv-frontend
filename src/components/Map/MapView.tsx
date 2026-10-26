@@ -15,6 +15,7 @@ const FIT_PADDING = 40
 const MAX_FIT_ZOOM = 15
 const SINGLE_POINT_ZOOM = 15
 const NO_POSITIONS: LatLngTuple[] = []
+const ROTATABLE_OPTIONS = { rotate: true, bearing: 0, rotateControl: false, touchRotate: false }
 
 type FitBoundsProps = {
   positions: LatLngTuple[]
@@ -74,6 +75,7 @@ type MapViewProps = {
   flush?: boolean
   zoomPosition?: 'topleft' | 'bottomleft'
   fitInsetRight?: number
+  rotatable?: boolean
   children?: ReactNode
 }
 
@@ -86,6 +88,7 @@ export default function MapView({
   flush = false,
   zoomPosition,
   fitInsetRight = 0,
+  rotatable = false,
   children,
 }: MapViewProps) {
   return (
@@ -100,6 +103,7 @@ export default function MapView({
         scrollWheelZoom={false}
         zoomControl={zoomPosition === undefined}
         className={styles.map}
+        {...(rotatable ? ROTATABLE_OPTIONS : {})}
       >
         <TileLayer attribution={ATTRIBUTION} url={env.tileUrl} />
         {zoomPosition && <ZoomControl position={zoomPosition} />}

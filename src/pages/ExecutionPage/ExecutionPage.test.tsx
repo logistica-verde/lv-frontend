@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import type { Execution } from '@/services/schemas/execution'
 import { routes } from '@/router'
 import { apiUrl } from '@/test/api'
@@ -27,8 +27,9 @@ function serve(execution: Execution) {
       current = { ...current, status: 'FINISHED' }
       return HttpResponse.json(current)
     }),
-    http.post(apiUrl('/api/executions/:id/cancel'), () => {
-      calls.push('cancel')
+    http.post(apiUrl('/api/executions/:id/cancel'), async ({ request }) => {
+      const body = (await request.json()) as { reason: string }
+      calls.push(`cancel: ${body.reason}`)
       current = { ...current, status: 'CANCELLED' }
       return HttpResponse.json(current)
     }),
@@ -41,6 +42,23 @@ function open(id = 9) {
   return renderRoutes(routes, `/execucao/${id}`)
 }
 
+function standAt(latitude: number, longitude: number) {
+  Object.defineProperty(navigator, 'geolocation', {
+    configurable: true,
+    value: {
+      watchPosition: (success: (position: object) => void) => {
+        success({ coords: { latitude, longitude, heading: null, speed: null, accuracy: 5 } })
+        return 1
+      },
+      clearWatch: () => undefined,
+    },
+  })
+}
+
+afterEach(() => {
+  Reflect.deleteProperty(navigator, 'geolocation')
+})
+
 describe('ExecutionPage', () => {
   it('shows the navigation map without the application menu while the route is in progress', async () => {
     serve(executionFixture)
@@ -50,7 +68,28 @@ describe('ExecutionPage', () => {
     expect(await screen.findByRole('region', { name: 'Mapa de navegação' })).toBeVisible()
     expect(screen.queryByRole('navigation', { name: 'Principal' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Simular percurso' })).toBeVisible()
-    expect(screen.getByRole('button', { name: 'Finalizar rota' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Finalizar rota' })).not.toBeInTheDocument()
+  })
+
+  it('shows the time left, the estimated arrival and the time to the next stop', async () => {
+    serve(executionFixture)
+
+    open()
+
+    expect(await screen.findByText('Tempo restante')).toBeVisible()
+    expect(screen.getByText('Chegada prevista')).toBeVisible()
+    expect(screen.getByText('Próxima parada')).toBeVisible()
+    expect(screen.getByText('Restante')).toBeVisible()
+  })
+
+  it('only offers to finish the route after reaching the last stop', async () => {
+    serve(executionFixture)
+    standAt(-23.56, -46.63)
+
+    open()
+
+    expect(await screen.findByRole('button', { name: 'Finalizar rota' })).toBeVisible()
+    expect(screen.getByText('Você chegou ao destino final')).toBeVisible()
   })
 
   it('announces the next stop while the simulated trip advances', async () => {
@@ -68,6 +107,7 @@ describe('ExecutionPage', () => {
 
   it('finishes the route and goes back to the planning page', async () => {
     const calls = serve(executionFixture)
+    standAt(-23.56, -46.63)
     const user = userEvent.setup()
     open()
 
@@ -78,20 +118,70 @@ describe('ExecutionPage', () => {
     await waitFor(() => expect(document.title).toBe('Nova rota · Lastro'))
   })
 
-  it('cancels the route only after the confirmation', async () => {
+  it('asks for a justification before cancelling and sends it with the quick reason', async () => {
     const calls = serve(executionFixture)
     const user = userEvent.setup()
     open()
 
     await user.click(await screen.findByRole('button', { name: 'Cancelar rota' }))
-    expect(calls).toEqual([])
     const dialog = await screen.findByRole('dialog', { name: 'Cancelar a rota' })
-    await user.click(
-      within(dialog).getByRole('button', { name: 'Cancelar rota' }),
-    )
+    expect(calls).toEqual([])
+
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar rota' }))
+    expect(await within(dialog).findByText(/pelo menos 10 caracteres/)).toBeVisible()
+    expect(calls).toEqual([])
+
+    await user.selectOptions(within(dialog).getByLabelText('Motivo'), 'Problema no veículo')
+    await user.type(within(dialog).getByLabelText('Justificativa'), 'Pneu furado na Marginal')
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar rota' }))
 
     expect(await screen.findByText('Rota cancelada.')).toBeVisible()
-    expect(calls).toEqual(['cancel'])
+    expect(calls).toEqual(['cancel: Problema no veículo. Pneu furado na Marginal'])
+  })
+
+  it('sends only the written text when the reason is "Outro motivo"', async () => {
+    const calls = serve(executionFixture)
+    const user = userEvent.setup()
+    open()
+
+    await user.click(await screen.findByRole('button', { name: 'Cancelar rota' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Cancelar a rota' })
+    await user.type(within(dialog).getByLabelText('Justificativa'), '  Operação suspensa pela gerência  ')
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar rota' }))
+
+    await waitFor(() => expect(calls).toEqual(['cancel: Operação suspensa pela gerência']))
+  })
+
+  it('lets the user go back from the cancellation without cancelling', async () => {
+    const calls = serve(executionFixture)
+    const user = userEvent.setup()
+    open()
+
+    await user.click(await screen.findByRole('button', { name: 'Cancelar rota' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Cancelar a rota' })
+    await user.click(within(dialog).getByRole('button', { name: 'Voltar' }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(calls).toEqual([])
+  })
+
+  it('cancels a scheduled route with a justification', async () => {
+    const calls = serve({
+      ...executionFixture,
+      status: 'SCHEDULED',
+      startedAt: null,
+      scheduledAt: '2026-10-20T15:00:00.000Z',
+    })
+    const user = userEvent.setup()
+    open()
+
+    await user.click(await screen.findByRole('button', { name: 'Cancelar agendamento' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Cancelar o agendamento' })
+    await user.type(within(dialog).getByLabelText('Justificativa'), 'Cliente remarcou para a semana seguinte')
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar agendamento' }))
+
+    expect(await screen.findByText('Agendamento cancelado.')).toBeVisible()
+    expect(calls).toEqual(['cancel: Cliente remarcou para a semana seguinte'])
   })
 
   it('offers to start a scheduled route now', async () => {
@@ -121,6 +211,14 @@ describe('ExecutionPage', () => {
 
     expect(await screen.findByRole('heading', { name: title })).toBeVisible()
     expect(screen.getByRole('link', { name: 'Voltar ao planejamento' })).toBeVisible()
+  })
+
+  it('shows why a route was cancelled', async () => {
+    serve({ ...executionFixture, status: 'CANCELLED', cancellationReason: 'Cliente ausente. Portão fechado.' })
+
+    open()
+
+    expect(await screen.findByText('Motivo: Cliente ausente. Portão fechado.')).toBeVisible()
   })
 
   it('explains when the execution does not exist', async () => {

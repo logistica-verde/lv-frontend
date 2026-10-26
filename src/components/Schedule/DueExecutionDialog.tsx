@@ -3,9 +3,10 @@ import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router'
 import Button from '@/components/Button/Button'
 import Modal from '@/components/Modal/Modal'
+import CancelRouteDialog from '@/components/Schedule/CancelRouteDialog'
 import styles from '@/components/Schedule/DueExecutionDialog.module.css'
 import TextField from '@/components/TextField/TextField'
-import { useRescheduleExecution, useStartExecution } from '@/hooks/useExecutions'
+import { useCancelExecution, useRescheduleExecution, useStartExecution } from '@/hooks/useExecutions'
 import { useToast } from '@/hooks/useToast'
 import { formatKilometers, formatNumber, formatShortDateTime } from '@/lib/format'
 import { defaultScheduleValue, isInThePast, parseLocalInput } from '@/lib/schedule'
@@ -22,6 +23,8 @@ export default function DueExecutionDialog({ execution, onDismiss }: DueExecutio
   const { notify } = useToast()
   const start = useStartExecution()
   const reschedule = useRescheduleExecution()
+  const cancel = useCancelExecution()
+  const [cancelling, setCancelling] = useState(false)
   const [rescheduling, setRescheduling] = useState(false)
   const [scheduleText, setScheduleText] = useState(() => defaultScheduleValue(new Date()))
   const [scheduleError, setScheduleError] = useState<string | null>(null)
@@ -57,6 +60,7 @@ export default function DueExecutionDialog({ execution, onDismiss }: DueExecutio
   }
 
   return (
+    <>
     <Modal open title="Chegou a hora da rota" onClose={onDismiss}>
       <div className={styles.body}>
         <p className={styles.lead}>
@@ -108,6 +112,9 @@ export default function DueExecutionDialog({ execution, onDismiss }: DueExecutio
           </form>
         ) : (
           <div className={styles.actions}>
+            <Button variant="ghost" onClick={() => setCancelling(true)}>
+              Cancelar rota
+            </Button>
             <Button variant="secondary" onClick={() => setRescheduling(true)}>
               Reagendar
             </Button>
@@ -118,5 +125,25 @@ export default function DueExecutionDialog({ execution, onDismiss }: DueExecutio
         )}
       </div>
     </Modal>
+    <CancelRouteDialog
+      open={cancelling}
+      title="Cancelar a rota agendada"
+      confirmLabel="Cancelar rota"
+      loading={cancel.isPending}
+      onBack={() => setCancelling(false)}
+      onConfirm={(reason) =>
+        cancel.mutate(
+          { id: execution.id, reason },
+          {
+            onSuccess: () => {
+              setCancelling(false)
+              notify('Rota cancelada.', 'info')
+            },
+            onError: (error) => notify(describeError(error), 'danger'),
+          },
+        )
+      }
+    />
+    </>
   )
 }

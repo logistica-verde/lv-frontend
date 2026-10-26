@@ -46,6 +46,16 @@ export function formatShortDateTime(isoDate: string): string {
   return shortDateTimeFormat.format(new Date(isoDate))
 }
 
+const clockFormat = new Intl.DateTimeFormat('pt-BR', {
+  hour: '2-digit',
+  minute: '2-digit',
+  timeZone: 'America/Sao_Paulo',
+})
+
+export function formatClock(date: Date): string {
+  return clockFormat.format(date)
+}
+
 export function formatDuration(hours: number): string {
   const totalMinutes = Math.round(hours * 60)
   const wholeHours = Math.floor(totalMinutes / 60)
