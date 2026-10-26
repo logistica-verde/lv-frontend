@@ -1,10 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
+import type { ChangeEvent } from 'react'
 import Button from '@/components/Button/Button'
 import Modal from '@/components/Modal/Modal'
 import TextField from '@/components/TextField/TextField'
 import VehicleImagePicker from '@/components/VehicleImagePicker/VehicleImagePicker'
 import { useToast } from '@/hooks/useToast'
+import { maskPlate, numericInputProps } from '@/lib/inputMask'
 import { useCreateVehicle } from '@/hooks/useVehicles'
 import styles from '@/pages/AdminPage/AdminPage.module.css'
 import { failureMessage } from '@/services/errors'
@@ -54,10 +56,15 @@ export default function RegisterVehicleDialog({ open, onClose }: RegisterVehicle
         <div className={styles.fields}>
           <TextField
             label="Placa"
-            hint="Até 10 caracteres"
+            hint="Formato ABC1234 ou ABC1D23"
             autoComplete="off"
+            maxLength={7}
             error={errors.placa?.message}
-            {...register('placa')}
+            {...register('placa', {
+              onChange: (event: ChangeEvent<HTMLInputElement>) => {
+                event.target.value = maskPlate(event.target.value)
+              },
+            })}
           />
           <TextField
             label="Massa (kg)"
@@ -65,6 +72,7 @@ export default function RegisterVehicleDialog({ open, onClose }: RegisterVehicle
             step="any"
             inputMode="decimal"
             error={errors.massaKg?.message}
+            {...numericInputProps({ decimal: true })}
             {...register('massaKg', { valueAsNumber: true })}
           />
           <TextField

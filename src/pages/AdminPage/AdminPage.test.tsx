@@ -231,6 +231,40 @@ describe('AdminPage vehicles', () => {
     expect(api.postedVehicles).toHaveLength(0)
   })
 
+  it('masks the plate while typing and refuses a plate in a wrong format', async () => {
+    const api = useAdminApi()
+    renderWithProviders(<AdminPage />)
+    await screen.findByRole('table')
+    const user = userEvent.setup()
+
+    await user.click(screen.getByRole('button', { name: 'Cadastrar veículo' }))
+    const dialog = screen.getByRole('dialog', { name: 'Cadastrar veículo' })
+    const plate = within(dialog).getByLabelText('Placa')
+    await user.type(plate, 'ab-12')
+    expect(plate).toHaveValue('AB12')
+
+    await user.type(within(dialog).getByLabelText('Massa (kg)'), '3000')
+    await user.type(within(dialog).getByLabelText('Tipo de combustível'), 'gnv')
+    await user.click(within(dialog).getByRole('button', { name: 'Cadastrar veículo' }))
+
+    expect(await within(dialog).findByText('Use o formato ABC1234 ou ABC1D23')).toBeVisible()
+    expect(api.postedVehicles).toHaveLength(0)
+  })
+
+  it('keeps letters out of the mass field', async () => {
+    useAdminApi()
+    renderWithProviders(<AdminPage />)
+    await screen.findByRole('table')
+    const user = userEvent.setup()
+
+    await user.click(screen.getByRole('button', { name: 'Cadastrar veículo' }))
+    const dialog = screen.getByRole('dialog', { name: 'Cadastrar veículo' })
+    const mass = within(dialog).getByLabelText('Massa (kg)')
+    await user.type(mass, '12e+x5')
+
+    expect(mass).toHaveValue(125)
+  })
+
   it('registers a vehicle from the dialog, closes it and refreshes the list', async () => {
     const api = useAdminApi()
     renderWithProviders(<AdminPage />)

@@ -4,6 +4,7 @@ import Button from '@/components/Button/Button'
 import Modal from '@/components/Modal/Modal'
 import TextField from '@/components/TextField/TextField'
 import { formatNumber } from '@/lib/format'
+import { numericInputProps, sanitizeNumeric } from '@/lib/inputMask'
 import styles from '@/pages/PlanningPage/Calculation/ConfirmCalculationDialog.module.css'
 import { VEHICLE_IMAGE_LABELS } from '@/services/schemas/vehicle'
 import type { Vehicle } from '@/services/schemas/vehicle'
@@ -87,7 +88,8 @@ export default function ConfirmCalculationDialog({
           hint="É somado à massa do veículo no cálculo da emissão."
           error={cargo.ok ? undefined : cargo.message}
           value={cargoText}
-          onChange={(event) => setCargoText(event.target.value)}
+          {...numericInputProps({ decimal: true })}
+          onChange={(event) => setCargoText(sanitizeNumeric(event.target.value, { decimal: true }))}
         />
         <p className={styles.total}>
           Massa total considerada:{' '}

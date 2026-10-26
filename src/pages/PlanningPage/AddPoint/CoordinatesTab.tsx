@@ -6,6 +6,7 @@ import TextField from '@/components/TextField/TextField'
 import { useCreateDeliveryPoints } from '@/hooks/useDeliveryPoints'
 import { useToast } from '@/hooks/useToast'
 import { roundCoordinate } from '@/lib/geo'
+import { numericInputProps } from '@/lib/inputMask'
 import styles from '@/pages/PlanningPage/AddPoint/AddPointTabs.module.css'
 import { describeError } from '@/services/errors'
 import { deliveryPointInputSchema } from '@/services/schemas/deliveryPoint'
@@ -67,6 +68,7 @@ export default function CoordinatesTab({ initialPosition, onAdded }: Coordinates
           step="any"
           inputMode="decimal"
           error={errors.latitude?.message}
+          {...numericInputProps({ decimal: true, negative: true })}
           {...register('latitude', { valueAsNumber: true })}
         />
         <TextField
@@ -75,6 +77,7 @@ export default function CoordinatesTab({ initialPosition, onAdded }: Coordinates
           step="any"
           inputMode="decimal"
           error={errors.longitude?.message}
+          {...numericInputProps({ decimal: true, negative: true })}
           {...register('longitude', { valueAsNumber: true })}
         />
       </div>

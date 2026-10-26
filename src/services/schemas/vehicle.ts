@@ -27,8 +27,16 @@ export const vehicleSchema = z.object({
 export const vehicleListSchema = z.array(vehicleSchema)
 
 export const vehicleInputSchema = z.object({
-  placa: z.string().trim().min(1, 'Informe a placa').max(10, 'A placa deve ter até 10 caracteres'),
-  massaKg: z.number('Informe a massa').positive('A massa deve ser maior que zero'),
+  placa: z
+    .string()
+    .trim()
+    .min(1, 'Informe a placa')
+    .regex(/^[A-Za-z]{3}[0-9][A-Za-z0-9][0-9]{2}$/, 'Use o formato ABC1234 ou ABC1D23')
+    .transform((value) => value.toUpperCase()),
+  massaKg: z
+    .number('Informe a massa')
+    .positive('A massa deve ser maior que zero')
+    .max(100000, 'A massa máxima é 100.000 kg'),
   tipoCombustivel: z.string().trim().min(1, 'Informe o tipo de combustível'),
   imagem: vehicleImageSchema,
 })
