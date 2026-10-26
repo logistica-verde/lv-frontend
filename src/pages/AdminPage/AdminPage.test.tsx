@@ -114,7 +114,7 @@ async function openTab(name: string) {
 }
 
 describe('AdminPage', () => {
-  it('has a tab for vehicles, users and algorithm parameters, starting on vehicles', async () => {
+  it('has a tab for vehicles, bases, users and algorithm parameters, starting on vehicles', async () => {
     useAdminApi()
 
     renderWithProviders(<AdminPage />)
@@ -122,6 +122,7 @@ describe('AdminPage', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Administração' })).toBeVisible()
     expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
       'Veículos',
+      'Bases',
       'Usuários e perfis',
       'Parâmetros do AG',
     ])
@@ -183,7 +184,7 @@ describe('AdminPage vehicles', () => {
 
     expect(
       await screen.findByText(
-        'Veículos usados nos cálculos, perfis de acesso e parâmetros do algoritmo genético.',
+        'Veículos e bases usados nos cálculos, perfis de acesso e parâmetros do algoritmo genético.',
       ),
     ).toBeVisible()
   })

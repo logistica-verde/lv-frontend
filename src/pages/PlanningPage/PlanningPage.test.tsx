@@ -245,6 +245,90 @@ describe('PlanningPage', () => {
     expect(routes.requests.map((request) => request.cargoKg)).toEqual([1200.5, 1200.5])
   })
 
+  describe('with a base registered', () => {
+    const base = {
+      id: 1,
+      nome: 'Base Central',
+      endereco: null,
+      latitude: -23.5505,
+      longitude: -46.6333,
+      ativo: true,
+    }
+
+    function useBaseApi() {
+      window.localStorage.clear()
+      server.use(http.get(apiUrl('/api/bases'), () => HttpResponse.json([base])))
+    }
+
+    it('lets a single stop be calculated from the base and sends the base instead of an origin', async () => {
+      useVehiclesApi([vehicleFixture])
+      useDeliveryPointsApi([sé, masp])
+      const routes = useRoutesApi()
+      useBaseApi()
+      const user = userEvent.setup()
+      renderPage()
+      await addExisting(user, ['MASP'])
+
+      await user.click(await screen.findByRole('button', { name: 'Calcular rotas' }))
+      const dialog = await screen.findByRole('dialog', { name: 'Confirmar cálculo da rota' })
+      await user.selectOptions(within(dialog).getByLabelText('Base (saída e retorno)'), 'Base Central')
+      expect(within(dialog).getByText('Base Central (com retorno)')).toBeVisible()
+      await user.click(within(dialog).getByRole('button', { name: 'Confirmar e calcular' }))
+
+      await waitFor(() => expect(routes.requests).toHaveLength(2))
+      expect(routes.requests.map((request) => request.baseId)).toEqual([1, 1])
+      expect(routes.requests.map((request) => request.origin)).toEqual([undefined, undefined])
+      expect(routes.requests.map((request) => request.deliveryPointIds)).toEqual([[2], [2]])
+    })
+
+    it('does not confirm a single stop while no base is chosen', async () => {
+      useVehiclesApi([vehicleFixture])
+      useDeliveryPointsApi([sé, masp])
+      useRoutesApi()
+      useBaseApi()
+      const user = userEvent.setup()
+      renderPage()
+      await addExisting(user, ['MASP'])
+
+      await user.click(await screen.findByRole('button', { name: 'Calcular rotas' }))
+      const dialog = await screen.findByRole('dialog', { name: 'Confirmar cálculo da rota' })
+
+      expect(within(dialog).getByRole('alert')).toHaveTextContent('pelo menos 2 pontos')
+      expect(within(dialog).getByRole('button', { name: 'Confirmar e calcular' })).toBeDisabled()
+    })
+
+    it('remembers the chosen base for the next calculation', async () => {
+      useVehiclesApi([vehicleFixture])
+      useDeliveryPointsApi([sé, masp])
+      useRoutesApi()
+      useBaseApi()
+      const user = userEvent.setup()
+      renderPage()
+      await addExisting(user, ['Praça da Sé', 'MASP'])
+      await user.click(await screen.findByRole('button', { name: 'Calcular rotas' }))
+      const first = await screen.findByRole('dialog', { name: 'Confirmar cálculo da rota' })
+      await user.selectOptions(within(first).getByLabelText('Base (saída e retorno)'), 'Base Central')
+      await user.click(within(first).getByRole('button', { name: 'Confirmar e calcular' }))
+      await screen.findByRole('dialog', { name: 'Calculando as rotas' })
+
+      expect(window.localStorage.getItem('lastro.base')).toBe('1')
+    })
+  })
+
+  it('does not offer a base when none is registered', async () => {
+    useVehiclesApi([vehicleFixture])
+    useDeliveryPointsApi([sé, masp])
+    window.localStorage.clear()
+    const user = userEvent.setup()
+    renderPage()
+    await addExisting(user, ['Praça da Sé', 'MASP'])
+
+    await user.click(await screen.findByRole('button', { name: 'Calcular rotas' }))
+
+    const dialog = await screen.findByRole('dialog', { name: 'Confirmar cálculo da rota' })
+    expect(within(dialog).queryByLabelText('Base (saída e retorno)')).not.toBeInTheDocument()
+  })
+
   it('does not calculate when the confirmation is cancelled', async () => {
     useVehiclesApi([vehicleFixture])
     useDeliveryPointsApi([sé, masp])
