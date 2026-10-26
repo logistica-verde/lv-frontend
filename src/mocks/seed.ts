@@ -1,3 +1,4 @@
+import type { Base } from '@/services/schemas/base'
 import type { DeliveryPoint } from '@/services/schemas/deliveryPoint'
 import type { User } from '@/services/schemas/user'
 import type { Vehicle } from '@/services/schemas/vehicle'
@@ -59,6 +60,17 @@ export const seedUsers: User[] = [
     email: 'beatriz.nogueira@logisticaverde.example',
     perfil: 'OPERATOR',
     ativo: false,
+  },
+]
+
+export const seedBases: Base[] = [
+  {
+    id: 1,
+    nome: 'Base Central',
+    endereco: 'Praça da Sé, São Paulo',
+    latitude: -23.5505,
+    longitude: -46.6333,
+    ativo: true,
   },
 ]
 

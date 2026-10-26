@@ -1,5 +1,7 @@
 export const queryKeys = {
   vehicles: ['vehicles'] as const,
+  bases: ['bases', 'active'] as const,
+  allBases: ['bases', 'all'] as const,
   allVehicles: ['vehicles', 'all'] as const,
   users: ['users'] as const,
   gaSettings: ['settings', 'ga'] as const,
