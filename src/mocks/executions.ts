@@ -15,6 +15,8 @@ const createSchema = z.object({
 
 const rescheduleSchema = z.object({ scheduledAt: z.iso.datetime() })
 
+const cancelSchema = z.object({ reason: z.string().trim().min(10).max(500) })
+
 function isPast(isoTime: string): boolean {
   return Date.parse(isoTime) < Date.now() - SCHEDULE_TOLERANCE_MS
 }
@@ -147,8 +149,12 @@ export function executionHandlers(db: MockDb, latencyMs: number, problem: Proble
       )
     }),
 
-    http.post('*/api/executions/:id/cancel', async ({ params }) => {
+    http.post('*/api/executions/:id/cancel', async ({ params, request }) => {
       await delay(latencyMs)
+      const parsed = cancelSchema.safeParse(await request.json().catch(() => null))
+      if (!parsed.success) {
+        return problem(400, 'Invalid request content.')
+      }
       return transition(
         params['id'],
         ['SCHEDULED', 'IN_PROGRESS'],
@@ -156,6 +162,8 @@ export function executionHandlers(db: MockDb, latencyMs: number, problem: Proble
           ...execution,
           status: 'CANCELLED',
           finishedAt: new Date().toISOString(),
+          cancellationReason: parsed.data.reason,
+          cancelledBy: 'mock',
         }),
         'The execution is already closed',
       )

@@ -2,7 +2,7 @@ import { Compass, Crosshair, Flag, Navigation, Volume2, VolumeX, X } from 'lucid
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import Button from '@/components/Button/Button'
-import ConfirmDialog from '@/components/ConfirmDialog/ConfirmDialog'
+import CancelRouteDialog from '@/components/Schedule/CancelRouteDialog'
 import MapMarker from '@/components/Map/MapMarker'
 import MapView from '@/components/Map/MapView'
 import NavigationVehicle from '@/components/Map/NavigationVehicle'
@@ -137,8 +137,8 @@ function NavigationMap({ execution, route }: NavigationViewProps) {
       onError: (error) => notify(describeError(error), 'danger'),
     })
 
-  const cancel = () =>
-    cancelExecution.mutate(execution.id, {
+  const cancel = (reason: string) =>
+    cancelExecution.mutate({ id: execution.id, reason }, {
       onSuccess: () => {
         notify('Rota cancelada.', 'info')
         navigate('/')
@@ -299,15 +299,13 @@ function NavigationMap({ execution, route }: NavigationViewProps) {
         </div>
       </div>
 
-      <ConfirmDialog
+      <CancelRouteDialog
         open={confirmingCancel}
         title="Cancelar a rota"
-        description="A rota em andamento será cancelada. Você poderá calcular uma nova depois."
         confirmLabel="Cancelar rota"
-        tone="danger"
         loading={cancelExecution.isPending}
         onConfirm={cancel}
-        onCancel={() => setConfirmingCancel(false)}
+        onBack={() => setConfirmingCancel(false)}
       />
     </div>
   )

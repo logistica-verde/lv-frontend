@@ -32,6 +32,9 @@ export function finishExecution(id: number): Promise<Execution> {
   return request(`/api/executions/${id}/finish`, executionSchema, { method: 'POST' })
 }
 
-export function cancelExecution(id: number): Promise<Execution> {
-  return request(`/api/executions/${id}/cancel`, executionSchema, { method: 'POST' })
+export function cancelExecution(id: number, reason: string): Promise<Execution> {
+  return request(`/api/executions/${id}/cancel`, executionSchema, {
+    method: 'POST',
+    body: { reason },
+  })
 }

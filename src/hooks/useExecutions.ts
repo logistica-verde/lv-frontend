@@ -71,5 +71,7 @@ export function useFinishExecution() {
 }
 
 export function useCancelExecution() {
-  return useExecutionMutation(cancelExecution)
+  return useExecutionMutation(({ id, reason }: { id: number; reason: string }) =>
+    cancelExecution(id, reason),
+  )
 }

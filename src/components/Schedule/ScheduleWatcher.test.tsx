@@ -14,7 +14,7 @@ import { signInAs } from '@/test/session'
 
 const MINUTE_MS = 60_000
 
-type RescheduleBody = { scheduledAt: string }
+type RescheduleBody = { scheduledAt?: string; reason?: string }
 
 function scheduledIn(minutes: number, id = 3): Execution {
   return {
@@ -40,6 +40,10 @@ function useExecutionsApi(list: Execution[]) {
       return HttpResponse.json({
         ...scheduledIn(120, Number(params['id'])),
       })
+    }),
+    http.post(apiUrl('/api/executions/:id/cancel'), async ({ params, request }) => {
+      calls.push({ path: `cancel ${String(params['id'])}`, body: (await request.json()) as RescheduleBody | null })
+      return HttpResponse.json({ ...executionFixture, id: Number(params['id']), status: 'CANCELLED' })
     }),
     http.get(apiUrl('/api/routes/:id'), () => HttpResponse.json(completedRouteFixture)),
     http.get(apiUrl('/api/executions/:id'), ({ params }) =>
@@ -113,6 +117,24 @@ describe('schedule reminders', () => {
     await waitFor(() => expect(calls).toHaveLength(1))
     expect(calls[0]?.path).toBe('reschedule 3')
     expect(await screen.findByText(/Rota reagendada para/)).toBeVisible()
+  })
+
+  it('cancels the due route after asking for a justification', async () => {
+    const calls = useExecutionsApi([scheduledIn(-2)])
+    signInAs('OPERATOR')
+    const user = userEvent.setup()
+
+    renderRoutes(routes, '/historico')
+
+    const due = await screen.findByRole('dialog', { name: 'Chegou a hora da rota' })
+    await user.click(within(due).getByRole('button', { name: 'Cancelar rota' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Cancelar a rota agendada' })
+    await user.type(within(dialog).getByLabelText('Justificativa'), 'Motorista indisponível hoje')
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar rota' }))
+
+    await waitFor(() => expect(calls).toHaveLength(1))
+    expect(calls[0]).toEqual({ path: 'cancel 3', body: { reason: 'Motorista indisponível hoje' } })
+    expect(await screen.findByText('Rota cancelada.')).toBeVisible()
   })
 
   it('lets the user close the dialog and keeps showing the route as due', async () => {
