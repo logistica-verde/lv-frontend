@@ -1,6 +1,7 @@
 import Tabs from '@/components/Tabs/Tabs'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import styles from '@/pages/AdminPage/AdminPage.module.css'
+import BasesTab from '@/pages/AdminPage/BasesTab'
 import GaSettingsTab from '@/pages/AdminPage/GaSettingsTab'
 import UsersTab from '@/pages/AdminPage/UsersTab'
 import VehiclesTab from '@/pages/AdminPage/VehiclesTab'
@@ -13,7 +14,7 @@ export default function AdminPage() {
       <div>
         <h1>Administração</h1>
         <p className={styles.subtitle}>
-          Veículos usados nos cálculos, perfis de acesso e parâmetros do algoritmo genético.
+          Veículos e bases usados nos cálculos, perfis de acesso e parâmetros do algoritmo genético.
         </p>
       </div>
       <Tabs
@@ -26,6 +27,15 @@ export default function AdminPage() {
             content: (
               <div className={styles.fill}>
                 <VehiclesTab />
+              </div>
+            ),
+          },
+          {
+            id: 'bases',
+            label: 'Bases',
+            content: (
+              <div className={styles.fill}>
+                <BasesTab />
               </div>
             ),
           },

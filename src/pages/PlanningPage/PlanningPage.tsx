@@ -6,6 +6,7 @@ import ErrorMessage from '@/components/ErrorMessage/ErrorMessage'
 import MapMarker from '@/components/Map/MapMarker'
 import MapView from '@/components/Map/MapView'
 import SplitLayout from '@/components/SplitLayout/SplitLayout'
+import { useBases } from '@/hooks/useBases'
 import { useDeliveryPoints } from '@/hooks/useDeliveryPoints'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useIsDesktop } from '@/hooks/useMediaQuery'
@@ -27,10 +28,12 @@ import OriginCard from '@/pages/PlanningPage/OriginCard'
 import PointsList from '@/pages/PlanningPage/PointsList'
 import VehicleCard from '@/pages/PlanningPage/VehicleCard'
 import { describeError } from '@/services/errors'
+import type { Base } from '@/services/schemas/base'
 import type { DeliveryPoint } from '@/services/schemas/deliveryPoint'
 import type { Route as CalculatedRoute } from '@/services/schemas/route'
 
 const NO_POINTS: DeliveryPoint[] = []
+const NO_BASES: Base[] = []
 const FLOATING_INSET_PX = 380
 
 type DialogState = {
@@ -59,6 +62,8 @@ function describeAdded(points: DeliveryPoint[]): string {
 export default function PlanningPage() {
   useDocumentTitle('Nova rota')
   const points = useDeliveryPoints()
+  const bases = useBases()
+  const activeBases = bases.data ?? NO_BASES
   const { vehicles, active, selected: vehicle, choose } = useActiveVehicle()
   const calculateRoutes = useCalculateRoutes()
   const { notify } = useToast()
@@ -78,7 +83,8 @@ export default function PlanningPage() {
     .filter((point): point is DeliveryPoint => point !== undefined)
   const selectedIds = selectedPoints.map((point) => point.id)
   const canCalculate =
-    vehicle !== undefined && isSelectionReady(selectedIds.length, origin !== null)
+    vehicle !== undefined &&
+    isSelectionReady(selectedIds.length, origin !== null || activeBases.length > 0)
 
   const handleAdded = (added: DeliveryPoint[]) => {
     setRequestedIds(
@@ -92,7 +98,7 @@ export default function PlanningPage() {
     notify(describeAdded(added), 'success')
   }
 
-  const calculate = (cargoKg: number) => {
+  const calculate = (cargoKg: number, baseId: number | null) => {
     if (!vehicle) {
       return
     }
@@ -100,8 +106,12 @@ export default function PlanningPage() {
       {
         vehicleId: vehicle.id,
         deliveryPointIds: selectedIds,
-        origin: origin ? { latitude: origin.latitude, longitude: origin.longitude } : undefined,
+        origin:
+          origin && baseId === null
+            ? { latitude: origin.latitude, longitude: origin.longitude }
+            : undefined,
         cargoKg: cargoKg > 0 ? cargoKg : undefined,
+        baseId: baseId ?? undefined,
       },
       {
         onSuccess: (ids) => {
@@ -244,6 +254,7 @@ export default function PlanningPage() {
         vehicle={vehicle}
         pointCount={selectedPoints.length}
         hasOrigin={origin !== null}
+        bases={activeBases}
         submitting={calculateRoutes.isPending}
         onCancel={() => setConfirming(false)}
         onConfirm={calculate}

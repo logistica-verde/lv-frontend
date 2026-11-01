@@ -110,3 +110,18 @@ describe('secondsPerVertex', () => {
     expect(seconds[1]).toBeCloseTo(1010 / (40 / 3.6), 3)
   })
 })
+
+describe('routePath with a return to the base', () => {
+  it('closes the straight-line path at the first point', () => {
+    const route: Route = { ...completedRouteFixture, returnsToBase: true }
+
+    const path = routePath(route)
+
+    expect(path).toHaveLength(completedRouteFixture.points.length + 1)
+    expect(path[path.length - 1]).toEqual(path[0])
+  })
+
+  it('keeps the path open without a return', () => {
+    expect(routePath(completedRouteFixture)).toHaveLength(completedRouteFixture.points.length)
+  })
+})

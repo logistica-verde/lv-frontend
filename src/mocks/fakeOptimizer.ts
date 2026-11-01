@@ -73,9 +73,11 @@ function costOf(leg: FakeLeg, criterion: OptimizationCriterion): number {
 
 const EXACT_SEARCH_LIMIT = 9
 
-function assemble(orderedPoints: FakePoint[]): FakeOptimization {
-  const legs = orderedPoints.slice(1).map((point, index) => {
-    const previous = orderedPoints[index]
+function assemble(orderedPoints: FakePoint[], closed: boolean): FakeOptimization {
+  const [depot] = orderedPoints
+  const walked = closed && depot ? [...orderedPoints, depot] : orderedPoints
+  const legs = walked.slice(1).map((point, index) => {
+    const previous = walked[index]
     return previous ? legBetween(previous, point) : legBetween(point, point)
   })
   return {
@@ -119,7 +121,11 @@ function greedyOrder(points: FakePoint[], criterion: OptimizationCriterion): Fak
   return order
 }
 
-function exactOrder(points: FakePoint[], criterion: OptimizationCriterion): FakePoint[] {
+function exactOrder(
+  points: FakePoint[],
+  criterion: OptimizationCriterion,
+  closed: boolean,
+): FakePoint[] {
   const [first, ...rest] = points
   if (!first) {
     return []
@@ -133,8 +139,11 @@ function exactOrder(points: FakePoint[], criterion: OptimizationCriterion): Fake
       return
     }
     if (remaining.length === 0) {
-      bestCost = cost
-      bestOrder = order
+      const total = closed ? cost + costOf(legBetween(current, first), criterion) : cost
+      if (total < bestCost) {
+        bestCost = total
+        bestOrder = order
+      }
       return
     }
     remaining.forEach((candidate) => {
@@ -155,9 +164,10 @@ function exactOrder(points: FakePoint[], criterion: OptimizationCriterion): Fake
 export function optimizeFake(
   points: FakePoint[],
   criterion: OptimizationCriterion,
+  closed = false,
 ): FakeOptimization {
   if (points.length <= EXACT_SEARCH_LIMIT) {
-    return assemble(exactOrder(points, criterion))
+    return assemble(exactOrder(points, criterion, closed), closed)
   }
-  return assemble(greedyOrder(points, criterion))
+  return assemble(greedyOrder(points, criterion), closed)
 }

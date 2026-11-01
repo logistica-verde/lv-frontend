@@ -3,11 +3,13 @@ import { z } from 'zod'
 import type { MockDb } from '@/mocks/db'
 import { seedAddresses } from '@/mocks/addresses'
 import { MOCK_PASSWORD } from '@/mocks/seed'
+import { baseHandlers } from '@/mocks/bases'
 import { executionHandlers } from '@/mocks/executions'
 import { generateRun } from '@/mocks/experiments'
 import { fakeHash } from '@/mocks/fakeHash'
 import { optimizeFake } from '@/mocks/fakeOptimizer'
 import type { FakePoint } from '@/mocks/fakeOptimizer'
+import type { Base } from '@/services/schemas/base'
 import type { DeliveryPoint } from '@/services/schemas/deliveryPoint'
 import type { IntegrityReport } from '@/services/schemas/integrity'
 import type { OptimizationCriterion, Route } from '@/services/schemas/route'
@@ -50,6 +52,7 @@ const routeRequestSchema = z.object({
     .object({ latitude: z.number().min(-90).max(90), longitude: z.number().min(-180).max(180) })
     .optional(),
   cargoKg: z.number().min(0).max(100000).optional(),
+  baseId: z.number().int().positive().optional(),
 })
 
 const COVERAGE = {
@@ -145,6 +148,8 @@ const ACCESS_RULES: AccessRule[] = [
   { method: 'POST', pattern: /^\/api\/routes\/calculate$/, roles: ['OPERATOR', 'ADMIN'] },
   { method: 'POST', pattern: /^\/api\/delivery-points/, roles: ['OPERATOR', 'ADMIN'] },
   { method: 'POST', pattern: /^\/api\/executions/, roles: ['OPERATOR', 'ADMIN'] },
+  { method: 'POST', pattern: /^\/api\/bases/, roles: ['ADMIN'] },
+  { method: 'PATCH', pattern: /^\/api\/bases/, roles: ['ADMIN'] },
 ]
 
 const TOKEN_PREFIX = 'Bearer mock-token-'
@@ -181,6 +186,7 @@ function createPendingRoute(
   criterion: OptimizationCriterion,
   points: DeliveryPoint[],
   cargoKg?: number,
+  base?: Base,
 ): Route {
   const route: Route = {
     id: db.nextRouteId++,
@@ -191,6 +197,8 @@ function createPendingRoute(
     totalEmissionKg: null,
     totalDistanceMeters: null,
     cargoKg: cargoKg && cargoKg > 0 ? cargoKg : null,
+    returnsToBase: base !== undefined,
+    baseName: base?.nome ?? null,
     errorMessage: null,
     points: points.map((point, index) => ({
       pointId: point.id,
@@ -211,12 +219,13 @@ function completeRoute(
   points: DeliveryPoint[],
   criterion: OptimizationCriterion,
   options: MockOptions,
+  closed = false,
 ): void {
   const current = db.routes.get(routeId)
   if (!current) {
     return
   }
-  const result = optimizeFake(points.map(toFakePoint), criterion)
+  const result = optimizeFake(points.map(toFakePoint), criterion, closed)
   db.routes.set(routeId, {
     ...current,
     status: 'COMPLETED',
@@ -275,6 +284,7 @@ function integrityReportOf(db: MockDb, routeId: number): IntegrityReport {
 export function createHandlers(db: MockDb, options: MockOptions) {
   return [
     ...executionHandlers(db, options.latencyMs, problem),
+    ...baseHandlers(db, options.latencyMs, problem),
     http.post('*/api/auth/login', async ({ request }) => {
       await delay(options.latencyMs)
       const parsed = loginInputSchema.safeParse(await request.json().catch(() => null))
@@ -415,12 +425,22 @@ export function createHandlers(db: MockDb, options: MockOptions) {
       if (!parsed.success) {
         return problem(400, 'Invalid request content.')
       }
-      const { vehicleId, deliveryPointIds, criterion, origin, cargoKg } = parsed.data
+      const { vehicleId, deliveryPointIds, criterion, origin, cargoKg, baseId } = parsed.data
       if (new Set(deliveryPointIds).size !== deliveryPointIds.length) {
         return problem(400, 'deliveryPointIds must not contain duplicates')
       }
-      if (!origin && deliveryPointIds.length < 2) {
+      if (baseId !== undefined && origin) {
+        return problem(400, 'Inform either a base or an origin, not both')
+      }
+      if (!origin && baseId === undefined && deliveryPointIds.length < 2) {
         return problem(400, 'Invalid request content.')
+      }
+      const base = baseId === undefined ? undefined : db.bases.find((candidate) => candidate.id === baseId)
+      if (baseId !== undefined && !base) {
+        return problem(404, `Base ${baseId} not found`)
+      }
+      if (base && !base.ativo) {
+        return problem(400, `Base ${baseId} is inactive`)
       }
       if (origin && !isCovered(origin.latitude, origin.longitude)) {
         return problem(400, 'The origin is outside the area covered by the road map')
@@ -433,7 +453,8 @@ export function createHandlers(db: MockDb, options: MockOptions) {
         return problem(400, `Vehicle ${vehicleId} is inactive`)
       }
       const points: DeliveryPoint[] = []
-      const orderedIds = origin ? [...deliveryPointIds].sort((a, b) => a - b) : deliveryPointIds
+      const orderedIds =
+        origin || base ? [...deliveryPointIds].sort((a, b) => a - b) : deliveryPointIds
       for (const pointId of orderedIds) {
         const point = db.deliveryPoints.find((candidate) => candidate.id === pointId)
         if (!point) {
@@ -448,9 +469,12 @@ export function createHandlers(db: MockDb, options: MockOptions) {
       if (origin) {
         points.unshift(originPoint(db, origin.latitude, origin.longitude))
       }
-      const route = createPendingRoute(db, vehicle, criterion, points, cargoKg)
+      if (base) {
+        points.unshift(originPoint(db, base.latitude, base.longitude))
+      }
+      const route = createPendingRoute(db, vehicle, criterion, points, cargoKg, base)
       setTimeout(
-        () => completeRoute(db, route.id, points, criterion, options),
+        () => completeRoute(db, route.id, points, criterion, options, base !== undefined),
         options.completionDelayMs,
       )
       return HttpResponse.json(

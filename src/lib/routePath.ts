@@ -6,9 +6,11 @@ import type { Route } from '@/services/schemas/route'
 const STRAIGHT_LINE_POINTS = 2
 
 function inVisitOrder(route: Route): LatLngTuple[] {
-  return [...route.points]
+  const path = [...route.points]
     .sort((first, second) => first.visitOrder - second.visitOrder)
     .map(toLatLng)
+  const [start] = path
+  return route.returnsToBase === true && start ? [...path, start] : path
 }
 
 export function followsStreets(route: Route): boolean {

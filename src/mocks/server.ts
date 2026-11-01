@@ -2,12 +2,13 @@ import { createServer } from '@mswjs/http-middleware'
 import { createDb } from '@/mocks/db'
 import { createHandlers } from '@/mocks/handlers'
 import { seedHistory } from '@/mocks/history'
-import { seedDeliveryPoints, seedUsers, seedVehicles } from '@/mocks/seed'
+import { seedBases, seedDeliveryPoints, seedUsers, seedVehicles } from '@/mocks/seed'
 
 const PORT = 8081
 
 const db = createDb({
   vehicles: seedVehicles,
+  bases: seedBases,
   users: seedUsers,
   deliveryPoints: seedDeliveryPoints,
 })

@@ -87,7 +87,14 @@ function NavigationMap({ execution, route }: NavigationViewProps) {
   )
   const track = useMemo(() => buildTrack(routePath(route)), [route])
   const timeline = useMemo(() => buildTimeline(track, secondsPerVertex(route)), [track, route])
-  const visits = useMemo(() => stops.slice(1), [stops])
+  const returning = route.returnsToBase === true
+  const deliveries = useMemo(() => stops.slice(1), [stops])
+  const visits = useMemo(() => {
+    const [base] = stops
+    return returning && base
+      ? [...deliveries, { ...base, name: `Retorno à base${route.baseName ? ` ${route.baseName}` : ''}` }]
+      : deliveries
+  }, [stops, deliveries, returning, route.baseName])
   const offsets = useMemo(() => stopOffsets(track, visits.map(toLatLng)), [track, visits])
   const travel = useTravel(track, speed)
   useWakeLock(true)
@@ -98,9 +105,11 @@ function NavigationMap({ execution, route }: NavigationViewProps) {
   const nextOffset = offsets[nextIndex]
   const lastStop = visits[visits.length - 1]
   const remainingMeters = Math.max(0, track.total - travel.along)
-  const remainingStops = Math.max(0, visits.length - nextIndex)
+  const remainingStops = Math.max(0, deliveries.length - nextIndex)
+  const approachingEnd = nextIndex >= visits.length - 1
   const arrived =
     travel.position !== null &&
+    approachingEnd &&
     (hasArrived(travel.position, lastStop ? toLatLng(lastStop) : undefined) ||
       remainingMeters <= ARRIVED_REMAINING_M)
   const tone = route.criterion === 'EMISSION' ? 'emission' : 'distance'
@@ -172,9 +181,9 @@ function NavigationMap({ execution, route }: NavigationViewProps) {
             key={stop.pointId}
             position={toLatLng(stop)}
             title={stop.name}
-            label={index === 0 ? 'S' : String(index)}
+            label={index === 0 ? (returning ? 'B' : 'S') : String(index)}
             tone={tone}
-            selected={index === nextIndex + 1}
+            selected={returning && nextIndex >= deliveries.length ? index === 0 : index === nextIndex + 1}
           />
         ))}
         <NavigationVehicle

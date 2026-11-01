@@ -2,10 +2,13 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import Button from '@/components/Button/Button'
 import Modal from '@/components/Modal/Modal'
+import SelectField from '@/components/SelectField/SelectField'
 import TextField from '@/components/TextField/TextField'
 import { formatNumber } from '@/lib/format'
 import { numericInputProps, sanitizeNumeric } from '@/lib/inputMask'
 import styles from '@/pages/PlanningPage/Calculation/ConfirmCalculationDialog.module.css'
+import { readStoredBase, storeBase } from '@/lib/baseChoice'
+import type { Base } from '@/services/schemas/base'
 import { VEHICLE_IMAGE_LABELS } from '@/services/schemas/vehicle'
 import type { Vehicle } from '@/services/schemas/vehicle'
 
@@ -16,9 +19,10 @@ type ConfirmCalculationDialogProps = {
   vehicle: Vehicle | undefined
   pointCount: number
   hasOrigin: boolean
+  bases: Base[]
   submitting: boolean
   onCancel: () => void
-  onConfirm: (cargoKg: number) => void
+  onConfirm: (cargoKg: number, baseId: number | null) => void
 }
 
 type ParsedCargo = { ok: true; value: number } | { ok: false; message: string }
@@ -43,21 +47,27 @@ export default function ConfirmCalculationDialog({
   vehicle,
   pointCount,
   hasOrigin,
+  bases,
   submitting,
   onCancel,
   onConfirm,
 }: ConfirmCalculationDialogProps) {
   const [cargoText, setCargoText] = useState('')
+  const [chosenBase, setChosenBase] = useState<number | null>(() => readStoredBase())
   const cargo = parseCargo(cargoText)
+  const base = bases.find((candidate) => candidate.id === chosenBase) ?? null
+  const needsMorePoints = base === null && !hasOrigin && pointCount < 2
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (cargo.ok && vehicle) {
-      onConfirm(cargo.value)
+    if (cargo.ok && vehicle && !needsMorePoints) {
+      storeBase(base?.id ?? null)
+      onConfirm(cargo.value, base?.id ?? null)
     }
   }
 
-  const stops = hasOrigin ? pointCount : pointCount - 1
+  const stops = base !== null || hasOrigin ? pointCount : pointCount - 1
+  const departure = base ? `${base.nome} (com retorno)` : hasOrigin ? 'Minha localização' : 'Primeiro ponto da lista'
 
   return (
     <Modal open={open} title="Confirmar cálculo da rota" onClose={onCancel}>
@@ -77,9 +87,26 @@ export default function ConfirmCalculationDialog({
           </div>
           <div>
             <dt>Saída</dt>
-            <dd>{hasOrigin ? 'Minha localização' : 'Primeiro ponto da lista'}</dd>
+            <dd>{departure}</dd>
           </div>
         </dl>
+        {bases.length > 0 && (
+          <SelectField
+            label="Base (saída e retorno)"
+            value={base?.id ?? ''}
+            hint="A rota parte da base e volta a ela depois da última parada."
+            onChange={(event) =>
+              setChosenBase(event.target.value === '' ? null : Number(event.target.value))
+            }
+          >
+            <option value="">Sem base (saída pelo primeiro ponto ou pela minha localização)</option>
+            {bases.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.nome}
+              </option>
+            ))}
+          </SelectField>
+        )}
         <TextField
           label="Peso da carga (kg)"
           inputMode="decimal"
@@ -97,6 +124,11 @@ export default function ConfirmCalculationDialog({
             {vehicle && cargo.ok ? `${formatNumber(vehicle.massaKg + cargo.value)} kg` : '—'}
           </strong>
         </p>
+        {needsMorePoints && (
+          <p role="alert" className={styles.note}>
+            Sem base nem localização, a rota precisa de pelo menos 2 pontos.
+          </p>
+        )}
         <p className={styles.note}>
           Serão calculadas a rota de menor emissão e a de menor distância para os mesmos pontos.
         </p>
@@ -104,7 +136,11 @@ export default function ConfirmCalculationDialog({
           <Button variant="ghost" onClick={onCancel}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={!cargo.ok || !vehicle} loading={submitting}>
+          <Button
+            type="submit"
+            disabled={!cargo.ok || !vehicle || needsMorePoints}
+            loading={submitting}
+          >
             Confirmar e calcular
           </Button>
         </div>

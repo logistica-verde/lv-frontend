@@ -16,9 +16,13 @@ export const routeInputSchema = z
     criterion: optimizationCriterionSchema,
     origin: routeOriginSchema.optional(),
     cargoKg: z.number().min(0).max(100000).optional(),
+    baseId: z.number().int().positive().optional(),
   })
-  .refine((input) => input.origin !== undefined || input.deliveryPointIds.length >= 2, {
-    message: 'Informe ao menos 2 pontos ou a saída',
+  .refine(
+    (input) =>
+      input.origin !== undefined || input.baseId !== undefined || input.deliveryPointIds.length >= 2,
+    {
+      message: 'Informe ao menos 2 pontos, a saída ou a base',
     path: ['deliveryPointIds'],
   })
 
@@ -54,6 +58,8 @@ export const routeSchema = z.object({
   totalEmissionKg: z.number().nullable(),
   totalDistanceMeters: z.number().nullable(),
   cargoKg: z.number().nullish(),
+  returnsToBase: z.boolean().optional(),
+  baseName: z.string().nullish(),
   errorMessage: z.string().nullable(),
   points: z.array(routePointSchema),
   segments: z.array(routeSegmentSchema),

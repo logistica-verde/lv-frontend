@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { Execution } from '@/services/schemas/execution'
+import type { Route } from '@/services/schemas/route'
 import { routes } from '@/router'
 import { apiUrl } from '@/test/api'
 import { executionFixture } from '@/test/executionFixtures'
@@ -11,12 +12,12 @@ import { renderRoutes } from '@/test/renderRoutes'
 import { server } from '@/test/server'
 import { signInAs } from '@/test/session'
 
-function serve(execution: Execution) {
+function serve(execution: Execution, route: Route = completedRouteFixture) {
   const calls: string[] = []
   let current = execution
   server.use(
     http.get(apiUrl('/api/executions/:id'), () => HttpResponse.json(current)),
-    http.get(apiUrl('/api/routes/:id'), () => HttpResponse.json(completedRouteFixture)),
+    http.get(apiUrl('/api/routes/:id'), () => HttpResponse.json(route)),
     http.post(apiUrl('/api/executions/:id/start'), () => {
       calls.push('start')
       current = { ...current, status: 'IN_PROGRESS', startedAt: '2026-10-20T15:00:00.000Z' }
@@ -90,6 +91,56 @@ describe('ExecutionPage', () => {
 
     expect(await screen.findByRole('button', { name: 'Finalizar rota' })).toBeVisible()
     expect(screen.getByText('Você chegou ao destino final')).toBeVisible()
+  })
+
+  describe('with a return to the base', () => {
+    const returning: Route = {
+      ...completedRouteFixture,
+      returnsToBase: true,
+      baseName: 'Base Central',
+      segments: [
+        ...completedRouteFixture.segments,
+        {
+          fromPointId: 11,
+          toPointId: 12,
+          distanceMeters: 1000,
+          averageSpeedKmh: 40,
+          slopePercent: 0,
+          emissionKg: 1.5,
+        },
+      ],
+    }
+
+    it('does not offer to finish while the vehicle is still at the base at the start', async () => {
+      serve(executionFixture, returning)
+      standAt(-23.57, -46.63)
+
+      open()
+
+      await screen.findByRole('region', { name: 'Mapa de navegação' })
+      expect(screen.queryByRole('button', { name: 'Finalizar rota' })).not.toBeInTheDocument()
+      expect(await screen.findByText(/Em .*: A/)).toBeVisible()
+    })
+
+    it('sends the vehicle back to the base after the last delivery', async () => {
+      serve(executionFixture, returning)
+      standAt(-23.56, -46.63)
+
+      open()
+
+      expect(await screen.findByText(/Retorno à base Base Central/)).toBeVisible()
+      expect(screen.queryByRole('button', { name: 'Finalizar rota' })).not.toBeInTheDocument()
+    })
+
+    it('counts only the deliveries as stops, not the return to the base', async () => {
+      serve(executionFixture, returning)
+      standAt(-23.57, -46.63)
+
+      open()
+
+      expect(await screen.findByText('Restante')).toBeVisible()
+      expect(screen.getByText('Paradas').nextSibling).toHaveTextContent('2')
+    })
   })
 
   it('announces the next stop while the simulated trip advances', async () => {

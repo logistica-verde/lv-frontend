@@ -1,4 +1,5 @@
 import type { DeliveryPoint } from '@/services/schemas/deliveryPoint'
+import type { Base } from '@/services/schemas/base'
 import type { Execution } from '@/services/schemas/execution'
 import type { Experiment } from '@/services/schemas/experiment'
 import type { GaSettings } from '@/services/schemas/gaSettings'
@@ -14,6 +15,7 @@ export type AnchorInfo = {
 
 export type MockDb = {
   vehicles: Vehicle[]
+  bases: Base[]
   users: User[]
   gaSettings: GaSettings
   deliveryPoints: DeliveryPoint[]
@@ -27,11 +29,13 @@ export type MockDb = {
   nextDeliveryPointId: number
   nextRouteId: number
   nextExecutionId: number
+  nextBaseId: number
   nextBlock: number
 }
 
 type Seed = {
   vehicles: Vehicle[]
+  bases?: Base[]
   users?: User[]
   deliveryPoints: DeliveryPoint[]
 }
@@ -41,6 +45,7 @@ const FIRST_BLOCK = 100
 export function createDb(seed: Seed): MockDb {
   return {
     vehicles: seed.vehicles.map((vehicle) => ({ ...vehicle })),
+    bases: (seed.bases ?? []).map((base) => ({ ...base })),
     users: (seed.users ?? []).map((user) => ({ ...user })),
     gaSettings: { ...DEFAULT_GA_SETTINGS },
     deliveryPoints: seed.deliveryPoints.map((point) => ({ ...point })),
@@ -54,6 +59,7 @@ export function createDb(seed: Seed): MockDb {
     nextDeliveryPointId: Math.max(0, ...seed.deliveryPoints.map((point) => point.id)) + 1,
     nextRouteId: 1,
     nextExecutionId: 1,
+    nextBaseId: Math.max(0, ...(seed.bases ?? []).map((base) => base.id)) + 1,
     nextBlock: FIRST_BLOCK,
   }
 }
