@@ -130,6 +130,19 @@ describe('VerdictCard', () => {
     expect(await screen.findByText('Íntegra')).toBeVisible()
   })
 
+  it('raises an alert and stops checking when the anchoring gave up', async () => {
+    const calls = useIntegrityApi(() => ({ ...notAnchored, status: 'ANCHOR_FAILED' }))
+
+    renderWithProviders(<VerdictCard routeId={7} />)
+
+    expect(await screen.findByText('Registro não concluído')).toBeVisible()
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'O registro na blockchain falhou em todas as tentativas.',
+    )
+    await new Promise((resolve) => setTimeout(resolve, 150))
+    expect(calls()).toBe(1)
+  })
+
   it('gives up polling after the maximum number of attempts', async () => {
     const calls = useIntegrityApi(() => notAnchored)
 

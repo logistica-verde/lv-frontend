@@ -11,6 +11,7 @@ const INTEGRITY_LABELS = {
   VALID: 'Íntegra',
   TAMPERED: 'Alterada',
   NOT_ANCHORED: 'Aguardando registro',
+  ANCHOR_FAILED: 'Registro não concluído',
 } as const
 
 export async function fetchAllOperations(

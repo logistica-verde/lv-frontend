@@ -80,7 +80,7 @@ export default function VerdictCard({ routeId }: VerdictCardProps) {
           <Icon size={28} aria-hidden="true" />
           <div>
             <p className={styles.label}>{label}</p>
-            <p role={report.status === 'TAMPERED' ? 'alert' : 'status'} className={styles.message}>
+            <p role={tone === 'danger' ? 'alert' : 'status'} className={styles.message}>
               {message}
             </p>
           </div>

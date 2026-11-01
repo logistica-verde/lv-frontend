@@ -7,6 +7,7 @@ describe('IntegrityBadge', () => {
     ['VALID', 'Íntegra'],
     ['TAMPERED', 'Alterada'],
     ['NOT_ANCHORED', 'Aguardando registro'],
+    ['ANCHOR_FAILED', 'Registro não concluído'],
   ] as const)('shows %s as "%s", in words and not only in color', (status, label) => {
     render(<IntegrityBadge status={status} />)
 

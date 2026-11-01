@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const integrityStatusSchema = z.enum(['VALID', 'TAMPERED', 'NOT_ANCHORED'])
+export const integrityStatusSchema = z.enum(['VALID', 'TAMPERED', 'NOT_ANCHORED', 'ANCHOR_FAILED'])
 
 export const integrityReportSchema = z.object({
   operationId: z.number(),
