@@ -11,6 +11,7 @@ import { useIsDesktop } from '@/hooks/useMediaQuery'
 import RecentVerifications from '@/pages/VerificationPage/RecentVerifications'
 import OperationData from '@/pages/VerificationPage/OperationData'
 import VerdictCard from '@/pages/VerificationPage/VerdictCard'
+import { numericInputProps } from '@/lib/inputMask'
 import styles from '@/pages/VerificationPage/VerificationPage.module.css'
 import { verificationSchema } from '@/pages/VerificationPage/verificationSchema'
 import type { VerificationInput } from '@/pages/VerificationPage/verificationSchema'
@@ -56,6 +57,7 @@ export default function VerificationPage() {
             inputMode="numeric"
             min={1}
             error={errors.routeId?.message}
+            {...numericInputProps()}
             {...register('routeId', { valueAsNumber: true })}
           />
           <Button type="submit">Verificar integridade</Button>

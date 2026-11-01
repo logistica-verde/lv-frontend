@@ -9,6 +9,7 @@ import TextField from '@/components/TextField/TextField'
 import VisuallyHidden from '@/components/VisuallyHidden/VisuallyHidden'
 import { useGaSettings, useSaveGaSettings } from '@/hooks/useAdmin'
 import { useToast } from '@/hooks/useToast'
+import { numericInputProps } from '@/lib/inputMask'
 import styles from '@/pages/AdminPage/AdminPage.module.css'
 import { describeError, failureMessage } from '@/services/errors'
 import { DEFAULT_GA_SETTINGS, gaSettingsSchema } from '@/services/schemas/gaSettings'
@@ -57,6 +58,7 @@ function GaSettingsForm({ settings }: GaSettingsFormProps) {
           inputMode="numeric"
           hint="De 10 a 500 indivíduos"
           error={errors.populationSize?.message}
+          {...numericInputProps()}
           {...register('populationSize', { valueAsNumber: true })}
         />
         <TextField
@@ -65,6 +67,7 @@ function GaSettingsForm({ settings }: GaSettingsFormProps) {
           inputMode="numeric"
           hint="De 10 a 1000"
           error={errors.generations?.message}
+          {...numericInputProps()}
           {...register('generations', { valueAsNumber: true })}
         />
         <TextField
@@ -74,6 +77,7 @@ function GaSettingsForm({ settings }: GaSettingsFormProps) {
           inputMode="decimal"
           hint="Entre 0 e 1"
           error={errors.crossoverRate?.message}
+          {...numericInputProps({ decimal: true })}
           {...register('crossoverRate', { valueAsNumber: true })}
         />
         <TextField
@@ -83,6 +87,7 @@ function GaSettingsForm({ settings }: GaSettingsFormProps) {
           inputMode="decimal"
           hint="Entre 0 e 1"
           error={errors.mutationRate?.message}
+          {...numericInputProps({ decimal: true })}
           {...register('mutationRate', { valueAsNumber: true })}
         />
       </div>

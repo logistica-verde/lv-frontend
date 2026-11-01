@@ -78,7 +78,21 @@ describe('VerificationPage', () => {
     expect(router.state.location.pathname).toBe('/verificacao')
   })
 
-  it.each(['0', '-3', '2.5'])('rejects the ID %s', async (value) => {
+  it.each([
+    ['-3', '3'],
+    ['2.5', '25'],
+    ['ab7', '7'],
+  ])('does not let the characters of %s that are not digits be typed', async (typed, kept) => {
+    renderRoutes(routes, '/verificacao')
+    const user = userEvent.setup()
+    const field = screen.getByLabelText('ID da operação')
+
+    await user.type(field, typed)
+
+    expect(field).toHaveValue(Number(kept))
+  })
+
+  it.each(['0'])('rejects the ID %s', async (value) => {
     const router = renderRoutes(routes, '/verificacao')
     const user = userEvent.setup()
 

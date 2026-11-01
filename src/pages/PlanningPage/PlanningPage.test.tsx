@@ -260,7 +260,7 @@ describe('PlanningPage', () => {
     expect(routes.requests).toHaveLength(0)
   })
 
-  it('rejects a negative or absurd cargo weight', async () => {
+  it('only accepts digits in the cargo weight and rejects an absurd one', async () => {
     useVehiclesApi([vehicleFixture])
     useDeliveryPointsApi([sé, masp])
     const user = userEvent.setup()
@@ -269,9 +269,8 @@ describe('PlanningPage', () => {
     await user.click(screen.getByRole('button', { name: 'Calcular rotas' }))
     const field = await screen.findByLabelText('Peso da carga (kg)')
 
-    await user.type(field, '-3')
-    expect(screen.getByText('Informe um peso igual ou maior que zero.')).toBeVisible()
-    expect(screen.getByRole('button', { name: 'Confirmar e calcular' })).toBeDisabled()
+    await user.type(field, '-3a')
+    expect(field).toHaveValue('3')
 
     await user.clear(field)
     await user.type(field, '100001')
