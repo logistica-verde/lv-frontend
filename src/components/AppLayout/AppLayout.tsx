@@ -6,6 +6,7 @@ import { z } from 'zod'
 import AccountBar from '@/components/AppLayout/AccountBar'
 import styles from '@/components/AppLayout/AppLayout.module.css'
 import BrandMark from '@/components/BrandMark/BrandMark'
+import ActiveExecutionChip from '@/components/Schedule/ActiveExecutionChip'
 import NextExecutionChip from '@/components/Schedule/NextExecutionChip'
 import ScheduleWatcher from '@/components/Schedule/ScheduleWatcher'
 import IconButton from '@/components/IconButton/IconButton'
@@ -115,6 +116,7 @@ export default function AppLayout() {
             {links}
           </nav>
           <div className={styles.sidebarEnd}>
+            <ActiveExecutionChip compact={collapsed} />
             <NextExecutionChip compact={collapsed} />
             {!collapsed && mockNotice}
             {session && (
@@ -152,6 +154,7 @@ export default function AppLayout() {
           {menuOpen && (
             <nav id={MENU_ID} aria-label="Principal" className={styles.mobileNav}>
               {links}
+              <ActiveExecutionChip />
               <NextExecutionChip />
               {session && <AccountBar session={session} variant="menu" />}
             </nav>

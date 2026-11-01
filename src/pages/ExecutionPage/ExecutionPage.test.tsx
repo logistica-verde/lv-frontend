@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import type { Execution } from '@/services/schemas/execution'
 import { routes } from '@/router'
 import { apiUrl } from '@/test/api'
@@ -41,6 +41,23 @@ function open(id = 9) {
   return renderRoutes(routes, `/execucao/${id}`)
 }
 
+function standAt(latitude: number, longitude: number) {
+  Object.defineProperty(navigator, 'geolocation', {
+    configurable: true,
+    value: {
+      watchPosition: (success: (position: object) => void) => {
+        success({ coords: { latitude, longitude, heading: null, speed: null, accuracy: 5 } })
+        return 1
+      },
+      clearWatch: () => undefined,
+    },
+  })
+}
+
+afterEach(() => {
+  Reflect.deleteProperty(navigator, 'geolocation')
+})
+
 describe('ExecutionPage', () => {
   it('shows the navigation map without the application menu while the route is in progress', async () => {
     serve(executionFixture)
@@ -50,7 +67,28 @@ describe('ExecutionPage', () => {
     expect(await screen.findByRole('region', { name: 'Mapa de navegação' })).toBeVisible()
     expect(screen.queryByRole('navigation', { name: 'Principal' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Simular percurso' })).toBeVisible()
-    expect(screen.getByRole('button', { name: 'Finalizar rota' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Finalizar rota' })).not.toBeInTheDocument()
+  })
+
+  it('shows the time left, the estimated arrival and the time to the next stop', async () => {
+    serve(executionFixture)
+
+    open()
+
+    expect(await screen.findByText('Tempo restante')).toBeVisible()
+    expect(screen.getByText('Chegada prevista')).toBeVisible()
+    expect(screen.getByText('Próxima parada')).toBeVisible()
+    expect(screen.getByText('Restante')).toBeVisible()
+  })
+
+  it('only offers to finish the route after reaching the last stop', async () => {
+    serve(executionFixture)
+    standAt(-23.56, -46.63)
+
+    open()
+
+    expect(await screen.findByRole('button', { name: 'Finalizar rota' })).toBeVisible()
+    expect(screen.getByText('Você chegou ao destino final')).toBeVisible()
   })
 
   it('announces the next stop while the simulated trip advances', async () => {
@@ -68,6 +106,7 @@ describe('ExecutionPage', () => {
 
   it('finishes the route and goes back to the planning page', async () => {
     const calls = serve(executionFixture)
+    standAt(-23.56, -46.63)
     const user = userEvent.setup()
     open()
 

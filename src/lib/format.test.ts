@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  formatClock,
   formatDateTime,
   formatKilometers,
   formatNumber,
@@ -77,5 +78,11 @@ describe('formatDuration', () => {
   it('shows hours with two-digit minutes', () => {
     expect(formatDuration(1.0833333)).toBe('1 h 05 min')
     expect(formatDuration(2)).toBe('2 h 00 min')
+  })
+})
+
+describe('formatClock', () => {
+  it('writes the hour and the minute in the Sao Paulo time zone', () => {
+    expect(formatClock(new Date('2026-10-20T15:42:30Z'))).toBe('12:42')
   })
 })

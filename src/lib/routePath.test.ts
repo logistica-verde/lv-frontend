@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { followsStreets, routePath } from '@/lib/routePath'
+import { followsStreets, routePath, secondsPerVertex } from '@/lib/routePath'
 import type { Route } from '@/services/schemas/route'
 import { completedRouteFixture } from '@/test/fixtures'
 
@@ -64,5 +64,49 @@ describe('routePath', () => {
     const route = withGeometry(street, [])
 
     expect(routePath(route)).toHaveLength(3)
+  })
+})
+
+describe('secondsPerVertex', () => {
+  it('has one entry per vertex of the path and spreads each segment time over its geometry', () => {
+    const route: Route = {
+      ...completedRouteFixture,
+      segments: [
+        {
+          ...completedRouteFixture.segments[0]!,
+          distanceMeters: 1000,
+          averageSpeedKmh: 36,
+          geometry: [
+            [-23.55, -46.63],
+            [-23.545, -46.63],
+            [-23.54, -46.63],
+          ],
+        },
+        {
+          ...completedRouteFixture.segments[1]!,
+          distanceMeters: 500,
+          averageSpeedKmh: 18,
+          geometry: [
+            [-23.54, -46.63],
+            [-23.54, -46.625],
+          ],
+        },
+      ],
+    }
+
+    const seconds = secondsPerVertex(route)
+
+    expect(seconds).toHaveLength(routePath(route).length)
+    expect(seconds[0]).toBe(0)
+    expect(seconds[1]! + seconds[2]!).toBeCloseTo(111, -1)
+    expect(seconds[3]).toBe(0)
+  })
+
+  it('uses one leg per segment when the route has no street geometry', () => {
+    const seconds = secondsPerVertex(completedRouteFixture)
+
+    expect(seconds).toHaveLength(completedRouteFixture.points.length)
+    expect(seconds[0]).toBe(0)
+    expect(seconds[1]).toBeCloseTo(1010 / (40 / 3.6), 3)
   })
 })
