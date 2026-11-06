@@ -90,5 +90,13 @@
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+@media (max-width: 40rem) {
+  .actions > * {
+    flex: 1 1 auto;
+  }
 }

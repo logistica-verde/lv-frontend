@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import AdminPage from '@/pages/AdminPage/AdminPage'
 import type { Base } from '@/services/schemas/base'
 import { DEFAULT_GA_SETTINGS } from '@/services/schemas/gaSettings'
@@ -108,6 +108,29 @@ describe('Bases tab', () => {
     expect(within(dialog).getByText('Informe a latitude')).toBeVisible()
     expect(within(dialog).getByText('Informe a longitude')).toBeVisible()
     expect(api.posted).toHaveLength(0)
+  })
+
+  it('lists the bases with their situation and action on a narrow screen, without a table', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      media: query,
+      matches: false,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }))
+    useBasesApi()
+
+    try {
+      await openBases()
+
+      const list = await screen.findByRole('list', { name: 'Bases cadastradas' })
+      expect(screen.queryByRole('table')).not.toBeInTheDocument()
+      expect(within(list).getByText('Base Central')).toBeVisible()
+      expect(within(list).getByText('Praça da Sé')).toBeVisible()
+      expect(within(list).getByText('Inativa')).toBeVisible()
+      expect(within(list).getByRole('button', { name: /Reativar.*Base Antiga/ })).toBeVisible()
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 
   it('deactivates and reactivates a base', async () => {

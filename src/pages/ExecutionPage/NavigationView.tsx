@@ -8,6 +8,7 @@ import MapView from '@/components/Map/MapView'
 import NavigationVehicle from '@/components/Map/NavigationVehicle'
 import RoutePolyline from '@/components/Map/RoutePolyline'
 import { useCancelExecution, useFinishExecution } from '@/hooks/useExecutions'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useToast } from '@/hooks/useToast'
 import { useNow } from '@/hooks/useNow'
 import { useTravel } from '@/hooks/useTravel'
@@ -70,6 +71,7 @@ export default function NavigationView(props: NavigationViewProps) {
 }
 
 function NavigationMap({ execution, route }: NavigationViewProps) {
+  const isDesktop = useIsDesktop()
   const navigate = useNavigate()
   const { notify } = useToast()
   const finishExecution = useFinishExecution()
@@ -174,6 +176,7 @@ function NavigationMap({ execution, route }: NavigationViewProps) {
         rotatable
         fitTo={travel.position ? undefined : track.points}
         zoomPosition="bottomleft"
+        zoomControls={isDesktop}
       >
         <RoutePolyline tone={tone} positions={track.points} />
         {stops.map((stop, index) => (

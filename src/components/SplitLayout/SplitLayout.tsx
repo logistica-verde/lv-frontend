@@ -27,7 +27,7 @@ export default function SplitLayout({ panelLabel, mapLabel, panel, map }: SplitL
       label="Painel ou mapa"
       className={styles.tabs}
       items={[
-        { id: 'panel', label: panelLabel, content: <div className={styles.fill}>{panel}</div> },
+        { id: 'panel', label: panelLabel, content: <div className={styles.scroll}>{panel}</div> },
         { id: 'map', label: mapLabel, content: <div className={styles.fill}>{map}</div> },
       ]}
     />

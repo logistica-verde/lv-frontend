@@ -1,5 +1,6 @@
 .wrapper {
   position: relative;
+  isolation: isolate;
   height: 100%;
   min-height: 12rem;
   border: 1px solid var(--color-border);

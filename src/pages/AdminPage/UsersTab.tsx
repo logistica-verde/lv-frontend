@@ -14,6 +14,7 @@ import { useUpdateUser, useUsers } from '@/hooks/useAdmin'
 import { useFitRows } from '@/hooks/useFitRows'
 import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useToast } from '@/hooks/useToast'
+import { classNames } from '@/lib/classNames'
 import { sliceForPage } from '@/lib/pagination'
 import listStyles from '@/pages/AdminPage/AdminList.module.css'
 import styles from '@/pages/AdminPage/AdminPage.module.css'
@@ -23,7 +24,7 @@ import type { Role, User, UserUpdate } from '@/services/schemas/user'
 
 const ROW_PX = 45
 const HEADER_PX = 36
-const LIST_ROW_PX = 68
+const LIST_ROW_PX = 116
 const FALLBACK_ROWS = 7
 
 type PendingChange = { kind: 'role'; user: User; role: Role } | { kind: 'deactivate'; user: User }
@@ -182,7 +183,7 @@ export default function UsersTab() {
         {users.isSuccess && all.length > 0 && !isDesktop && (
           <ul aria-label="Usuários e seus perfis" className={listStyles.list}>
             {visible.map((user) => (
-              <li key={user.id} className={listStyles.item}>
+              <li key={user.id} className={classNames(listStyles.item, listStyles.stacked)}>
                 <div className={listStyles.main}>
                   <span className={listStyles.title}>
                     {user.nome}

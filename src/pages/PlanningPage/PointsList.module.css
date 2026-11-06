@@ -130,3 +130,10 @@
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-strong);
 }
+
+@media (max-width: 63.99rem) {
+  section.card {
+    flex: none;
+    height: 30rem;
+  }
+}

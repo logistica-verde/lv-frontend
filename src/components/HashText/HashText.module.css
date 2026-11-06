@@ -1,6 +1,6 @@
 .hash {
   display: inline-flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--space-1);
   max-width: 100%;
 }
