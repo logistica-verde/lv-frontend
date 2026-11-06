@@ -44,6 +44,19 @@
   gap: var(--space-3);
 }
 
+.lineText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.stage {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
 .error {
   margin: 0;
   color: var(--color-danger);

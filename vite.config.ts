@@ -12,7 +12,10 @@ export default defineConfig(({ mode }) => ({
     },
   },
   server: {
-    proxy: mode === 'mock' ? { '/api': MOCK_API_URL } : undefined,
+    proxy:
+      mode === 'mock'
+        ? { '/api': MOCK_API_URL, '/ws': { target: MOCK_API_URL, ws: true } }
+        : undefined,
   },
   test: {
     environment: 'jsdom',
