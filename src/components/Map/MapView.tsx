@@ -20,9 +20,10 @@ const ROTATABLE_OPTIONS = { rotate: true, bearing: 0, rotateControl: false, touc
 type FitBoundsProps = {
   positions: LatLngTuple[]
   insetRight: number
+  insetTop: number
 }
 
-function FitBounds({ positions, insetRight }: FitBoundsProps) {
+function FitBounds({ positions, insetRight, insetTop }: FitBoundsProps) {
   const map = useMap()
   const key = positionsKey(positions)
   const target = useMemo(() => parsePositionsKey(key), [key])
@@ -57,11 +58,11 @@ function FitBounds({ positions, insetRight }: FitBoundsProps) {
       return
     }
     map.fitBounds(target, {
-      paddingTopLeft: [FIT_PADDING, FIT_PADDING],
+      paddingTopLeft: [FIT_PADDING, FIT_PADDING + insetTop],
       paddingBottomRight: [FIT_PADDING + insetRight, FIT_PADDING],
       maxZoom: MAX_FIT_ZOOM,
     })
-  }, [map, target, resizes, insetRight])
+  }, [map, target, resizes, insetRight, insetTop])
 
   return null
 }
@@ -74,7 +75,9 @@ type MapViewProps = {
   legend?: ReactNode
   flush?: boolean
   zoomPosition?: 'topleft' | 'bottomleft'
+  zoomControls?: boolean
   fitInsetRight?: number
+  fitInsetTop?: number
   rotatable?: boolean
   children?: ReactNode
 }
@@ -87,7 +90,9 @@ export default function MapView({
   legend,
   flush = false,
   zoomPosition,
+  zoomControls = true,
   fitInsetRight = 0,
+  fitInsetTop = 0,
   rotatable = false,
   children,
 }: MapViewProps) {
@@ -100,14 +105,14 @@ export default function MapView({
       <MapContainer
         center={SAO_PAULO_CENTER}
         zoom={DEFAULT_ZOOM}
-        scrollWheelZoom={false}
-        zoomControl={zoomPosition === undefined}
+        scrollWheelZoom={!zoomControls}
+        zoomControl={zoomControls && zoomPosition === undefined}
         className={styles.map}
         {...(rotatable ? ROTATABLE_OPTIONS : {})}
       >
         <TileLayer attribution={ATTRIBUTION} url={env.tileUrl} />
-        {zoomPosition && <ZoomControl position={zoomPosition} />}
-        <FitBounds positions={fitTo} insetRight={fitInsetRight} />
+        {zoomControls && zoomPosition && <ZoomControl position={zoomPosition} />}
+        <FitBounds positions={fitTo} insetRight={fitInsetRight} insetTop={fitInsetTop} />
         {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
         {children}
       </MapContainer>

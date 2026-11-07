@@ -35,6 +35,7 @@ import type { Route as CalculatedRoute } from '@/services/schemas/route'
 const NO_POINTS: DeliveryPoint[] = []
 const NO_BASES: Base[] = []
 const FLOATING_INSET_PX = 380
+const VEHICLE_INSET_PX = 250
 
 type DialogState = {
   tab: AddPointTab
@@ -184,9 +185,10 @@ export default function PlanningPage() {
       label="Mapa dos pontos de entrega"
       flush={isDesktop}
       fitInsetRight={isDesktop ? FLOATING_INSET_PX : 0}
+      fitInsetTop={isDesktop ? VEHICLE_INSET_PX : 0}
       fitTo={registered.map(toLatLng)}
       onMapClick={setDraft}
-      zoomPosition={isDesktop ? 'bottomleft' : undefined}
+      zoomControls={false}
       overlay={
         draft && (
           <div className={styles.draft}>

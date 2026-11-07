@@ -9,8 +9,10 @@ import StatusBadge from '@/components/StatusBadge/StatusBadge'
 import Table, { Td, Th } from '@/components/Table/Table'
 import VisuallyHidden from '@/components/VisuallyHidden/VisuallyHidden'
 import { useAllBases, useSetBaseActive } from '@/hooks/useBases'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useToast } from '@/hooks/useToast'
 import { formatNumber } from '@/lib/format'
+import listStyles from '@/pages/AdminPage/AdminList.module.css'
 import RegisterBaseDialog from '@/pages/AdminPage/RegisterBaseDialog'
 import { describeError, failureMessage } from '@/services/errors'
 import type { Base } from '@/services/schemas/base'
@@ -20,6 +22,7 @@ export default function BasesTab() {
   const setActive = useSetBaseActive()
   const { notify } = useToast()
   const [registering, setRegistering] = useState(false)
+  const isDesktop = useIsDesktop()
 
   const change = async (base: Base, ativo: boolean) => {
     try {
@@ -31,6 +34,24 @@ export default function BasesTab() {
   }
 
   const all = bases.data ?? []
+
+  const status = (base: Base) => (
+    <StatusBadge tone={base.ativo ? 'success' : 'neutral'}>
+      {base.ativo ? 'Ativa' : 'Inativa'}
+    </StatusBadge>
+  )
+
+  const toggleButton = (base: Base) => (
+    <Button
+      variant="secondary"
+      size="sm"
+      loading={setActive.isPending && setActive.variables?.id === base.id}
+      onClick={() => change(base, !base.ativo)}
+    >
+      {base.ativo ? 'Desativar' : 'Reativar'}
+      <VisuallyHidden> base {base.nome}</VisuallyHidden>
+    </Button>
+  )
 
   return (
     <Card
@@ -57,7 +78,25 @@ export default function BasesTab() {
           description="Cadastre a base para que as rotas partam dela e voltem a ela no fim do percurso."
         />
       )}
-      {all.length > 0 && (
+      {all.length > 0 && !isDesktop && (
+        <ul aria-label="Bases cadastradas" className={listStyles.list}>
+          {all.map((base) => (
+            <li key={base.id} className={listStyles.item}>
+              <div className={listStyles.main}>
+                <span className={listStyles.title}>{base.nome}</span>
+                <span className={listStyles.meta}>
+                  {base.endereco ?? `${formatNumber(base.latitude)}, ${formatNumber(base.longitude)}`}
+                </span>
+              </div>
+              <div className={listStyles.side}>
+                {status(base)}
+                {toggleButton(base)}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      {all.length > 0 && isDesktop && (
         <Table caption="Bases cadastradas">
           <thead>
             <tr>
@@ -76,22 +115,8 @@ export default function BasesTab() {
                 <Td>{base.endereco ?? '—'}</Td>
                 <Td>{formatNumber(base.latitude)}</Td>
                 <Td>{formatNumber(base.longitude)}</Td>
-                <Td>
-                  <StatusBadge tone={base.ativo ? 'success' : 'neutral'}>
-                    {base.ativo ? 'Ativa' : 'Inativa'}
-                  </StatusBadge>
-                </Td>
-                <Td>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    loading={setActive.isPending && setActive.variables?.id === base.id}
-                    onClick={() => change(base, !base.ativo)}
-                  >
-                    {base.ativo ? 'Desativar' : 'Reativar'}
-                    <VisuallyHidden> base {base.nome}</VisuallyHidden>
-                  </Button>
-                </Td>
+                <Td>{status(base)}</Td>
+                <Td>{toggleButton(base)}</Td>
               </tr>
             ))}
           </tbody>

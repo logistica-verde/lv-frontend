@@ -27,6 +27,13 @@ describe('MapView', () => {
     expect(screen.getByRole('button', { name: 'Zoom out' })).toBeInTheDocument()
   })
 
+  it('can leave the zoom to the mouse wheel and the fingers, without buttons', () => {
+    render(<MapView label="Mapa de teste" zoomControls={false} zoomPosition="bottomleft" />)
+
+    expect(screen.queryByRole('button', { name: 'Zoom in' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Zoom out' })).not.toBeInTheDocument()
+  })
+
   it('renders markers passed as children', () => {
     render(
       <MapView label="Mapa de teste">

@@ -21,9 +21,14 @@ export default function Tabs({ label, items, initialId, className }: TabsProps) 
   const [selectedId, setSelectedId] = useState(initialId ?? items[0]?.id ?? '')
   const tabRefs = useRef(new Map<string, HTMLButtonElement>())
 
+  const reveal = (id: string) => {
+    tabRefs.current.get(id)?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+  }
+
   const select = (id: string) => {
     setSelectedId(id)
     tabRefs.current.get(id)?.focus()
+    reveal(id)
   }
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -63,7 +68,10 @@ export default function Tabs({ label, items, initialId, className }: TabsProps) 
             aria-controls={`${baseId}-panel-${item.id}`}
             tabIndex={item.id === selectedId ? 0 : -1}
             className={classNames(styles.tab, item.id === selectedId && styles.selected)}
-            onClick={() => setSelectedId(item.id)}
+            onClick={() => {
+              setSelectedId(item.id)
+              reveal(item.id)
+            }}
           >
             {item.label}
           </button>

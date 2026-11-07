@@ -44,3 +44,9 @@
   gap: var(--space-3);
   align-items: start;
 }
+
+@media (max-width: 40rem) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

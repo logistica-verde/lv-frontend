@@ -12,7 +12,7 @@ import Skeleton from '@/components/Skeleton/Skeleton'
 import VisuallyHidden from '@/components/VisuallyHidden/VisuallyHidden'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useFitRows } from '@/hooks/useFitRows'
-import { useIsDesktop } from '@/hooks/useMediaQuery'
+import { useIsDesktop, useMediaQuery } from '@/hooks/useMediaQuery'
 import { useOperations } from '@/hooks/useOperations'
 import { useSession } from '@/hooks/useSession'
 import { useToast } from '@/hooks/useToast'
@@ -35,6 +35,7 @@ import { describeError, failureMessage } from '@/services/errors'
 import type { OperationSortField } from '@/services/schemas/operation'
 import { VEHICLE_IMAGE_LABELS } from '@/services/schemas/vehicle'
 
+const TABLE_QUERY = '(min-width: 75rem)'
 const TABLE_ROW_PX = 48
 const TABLE_HEADER_PX = 40
 const LIST_ROW_PX = 76
@@ -49,11 +50,12 @@ export default function HistoryPage() {
   const [params, setParams] = useSearchParams()
   const state = parseHistoryParams(params)
   const isDesktop = useIsDesktop()
+  const fitsTable = useMediaQuery(TABLE_QUERY)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const { ref, rows, ready } = useFitRows(
-    isDesktop ? TABLE_ROW_PX : LIST_ROW_PX,
+    fitsTable ? TABLE_ROW_PX : LIST_ROW_PX,
     FALLBACK_ROWS,
-    isDesktop ? TABLE_HEADER_PX : 0,
+    fitsTable ? TABLE_HEADER_PX : 0,
   )
   const vehicles = useVehicles()
   const session = useSession()
@@ -183,7 +185,7 @@ export default function HistoryPage() {
         />
       )
     }
-    return isDesktop ? (
+    return fitsTable ? (
       <HistoryTable
         items={data.items}
         sort={state.sort}

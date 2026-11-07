@@ -65,6 +65,7 @@ export default function PointsList({
     <Card
       title="Pontos de entrega"
       fill
+      className={styles.card}
       actions={
         <span className={styles.counter} aria-hidden="true">
           {points.length} de {MAX_SELECTED_POINTS}
