@@ -4,12 +4,14 @@ import Modal from '@/components/Modal/Modal'
 import ProgressBar from '@/components/ProgressBar/ProgressBar'
 import Spinner from '@/components/Spinner/Spinner'
 import StatusBadge from '@/components/StatusBadge/StatusBadge'
+import { useCalculationProgress } from '@/hooks/useCalculationProgress'
 import { useElapsedSeconds } from '@/hooks/useElapsedSeconds'
 import { useRoute } from '@/hooks/useRoutes'
 import type { CalculationIds } from '@/hooks/useRoutes'
 import { formatElapsed } from '@/lib/duration'
 import styles from '@/pages/PlanningPage/Calculation/CalculatingDialog.module.css'
 import { describeError } from '@/services/errors'
+import type { CalculationProgress } from '@/services/schemas/calculationProgress'
 import type { OperationStatus, Route } from '@/services/schemas/route'
 
 const EXPECTED_SECONDS = 14
@@ -28,6 +30,35 @@ type Line = {
   status: OperationStatus | undefined
   error: Error | null
   message: string | null | undefined
+  progress: CalculationProgress | undefined
+}
+
+function stageOf(line: Line): string | null {
+  if (line.status !== 'PENDING' || !line.progress) {
+    return null
+  }
+  const { stage, done, total } = line.progress
+  switch (stage) {
+    case 'QUEUED':
+      return 'Na fila'
+    case 'PREPARING':
+      return done !== null && total !== null ? `Traçando as ruas · ${done} de ${total}` : 'Traçando as ruas'
+    case 'OPTIMIZING':
+      return done !== null && total !== null
+        ? `Otimizando · geração ${done} de ${total}`
+        : 'Otimizando'
+    case 'SAVING':
+      return 'Salvando a rota'
+    default:
+      return null
+  }
+}
+
+function percentOf(line: Line): number {
+  if (line.status === 'COMPLETED') {
+    return 100
+  }
+  return line.progress?.percent ?? 0
 }
 
 function badgeOf(line: Line): { tone: 'info' | 'success' | 'danger'; text: string } {
@@ -55,6 +86,7 @@ export default function CalculatingDialog({
 }: CalculatingDialogProps) {
   const emission = useRoute(calculation.emission.id)
   const distance = useRoute(calculation.distance.id)
+  const live = useCalculationProgress([calculation.emission.id, calculation.distance.id])
   const delivered = useRef(false)
 
   const lines: Line[] = [
@@ -63,21 +95,24 @@ export default function CalculatingDialog({
       status: emission.data?.status,
       error: emission.error,
       message: emission.data?.errorMessage,
+      progress: live[calculation.emission.id],
     },
     {
       label: 'Menor distância',
       status: distance.data?.status,
       error: distance.error,
       message: distance.data?.errorMessage,
+      progress: live[calculation.distance.id],
     },
   ]
   const failures = lines.map(failureOf).filter((message): message is string => message !== null)
   const completed = lines.every((line) => line.status === 'COMPLETED')
   const settled = completed || failures.length > 0
   const elapsed = useElapsedSeconds(startedAt, !settled)
-  const percent = completed
-    ? 100
-    : Math.min(MAX_ESTIMATED_PERCENT, (elapsed / EXPECTED_SECONDS) * 100)
+  const reporting = lines.some((line) => line.progress !== undefined)
+  const estimated = Math.min(MAX_ESTIMATED_PERCENT, (elapsed / EXPECTED_SECONDS) * 100)
+  const measured = lines.reduce((sum, line) => sum + percentOf(line), 0) / lines.length
+  const percent = completed ? 100 : reporting ? measured : estimated
 
   const emissionRoute = emission.data
   const distanceRoute = distance.data
@@ -108,9 +143,13 @@ export default function CalculatingDialog({
           <ul className={styles.lines}>
             {lines.map((line) => {
               const badge = badgeOf(line)
+              const stage = stageOf(line)
               return (
                 <li key={line.label} className={styles.line}>
-                  <span>{line.label}</span>
+                  <span className={styles.lineText}>
+                    <span>{line.label}</span>
+                    {stage && <span className={styles.stage}>{stage}</span>}
+                  </span>
                   <StatusBadge tone={badge.tone}>{badge.text}</StatusBadge>
                 </li>
               )
