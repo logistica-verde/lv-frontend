@@ -86,6 +86,7 @@ export default function HistoryFilters({
         <option value="VALID">Íntegra</option>
         <option value="TAMPERED">Alterada</option>
         <option value="NOT_ANCHORED">Aguardando registro</option>
+        <option value="ANCHOR_FAILED">Registro não concluído</option>
       </SelectField>
       <div className={styles.clear}>
         <Button variant="ghost" disabled={countActiveFilters(filters) === 0} onClick={onClear}>
